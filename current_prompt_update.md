@@ -6,9 +6,28 @@
 
 ## Latest Update
 
-- **Timestamp:** 2026-09-27 02:22 IST
-- **Prompt:** Phase 3 — Multi-Signal Distress Risk Engine
-- **Current Phase:** Phase 3 — Multi-Signal Distress Risk Engine (`COMPLETED`)
+- **Timestamp:** 2026-09-27 02:40 IST
+- **Prompt:** Phase 4 — Sanket Console Dashboard Assembly
+  ```
+  Microphone
+     ↓
+  Feature Extraction
+     ↓
+  Risk Engine
+     ↓
+  ┌─────────────────────────────┐
+  │       SANKET CONSOLE        │
+  │                             │
+  │   RISK SCORE     STATUS     │
+  │      72          HIGH RISK  │
+  │                             │
+  │   Live Waveform             │
+  │   Signal Breakdown          │
+  │   Detection Timeline        │
+  │   Monitoring Status         │
+  └─────────────────────────────┘
+  ```
+- **Current Phase:** Phase 4 — Live Sanket Safety Dashboard Console (`COMPLETED`)
 - **Build:** `npm run build` → **0 TypeScript errors** | `npm run lint` → **0 warnings, 0 errors**
 - **Tests:**
   - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
@@ -19,58 +38,50 @@
 
 ### Actions Taken in This Turn
 
-1. **Read & analyzed all prerequisite files** and prompt requirements for Phase 3.
-2. **Extended `src/analysis/types.ts`**:
-   - `RiskLevel`: Typed strictly as `'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK'` adhering to prompt rule (no certainty/emergency claims).
-   - `RiskEvaluation`: Full telemetry snapshot with `riskScore`, `riskLevel`, `contributingSignals`, `confirmedSignals`, `persistenceFrames`, `isConfirmed`.
-   - `SignalContribution`: Per-channel breakdown `{ signal, contribution, reason }` for explainability in UI and audit logs.
-   - `RiskEngineConfig`: Configurable parameters for all signal baseline references, saturation ranges, EMA decay factor, confirmation frames, weights, and risk level thresholds.
-3. **Implemented `src/analysis/riskEngine.ts`**:
-   - Pure TypeScript, zero React/DOM/browser API dependencies.
-   - Independent linear bounded scoring for 6 channels:
-     - `pitch`: deviation from baseline (max 20%)
-     - `rms`: vocal intensity shift / whisper detection (max 15%)
-     - `silence`: prolonged hesitation / speech absence (max 15%)
-     - `voiceActivity`: session voice-activity ratio deficit (max 15%)
-     - `spectral`: high-frequency vocal strain centroid (max 10%)
-     - `zcr`: breathiness / turbulent unvoiced airflow (max 10%)
-     - `persistence`: multi-frame confirmation bonus (max 15%)
-   - **Single-Signal Ceiling Invariant (ADR 011):** Max single signal is 20 + 15 persistence = 35 < 70 (`HIGH_RISK`). Provably impossible for any isolated signal (cough, loud exclamation, pause) to reach `HIGH_RISK`.
-   - **Exponential Moving Average Decay (ADR 010):** Smoothing with `decayFactor: 0.78` guarantees smooth score evolution and gradual recovery when signals return to normal calm conversational speech.
-   - `injectExternalSignal()`: bounded additive boost channel for future Phase 5 (code-word) and Phase 8 (breathing) integration.
-   - Complete state management: `reset()`, `getState()`, `getConfig()`, `updateConfig()`, and `evaluationToRiskEvent()`.
-4. **Implemented `src/analysis/useRiskEngine.ts`**:
-   - React hook bridging `FeatureSet` (from `useFeatureExtractor`) into `RiskEngine` at ~10Hz.
-   - Deferred state updates via `setTimeout(0)` to prevent React 19 synchronous `setState`-in-effect warnings.
-   - Complete lifecycle reset when monitoring is stopped.
-   - 0 oxlint warnings.
-5. **Implemented `src/analysis/__tests__/riskEngine.test.ts`**:
-   - 59 comprehensive, deterministic unit tests (synthetic data, no browser, no DOM).
-   - Validates all 18 requirements from the Phase 3 prompt:
-     - Normal FeatureSet produces low risk (<30, `NORMAL`)
-     - Single-signal ceiling holds across pitch, silence, RMS, ZCR (all < 70)
-     - Multi-signal combinations raise risk above individual signals
-     - Temporal persistence increases score over time
-     - Brief transient spikes are suppressed below `HIGH_RISK`
-     - Sustained multi-signal abnormalities can reach `HIGH_RISK` (>=70)
-     - Score decays gradually when signals normalize
-     - Score approaches `NORMAL` after 50 normal recovery frames
-     - Score does not instantly zero out after a single normal frame
-     - Null pitch and missing optional fields are safely handled without NaN or crashes
-     - Score is strictly bounded [0, 100] across all edge cases
-     - Risk level boundaries are deterministic (0–29 `NORMAL`, 30–49 `ELEVATED`, 50–69 `SUSPICIOUS`, 70–100 `HIGH_RISK`)
-     - Same input sequence produces identical outputs across independent engines
-     - Engine `reset()` clears all temporal state
-     - External signal injection is strictly bounded to `maxBoost`
-     - Contributing signals explain the score with human-readable reasons
-     - Mathematical proof: single signal + persistence (35) < `HIGH_RISK` threshold (70)
-     - Clamp and linearScore helper correctness
-     - Edge cases (all-zero features, silence below onset threshold)
-6. **Updated documentation**:
-   - `docs/DECISIONS.md`: Added ADR 010 (EMA decision engine) and ADR 011 (Single-signal ceiling guarantee).
-   - `docs/PROGRESS.md`: Marked Phase 3 as COMPLETED, updated test metrics and functionality list.
-   - `docs/ROADMAP.md`: Marked Phase 3 as COMPLETED with feature breakdown.
-   - `docs/AGENT_HANDOFF.md`: Full handoff manifest updated with Phase 3 architecture, contracts, and Phase 4 instructions.
+1. **Implemented `src/components/RiskScoreGauge.tsx`**:
+   - High-tech circular SVG HUD gauge with 260-degree arc, tick marks (0, 30, 50, 70, 100), and gradient stroke with dynamic glowing filter.
+   - Central prominent readout for `RISK SCORE` (0–100) and `STATUS` badge (`NORMAL`, `ELEVATED`, `SUSPICIOUS`, `HIGH_RISK`).
+   - Dynamic pulsing beacon dots and color themes: Emerald for Normal, Amber for Elevated, Orange for Suspicious, Red for High Risk.
+   - Persistence telemetry pills indicating sustained frames and active anomaly channels.
+2. **Implemented `src/components/SignalBreakdown.tsx`**:
+   - Telemetry breakdown across all 6 heuristic channels:
+     - Pitch Deviation (max 20 pts)
+     - Vocal Intensity / RMS (max 15 pts)
+     - Prolonged Silence (max 15 pts)
+     - Voice Activity Ratio (max 15 pts)
+     - Spectral Strain / Centroid (max 10 pts)
+     - Turbulence / ZCR (max 10 pts)
+   - Real-time proportional progress meters, active/idle status icons, live values against baseline references, and human-readable anomaly explanations.
+   - Temporal persistence notice banner showing multi-frame confirmation bonus and pattern status.
+3. **Implemented `src/components/DetectionTimeline.tsx`**:
+   - 30-sample rolling sparkline chart displaying real-time score trajectory with color-coded severity bars.
+   - Real-time event log tracking risk level transitions (`LEVEL_UP`, `LEVEL_DOWN`), multi-signal co-occurrences, timestamps, and contributing signals.
+   - Clean state clearing upon monitoring stop.
+4. **Implemented `src/components/MonitoringStatus.tsx`**:
+   - Audio input layer metrics (Web Audio API, sample rate, 2048 FFT buffer).
+   - Voice Activity Detection (VAD) pill (`VOICED SPEECH` vs `AMBIENT / QUIET`) with live RMS energy bar.
+   - DSP analysis cadence readout (10Hz FeatureExtractor + 10Hz RiskEngine).
+   - Cumulative session metrics: voiced speech duration, segment count, continuous silence timer.
+   - Security and privacy assurances badge: 100% local browser processing, zero cloud streaming.
+5. **Implemented `src/components/DemoScenarios.tsx` & `src/utils/demoScenariosData.ts`**:
+   - Built interactive preset scenario simulator for hackathon evaluators and live demos:
+     - `Live Microphone`: real hardware mic input
+     - `Calm Conversational`: baseline pitch (165Hz), 6% RMS, normal cadence (~10 pts, `NORMAL`)
+     - `Isolated Pitch Spike`: 340Hz pitch spike demonstrating the Single-Signal Ceiling (<35 pts, `ELEVATED`)
+     - `Prolonged Silence`: 4.2s silence during session (~25 pts)
+     - `Strained Whisper`: low energy + high ZCR turbulence (~32 pts)
+     - `Multi-Signal Distress`: pitch + RMS + centroid + ZCR + persistence (75+ pts, `HIGH_RISK`)
+     - `Signals Normalizing`: returns to baseline demonstrating exponential moving average score decay
+   - Clean separation of component vs. utility functions to comply strictly with Vite Fast Refresh (`react/only-export-components`).
+6. **Assembled `src/App.tsx` & Styled in `src/index.css`**:
+   - Unified the end-to-end pipeline: `useAudioMonitor` → `useFeatureExtractor` → `useRiskEngine` → Sanket Console.
+   - Added pipeline trace indicator (`Microphone → Feature Extractor → Risk Engine → Console`).
+   - Extended Vanilla CSS design system with sleek dark safety HUD aesthetic, glassmorphism, responsive grid layouts, and micro-animations.
+7. **Comprehensive Verification**:
+   - Verified with `oxlint` across 24 files: 0 errors, 0 warnings.
+   - Verified with TypeScript and Vite build: 0 errors.
+   - Ran all 105 unit tests: 100% pass rate.
+   - Adhered strictly to user constraint: no browser testing, only deterministic CLI checks.
 
 ---
 
@@ -78,11 +89,14 @@
 
 | Action | File |
 | :--- | :--- |
-| Modified | `src/analysis/types.ts` |
-| Created | `src/analysis/riskEngine.ts` |
-| Created | `src/analysis/useRiskEngine.ts` |
-| Created | `src/analysis/__tests__/riskEngine.test.ts` |
-| Modified | `docs/DECISIONS.md` |
+| Created | `src/components/RiskScoreGauge.tsx` |
+| Created | `src/components/SignalBreakdown.tsx` |
+| Created | `src/components/DetectionTimeline.tsx` |
+| Created | `src/components/MonitoringStatus.tsx` |
+| Created | `src/components/DemoScenarios.tsx` |
+| Created | `src/utils/demoScenariosData.ts` |
+| Modified | `src/App.tsx` |
+| Modified | `src/index.css` |
 | Modified | `docs/PROGRESS.md` |
 | Modified | `docs/ROADMAP.md` |
 | Modified | `docs/AGENT_HANDOFF.md` |
@@ -92,7 +106,7 @@
 
 ### Build & Test Status
 
-- `npm run lint`: ✅ Exit 0 — **0 warnings, 0 errors** (oxlint across 18 files)
+- `npm run lint`: ✅ Exit 0 — **0 warnings, 0 errors** (oxlint on 24 files)
 - `npm run build`: ✅ Exit 0 — **0 TypeScript errors**, production bundle built cleanly
 - `npx tsx src/analysis/__tests__/featureExtraction.test.ts`: ✅ Exit 0 — **46/46 passed**
 - `npx tsx src/analysis/__tests__/riskEngine.test.ts`: ✅ Exit 0 — **59/59 passed**
@@ -103,14 +117,12 @@
 ### Repository State
 
 - **Branch:** `main`
-- **Working Tree:** All Phase 3 files tested, built, linted, and ready for commit.
+- **Working Tree:** Phase 4 completed, built, tested, linted, ready to commit.
 - **Remote:** `https://github.com/vishesh-ienc/sanket`
 
 ---
 
 ### Next Target
 
-- **Phase 4:** Live Sanket Safety Dashboard
-- **Goal:** Build the interactive real-time telemetry dashboard (Distress Risk Score gauge, status indicators, breakdown cards for pitch, intensity, pauses, spectral strain, and session timeline).
-- **Inputs:** `useRiskEngine`, `useFeatureExtractor`, `useAudioMonitor`.
-- **Aesthetic:** High-fidelity, dark safety-monitoring interface with smooth micro-animations.
+- **Phase 5:** Configurable Code-Word Detection
+- **Goal:** Allow users to set a covert distress phrase (e.g., *"Remember to feed the cat"*) that provides contextual high-confidence signal injection into the Risk Engine without alerting bystanders.
