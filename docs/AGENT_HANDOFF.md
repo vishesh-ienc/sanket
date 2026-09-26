@@ -11,17 +11,20 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Phase 2 — Voice Feature Extraction** (`COMPLETED`)
-- **Git State:** Clean, to be committed and pushed.
+- **Phase:** **Phase 3 — Multi-Signal Distress Risk Engine** (`COMPLETED`)
+- **Git State:** Clean, all tests passing, ready for Phase 4.
 - **Build Status:** `npm run build` passes with 0 TypeScript errors. `npm run lint` passes with 0 warnings/errors.
-- **Tests:** `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
+- **Tests:**
+  - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
+  - `npx tsx src/analysis/__tests__/riskEngine.test.ts` → **59/59 passed**
+  - Total: **105 passed, 0 failed**
 - **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
 
 ---
 
 ## 3. Current Phase
-- **Completed:** Phase 2.
-- **Next Phase:** **Phase 3 — Multi-Signal Distress Risk Engine.**
+- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine).
+- **Next Phase:** **Phase 4 — Live Sanket Safety Dashboard.**
 
 ---
 
@@ -48,37 +51,52 @@
 - **`src/App.tsx`**: Full 5-state monitoring UI shell.
 - **`src/index.css`**: Extended with all Phase 1 component styles.
 
-### Phase 2 (NEW)
-- **`src/analysis/types.ts`**: Expanded `FeatureSet` (8 fields), added `FeatureExtractorConfig`.
-- **`src/analysis/featureFunctions.ts`**: Pure stateless DSP utility functions:
+### Phase 2
+- **`src/analysis/types.ts`**: `FeatureSet` (9 fields), `FeatureExtractorConfig`.
+- **`src/analysis/featureFunctions.ts`**: Pure stateless DSP functions:
   - `calculateRms(samples)` — RMS from PCM Float32Array
   - `calculateZeroCrossingRate(samples)` — normalized sign-change fraction
   - `calculateSpectralCentroid(frequencyData, sampleRate, minMagnitude)` — weighted Hz centroid; **null** on silence
   - `estimatePitch(samples, sampleRate, minHz, maxHz, confidenceThreshold)` — autocorrelation F0; **null** on unvoiced/low-energy
   - `detectVoiceActivity(rms, threshold)` — energy gate VAD
 - **`src/analysis/featureExtractor.ts`**: Stateful `FeatureExtractor` class:
-  - `processFrame(frame: AudioFrame): FeatureSet` — complete per-frame analysis
+  - `processFrame(frame: AudioFrame): FeatureSet` — complete per-frame analysis (~10Hz)
   - Internal `TemporalState`: `silenceDurationSec`, `speechActivityDurationSec`, `speechSegmentCount`, `wasVoicedPrevFrame`, `lastFrameTimestamp`
   - `reset()`, `getTemporalState()`, `updateConfig()` methods
 - **`src/analysis/useFeatureExtractor.ts`**: React hook:
   - Runs at configurable analysis interval (default 100ms / 10Hz)
   - `FeatureExtractor` stored in `useState` (not `useRef`) — satisfies oxlint react/refs rule
   - Resets extractor on monitoring stop
-- **`src/analysis/__tests__/featureExtraction.test.ts`**: 46 deterministic tests (synthetic audio, no DOM/browser)
-- **`tsconfig.app.json`**: `__tests__` directories excluded from browser build
-- **`tsconfig.test.json`**: Separate tsconfig for test runner
+- **`src/analysis/__tests__/featureExtraction.test.ts`**: 46 deterministic unit tests.
+
+### Phase 3 (NEW)
+- **`src/analysis/types.ts`**:
+  - `RiskLevel`: `'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK'`
+  - `RiskEvaluation`: Smoothed composite score (0–100), level, explainable signal breakdown, confirmed signal count, persistence frames, isConfirmed flag.
+  - `SignalContribution`: Per-channel detail `{ signal, contribution, reason }`.
+  - `RiskEngineConfig`: Thresholds, baseline references, EMA smoothing factor, confirmation count, per-signal weights.
+- **`src/analysis/riskEngine.ts`**: Pure TypeScript heuristic risk decision engine:
+  - 6 independent signal channels (pitch, RMS, silence, voice activity, spectral centroid, ZCR) + persistence bonus.
+  - Bounded linear scoring functions per channel.
+  - Single-signal ceiling: Max single weight is 20, max single + persistence is 35 < 70 (`HIGH_RISK`). **Single signals provably cannot trigger `HIGH_RISK`.**
+  - Exponential moving average smoothing (`decayFactor: 0.78`): gradual recovery when speech normalizes; transient spikes do not latch into alerts.
+  - `injectExternalSignal()`: bounded additive channel for future Phase 5 (code-word) and Phase 8 (breathing) integration.
+  - `reset()`, `getState()`, `getConfig()`, `updateConfig()`, and `evaluationToRiskEvent()` methods.
+- **`src/analysis/useRiskEngine.ts`**: React hook:
+  - Bridges `useFeatureExtractor` output into `RiskEngine` (~10Hz).
+  - Clean lifecycle reset on monitoring stop.
+  - Deferrals with `setTimeout(0)` to prevent React effect state-update warnings.
+- **`src/analysis/__tests__/riskEngine.test.ts`**: 59 deterministic unit tests covering mathematical proofs, signal bounds, recovery decay, and determinism.
 
 ---
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Risk Score calculation (0–100 numeric) → Phase 3
-- [ ] `RiskLevel` classification (`NORMAL` / `ELEVATED` / `SUSPECTED` / `CRITICAL`) → Phase 3
-- [ ] Multi-signal temporal co-occurrence weighting → Phase 3
-- [ ] Personal baseline calibration (`BaselineProfile`) → Phase 7
-- [ ] Distress telemetry dashboard → Phase 4
+- [ ] Distress telemetry dashboard (gauges, meter, cards, history) → Phase 4
 - [ ] Covert code-word spotter → Phase 5
-- [ ] Silent alert dispatch simulation → Phase 6
-- [ ] Multi-signal false-positive filter → Phase 8
+- [ ] Silent alert dispatch simulation & forensic modal → Phase 6
+- [ ] Personal baseline calibration (`BaselineProfile`) → Phase 7
+- [ ] Multi-signal false-positive reduction filters → Phase 8
+- [ ] Mobile/VoIP native integration → Phase 10
 
 ---
 
@@ -99,27 +117,33 @@ useFeatureExtractor hook (src/analysis/useFeatureExtractor.ts)   ← 10Hz analys
    ↓ calls
 FeatureExtractor.processFrame() (src/analysis/featureExtractor.ts)
    ↓ calls
-featureFunctions.ts (calculateRms, calculateZeroCrossingRate, calculateSpectralCentroid, estimatePitch, detectVoiceActivity)
+featureFunctions.ts (RMS, ZCR, Spectral Centroid, Pitch, VAD)
    ↓ maintains
 TemporalState { silenceDurationSec, speechActivityDurationSec, speechSegmentCount, ... }
    ↓ emits
 FeatureSet { rmsEnergy, zeroCrossingRate, spectralCentroid, pitchHz, isSpeech,
              silenceDurationSec, speechActivityDurationSec, speechSegmentCount }
    ↓
-Future Phase 3 Risk Engine hook (useRiskEngine)
-
-LiveWaveform component  → reads AnalyserNode directly at ~60fps RAF
-AudioActivityMeter component → reads activity state from useAudioMonitor
+useRiskEngine hook (src/analysis/useRiskEngine.ts)               ← 10Hz scoring
+   ↓ calls
+RiskEngine.evaluate() (src/analysis/riskEngine.ts)
+   ↓ maintains
+RiskTemporalState { smoothedScore, consecutiveAbnormalFrames, rmsSmoothRef, ... }
+   ↓ emits
+RiskEvaluation { riskScore, riskLevel, contributingSignals, confirmedSignals, persistenceFrames, isConfirmed }
+   ↓
+Future Phase 4 Live Safety Dashboard
 ```
 
 ---
 
-## 7. FeatureSet Contract
+## 7. Data Contracts
 
+### FeatureSet Contract
 ```typescript
 interface FeatureSet {
   timestamp: number;                // ms (performance.now())
-  rmsEnergy: number;                // 0.0–1.0 amplitude ratio (NOT calibrated dBSPL)
+  rmsEnergy: number;                // 0.0–1.0 amplitude ratio
   zeroCrossingRate: number;         // 0.0–1.0 fraction of sign changes
   spectralCentroid: number | null;  // Hz, null on silence
   pitchHz: number | null;           // Hz, null on unvoiced/silence/low-confidence
@@ -130,16 +154,35 @@ interface FeatureSet {
 }
 ```
 
-**Critical nullability rule:** `pitchHz: null` and `pitchHz: 0` are DIFFERENT states. The risk engine must handle null correctly (= "unavailable") vs 0 (= "measured as 0Hz", which is physically impossible for speech).
+### RiskEvaluation Contract
+```typescript
+type RiskLevel = 'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK';
+
+interface SignalContribution {
+  signal: string;                   // 'pitch' | 'rms' | 'silence' | 'voiceActivity' | 'spectral' | 'zcr' | 'persistence'
+  contribution: number;             // 0–maxWeight
+  reason: string;                   // Human-readable rationale for UI/audit logs
+}
+
+interface RiskEvaluation {
+  timestamp: number;
+  riskScore: number;                // 0–100 smoothed composite score
+  riskLevel: RiskLevel;             // NORMAL (0–29), ELEVATED (30–49), SUSPICIOUS (50–69), HIGH_RISK (70–100)
+  contributingSignals: SignalContribution[];
+  confirmedSignals: number;         // Number of positive non-persistence contributors
+  persistenceFrames: number;        // Consecutive abnormal frames count
+  isConfirmed: boolean;             // True if persistence >= confirmationFrames
+}
+```
 
 ---
 
-## 8. Test Strategy
+## 8. Test Strategy & Commands
 
-- All feature extraction tests use synthetic Float32Array signals.
-- No browser, no DOM, no microphone required.
-- Run with: `npx tsx src/analysis/__tests__/featureExtraction.test.ts`
-- Tests cover: RMS (silence, constant, sine), ZCR (silence, constant, square waves), spectral centroid (silence→null, single bin), pitch (150/220/300 Hz tones ±15–20Hz, silence→null, low amplitude→null, invalid range→null), VAD (boundary conditions, custom thresholds), temporal state machine (silence accumulation, voice→silence→voice transitions, segment counting, reset).
+All tests use synthetic signals and require **no browser, no DOM, and no microphone**:
+- `npx tsx src/analysis/__tests__/featureExtraction.test.ts` (46 tests)
+- `npx tsx src/analysis/__tests__/riskEngine.test.ts` (59 tests)
+- Full verification: `npm run lint && npm run build && npx tsx src/analysis/__tests__/featureExtraction.test.ts && npx tsx src/analysis/__tests__/riskEngine.test.ts`
 
 ---
 
@@ -151,8 +194,10 @@ interface FeatureSet {
 - **Decision 005:** Heuristic rule-based scoring over opaque fake ML.
 - **Decision 006:** Local-first, zero-cloud audio streaming.
 - **Decision 007:** `getAnalyserNode()` exposed for canvas rendering (Phase 1).
-- **Decision 008:** Autocorrelation chosen over YIN or external library for pitch (Phase 2).
-- **Decision 009:** `FeatureExtractor` maintains temporal state internally, not in React (Phase 2).
+- **Decision 008:** Autocorrelation chosen over YIN for pitch (Phase 2).
+- **Decision 009:** `FeatureExtractor` maintains temporal state internally (Phase 2).
+- **Decision 010:** Multi-Signal Decision Engine with Exponential Moving Average (Phase 3).
+- **Decision 011:** Strict Single-Signal Ceiling Guarantee (Phase 3).
 
 ---
 
@@ -160,18 +205,22 @@ interface FeatureSet {
 
 | File | Purpose |
 | :--- | :--- |
-| [docs/PROJECT_CONTEXT.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/PROJECT_CONTEXT.md) | Primary source of truth |
+| [docs/PROJECT_CONTEXT.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/PROJECT_CONTEXT.md) | Primary source of truth & positioning |
 | [docs/ARCHITECTURE.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/ARCHITECTURE.md) | Technical specs & data contracts |
 | [docs/PROGRESS.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/PROGRESS.md) | Current implementation state |
-| [docs/DECISIONS.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/DECISIONS.md) | Architecture Decision Records |
+| [docs/DECISIONS.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/DECISIONS.md) | Architecture Decision Records (ADRs 001–011) |
+| [docs/ROADMAP.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/ROADMAP.md) | Multi-phase development roadmap |
 | [src/audio/types.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/types.ts) | Audio layer data contracts |
 | [src/audio/audioInput.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/audioInput.ts) | AudioInputService |
 | [src/audio/useAudioMonitor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/useAudioMonitor.ts) | React hook — audio bridge |
-| [src/analysis/types.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/types.ts) | FeatureSet, FeatureExtractorConfig, RiskEvent contracts |
+| [src/analysis/types.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/types.ts) | FeatureSet, RiskEvaluation, RiskEvent contracts |
 | [src/analysis/featureFunctions.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/featureFunctions.ts) | Pure DSP functions |
 | [src/analysis/featureExtractor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/featureExtractor.ts) | Stateful FeatureExtractor class |
 | [src/analysis/useFeatureExtractor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useFeatureExtractor.ts) | React hook — feature bridge |
-| [src/analysis/__tests__/featureExtraction.test.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/__tests__/featureExtraction.test.ts) | 46 deterministic tests |
+| [src/analysis/riskEngine.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/riskEngine.ts) | Heuristic multi-signal decision engine |
+| [src/analysis/useRiskEngine.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useRiskEngine.ts) | React hook — risk evaluation bridge |
+| [src/analysis/__tests__/featureExtraction.test.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/__tests__/featureExtraction.test.ts) | 46 deterministic DSP tests |
+| [src/analysis/__tests__/riskEngine.test.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/__tests__/riskEngine.test.ts) | 59 deterministic risk engine tests |
 | [src/components/LiveWaveform.tsx](file:///c:/Users/VISHESH/Desktop/SANKET/src/components/LiveWaveform.tsx) | Canvas oscilloscope |
 | [src/components/AudioActivityMeter.tsx](file:///c:/Users/VISHESH/Desktop/SANKET/src/components/AudioActivityMeter.tsx) | RMS meter |
 | [src/App.tsx](file:///c:/Users/VISHESH/Desktop/SANKET/src/App.tsx) | Main UI shell |
@@ -179,22 +228,14 @@ interface FeatureSet {
 
 ---
 
-## 11. Next Phase — Phase 3: Multi-Signal Distress Risk Engine
+## 11. Next Phase — Phase 4: Live Sanket Safety Dashboard
 
-The next agent should build `src/analysis/riskEngine.ts`:
-
-**Inputs:** `FeatureSet` stream from `FeatureExtractor`  
-**Outputs:** Numeric `riskScore` (0–100) + `RiskLevel` + contributing signal list + `RiskEvent` when score crosses thresholds
-
-**Key implementation notes:**
-- This phase DOES introduce distress scoring — but it must use **transparent, weighted, configurable** heuristics.
-- Each contributing signal (pitch deviation, silence duration, RMS shift, etc.) contributes a weighted sub-score.
-- No single signal produces a `CRITICAL` classification.
-- Score should decay gradually when signals return to normal (not binary on/off).
-- Use `BaselineProfile` if available; fall back to universal population defaults if not yet calibrated.
-- `RiskEvent` is emitted when `riskScore` crosses defined thresholds.
-- Build a `useRiskEngine` React hook for integration.
-- No dashboard yet — Phase 4 handles visualization.
+The next agent should build the interactive telemetry UI:
+- Create real-time Distress Risk Score gauge / meter (Green `NORMAL`, Yellow `ELEVATED`, Orange `SUSPICIOUS`, Red `HIGH_RISK`).
+- Build breakdown cards displaying individual signal contributions (`contributingSignals`).
+- Show pitch deviation, vocal intensity, silence duration, and spectral strain telemetry in real-time.
+- Preserve the decoupled pipeline: UI components consume `useRiskEngine`, which consumes `useFeatureExtractor`, which consumes `useAudioMonitor`.
+- Maintain rich, stunning dark mode aesthetics without external CSS frameworks.
 
 ---
 
@@ -205,7 +246,7 @@ The next agent should build `src/analysis/riskEngine.ts`:
 3. **Read `docs/ARCHITECTURE.md` before modifying architecture.**
 4. **Read `docs/DECISIONS.md` before making major technical decisions.**
 5. **Do not duplicate existing functionality.**
-6. **Do not modify `AudioInputService` or `FeatureExtractor` — consume their output.**
+6. **Do not modify `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.**
 7. **Update `docs/PROGRESS.md` after completing meaningful work.**
 8. **Update `docs/AGENT_HANDOFF.md` when architecture changes significantly.**
 9. **Update `docs/DECISIONS.md` when making an important architectural decision.**

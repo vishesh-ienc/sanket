@@ -85,6 +85,22 @@
 - **Decision:** `FeatureExtractor` maintains a private `TemporalState` object updated synchronously on every `processFrame()` call. React state (`useFeatureExtractor`) receives a snapshot of the latest `FeatureSet` at the hook's interval rate (10Hz), not on every raw audio frame.
 - **Consequences:** Accurate temporal accumulation independent of React render cycle; clean separation between the analysis engine and UI layer; `FeatureExtractor` is independently testable without React.
 
+### DECISION 010: Multi-Signal Decision Engine with Exponential Moving Average
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Distress risk cannot be judged on single-frame instantaneous observations or isolated acoustic anomalies. Vocal spikes occur in normal conversational emphasis or laughter, and silence happens naturally during pauses. The system requires temporal stability, gradual decay upon recovery, and bounded evidence accumulation.
+- **Decision:** The `RiskEngine` calculates linear bounded contributions per signal channel (pitch, RMS, silence, VAD/timing, spectral centroid, ZCR), adds a persistence bonus for sustained consecutive abnormal frames, and applies an exponential moving average (EMA) smoother (`decayFactor: 0.78`). When signals normalize, the score decays exponentially toward zero rather than abruptly resetting.
+- **Consequences:** Transparent and deterministic scoring; no sudden jumpy alert state; natural recovery when speech returns to normal; explicit prototype heuristic design without opaque or hallucinating ML models.
+
+---
+
+### DECISION 011: Strict Single-Signal Ceiling Guarantee
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Product positioning mandates that Sanket must never trigger emergency escalation based on any single acoustic feature (e.g., a cough, shouting, or long pause).
+- **Decision:** Every individual signal channel is assigned a hard weight ceiling ≤ 20 out of 100. Even with maximum temporal persistence (15), the mathematical ceiling for any isolated signal is 35/100. Because `HIGH_RISK` requires a score ≥ 70, it is mathematically impossible for any single signal alone to cause a `HIGH_RISK` event. Escalation strictly requires multi-signal co-occurrence (at least 3–4 corroborating anomaly channels simultaneously active and temporally confirmed).
+- **Consequences:** Eliminates single points of false-positive failure; provides a provable mathematical safety invariant covered by automated unit tests; reinforces the core product principle that Sanket measures multi-signal distress risk rather than claiming certainty.
+
 ---
 
 ### Template for Future Decisions
@@ -96,3 +112,4 @@
 - **Decision:** [What was decided?]
 - **Consequences:** [What are the positive and negative implications?]
 ```
+

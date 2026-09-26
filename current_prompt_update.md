@@ -6,63 +6,71 @@
 
 ## Latest Update
 
-- **Timestamp:** 2026-09-27 02:03 IST
-- **Prompt:** Phase 2 — Voice Feature Extraction
-- **Current Phase:** Phase 2 — Voice Feature Extraction (`COMPLETED`)
+- **Timestamp:** 2026-09-27 02:22 IST
+- **Prompt:** Phase 3 — Multi-Signal Distress Risk Engine
+- **Current Phase:** Phase 3 — Multi-Signal Distress Risk Engine (`COMPLETED`)
 - **Build:** `npm run build` → **0 TypeScript errors** | `npm run lint` → **0 warnings, 0 errors**
-- **Tests:** `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
+- **Tests:**
+  - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
+  - `npx tsx src/analysis/__tests__/riskEngine.test.ts` → **59/59 passed**
+  - Total: **105/105 passed (100%)**
 
 ---
 
 ### Actions Taken in This Turn
 
-1. Read all 9 prerequisite files before writing code.
-
+1. **Read & analyzed all prerequisite files** and prompt requirements for Phase 3.
 2. **Extended `src/analysis/types.ts`**:
-   - `FeatureSet` expanded to 9 fields: added `silenceDurationSec`, `speechActivityDurationSec`, `speechSegmentCount`; made `spectralCentroid` and `pitchHz` properly nullable
-   - Added `FeatureExtractorConfig` interface with 5 configurable thresholds
-
-3. **Created `src/analysis/featureFunctions.ts`** (pure stateless DSP):
-   - `calculateRms()` — RMS from Float32Array
-   - `calculateZeroCrossingRate()` — normalized ZCR
-   - `calculateSpectralCentroid()` — weighted Hz centroid from dBFS bins, null on silence
-   - `estimatePitch()` — autocorrelation F0 estimator (80–500 Hz), null on unvoiced
-   - `detectVoiceActivity()` — energy-gate VAD
-   - All functions zero DOM/React/browser dependencies
-
-4. **Created `src/analysis/featureExtractor.ts`** (stateful class):
-   - `processFrame(frame): FeatureSet` — orchestrates all DSP functions
-   - Internal `TemporalState` — cross-frame silence/speech timing
-   - `updateTemporalState()` — handles VOICE↔SILENCE transitions
-   - `reset()`, `getTemporalState()`, `updateConfig()` methods
-   - Pitch skipped on non-voiced frames (performance optimization)
-
-5. **Created `src/analysis/useFeatureExtractor.ts`** (React hook):
-   - Runs at 10Hz (100ms interval) via `setInterval`
-   - `FeatureExtractor` stored in `useState` — satisfies oxlint react/refs rule
-   - Resets extractor + defers `setLatestFeatures(null)` via `setTimeout(0)` — avoids synchronous setState-in-effect warning
-
-6. **Created `src/analysis/__tests__/featureExtraction.test.ts`** (46 tests):
-   - Synthetic audio generators: `silence()`, `constantSignal()`, `sineWave()`, `squareWave()`, `silenceFreqData()`
-   - Covers all 5 DSP functions + temporal state machine + reset()
-   - Run with `npx tsx`
-
-7. **Updated `tsconfig.app.json`**: excluded `__tests__` from browser TypeScript compilation
-8. **Created `tsconfig.test.json`**: Node-compatible test runner config
-
-9. **Fixed 2 bugs found by tests:**
-   - Pitch energy floor raised from `1e-8` to `1e-4` to properly reject near-silence signals
-   - Silence accumulation test expectations corrected (f2=0.5s, f3=1.0s for 3 frames at 0/500/1000ms)
-
-10. **Fixed 3 oxlint warnings** in `useFeatureExtractor.ts`:
-    - Moved `FeatureExtractor` from `useRef` to `useState`
-    - Deferred `setLatestFeatures(null)` with `setTimeout(0)` to avoid synchronous setState-in-effect
-
-11. **Updated documentation**:
-    - `docs/PROGRESS.md` — Phase 2 COMPLETED
-    - `docs/AGENT_HANDOFF.md` — Full architecture, FeatureSet contract, test strategy, Phase 3 instructions
-    - `docs/DECISIONS.md` — ADR 008 (autocorrelation choice), ADR 009 (temporal state in class not React)
-    - `docs/ROADMAP.md` — Phase 2 marked COMPLETED
+   - `RiskLevel`: Typed strictly as `'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK'` adhering to prompt rule (no certainty/emergency claims).
+   - `RiskEvaluation`: Full telemetry snapshot with `riskScore`, `riskLevel`, `contributingSignals`, `confirmedSignals`, `persistenceFrames`, `isConfirmed`.
+   - `SignalContribution`: Per-channel breakdown `{ signal, contribution, reason }` for explainability in UI and audit logs.
+   - `RiskEngineConfig`: Configurable parameters for all signal baseline references, saturation ranges, EMA decay factor, confirmation frames, weights, and risk level thresholds.
+3. **Implemented `src/analysis/riskEngine.ts`**:
+   - Pure TypeScript, zero React/DOM/browser API dependencies.
+   - Independent linear bounded scoring for 6 channels:
+     - `pitch`: deviation from baseline (max 20%)
+     - `rms`: vocal intensity shift / whisper detection (max 15%)
+     - `silence`: prolonged hesitation / speech absence (max 15%)
+     - `voiceActivity`: session voice-activity ratio deficit (max 15%)
+     - `spectral`: high-frequency vocal strain centroid (max 10%)
+     - `zcr`: breathiness / turbulent unvoiced airflow (max 10%)
+     - `persistence`: multi-frame confirmation bonus (max 15%)
+   - **Single-Signal Ceiling Invariant (ADR 011):** Max single signal is 20 + 15 persistence = 35 < 70 (`HIGH_RISK`). Provably impossible for any isolated signal (cough, loud exclamation, pause) to reach `HIGH_RISK`.
+   - **Exponential Moving Average Decay (ADR 010):** Smoothing with `decayFactor: 0.78` guarantees smooth score evolution and gradual recovery when signals return to normal calm conversational speech.
+   - `injectExternalSignal()`: bounded additive boost channel for future Phase 5 (code-word) and Phase 8 (breathing) integration.
+   - Complete state management: `reset()`, `getState()`, `getConfig()`, `updateConfig()`, and `evaluationToRiskEvent()`.
+4. **Implemented `src/analysis/useRiskEngine.ts`**:
+   - React hook bridging `FeatureSet` (from `useFeatureExtractor`) into `RiskEngine` at ~10Hz.
+   - Deferred state updates via `setTimeout(0)` to prevent React 19 synchronous `setState`-in-effect warnings.
+   - Complete lifecycle reset when monitoring is stopped.
+   - 0 oxlint warnings.
+5. **Implemented `src/analysis/__tests__/riskEngine.test.ts`**:
+   - 59 comprehensive, deterministic unit tests (synthetic data, no browser, no DOM).
+   - Validates all 18 requirements from the Phase 3 prompt:
+     - Normal FeatureSet produces low risk (<30, `NORMAL`)
+     - Single-signal ceiling holds across pitch, silence, RMS, ZCR (all < 70)
+     - Multi-signal combinations raise risk above individual signals
+     - Temporal persistence increases score over time
+     - Brief transient spikes are suppressed below `HIGH_RISK`
+     - Sustained multi-signal abnormalities can reach `HIGH_RISK` (>=70)
+     - Score decays gradually when signals normalize
+     - Score approaches `NORMAL` after 50 normal recovery frames
+     - Score does not instantly zero out after a single normal frame
+     - Null pitch and missing optional fields are safely handled without NaN or crashes
+     - Score is strictly bounded [0, 100] across all edge cases
+     - Risk level boundaries are deterministic (0–29 `NORMAL`, 30–49 `ELEVATED`, 50–69 `SUSPICIOUS`, 70–100 `HIGH_RISK`)
+     - Same input sequence produces identical outputs across independent engines
+     - Engine `reset()` clears all temporal state
+     - External signal injection is strictly bounded to `maxBoost`
+     - Contributing signals explain the score with human-readable reasons
+     - Mathematical proof: single signal + persistence (35) < `HIGH_RISK` threshold (70)
+     - Clamp and linearScore helper correctness
+     - Edge cases (all-zero features, silence below onset threshold)
+6. **Updated documentation**:
+   - `docs/DECISIONS.md`: Added ADR 010 (EMA decision engine) and ADR 011 (Single-signal ceiling guarantee).
+   - `docs/PROGRESS.md`: Marked Phase 3 as COMPLETED, updated test metrics and functionality list.
+   - `docs/ROADMAP.md`: Marked Phase 3 as COMPLETED with feature breakdown.
+   - `docs/AGENT_HANDOFF.md`: Full handoff manifest updated with Phase 3 architecture, contracts, and Phase 4 instructions.
 
 ---
 
@@ -71,36 +79,38 @@
 | Action | File |
 | :--- | :--- |
 | Modified | `src/analysis/types.ts` |
-| Created | `src/analysis/featureFunctions.ts` |
-| Created | `src/analysis/featureExtractor.ts` |
-| Created | `src/analysis/useFeatureExtractor.ts` |
-| Created | `src/analysis/__tests__/featureExtraction.test.ts` |
-| Modified | `tsconfig.app.json` |
-| Created | `tsconfig.test.json` |
-| Modified | `docs/PROGRESS.md` |
-| Modified | `docs/AGENT_HANDOFF.md` |
+| Created | `src/analysis/riskEngine.ts` |
+| Created | `src/analysis/useRiskEngine.ts` |
+| Created | `src/analysis/__tests__/riskEngine.test.ts` |
 | Modified | `docs/DECISIONS.md` |
+| Modified | `docs/PROGRESS.md` |
 | Modified | `docs/ROADMAP.md` |
+| Modified | `docs/AGENT_HANDOFF.md` |
+| Modified | `current_prompt_update.md` |
 
 ---
 
-### Build Status
-- `npm run build`: ✅ Exit 0 — 0 TypeScript errors, built in ~489ms
-- `npm run lint`: ✅ Exit 0 — 0 warnings, 0 errors (oxlint)
+### Build & Test Status
+
+- `npm run lint`: ✅ Exit 0 — **0 warnings, 0 errors** (oxlint across 18 files)
+- `npm run build`: ✅ Exit 0 — **0 TypeScript errors**, production bundle built cleanly
 - `npx tsx src/analysis/__tests__/featureExtraction.test.ts`: ✅ Exit 0 — **46/46 passed**
+- `npx tsx src/analysis/__tests__/riskEngine.test.ts`: ✅ Exit 0 — **59/59 passed**
+- **Total Test Count:** **105 passed, 0 failed**
 
 ---
 
 ### Repository State
+
 - **Branch:** `main`
-- **Uncommitted changes:** Yes — all Phase 2 files staged, commit pending
+- **Working Tree:** All Phase 3 files tested, built, linted, and ready for commit.
 - **Remote:** `https://github.com/vishesh-ienc/sanket`
 
 ---
 
 ### Next Target
-- **Phase 3:** Multi-Signal Distress Risk Engine
-- **Entry file:** `src/analysis/riskEngine.ts`
-- **Input:** `FeatureSet` stream from `FeatureExtractor`
-- **Output:** `riskScore` (0–100) + `RiskLevel` + `RiskEvent` emissions
-- **Key requirement:** Multi-signal weighted heuristic; no single signal triggers CRITICAL; score decays when signals normalize
+
+- **Phase 4:** Live Sanket Safety Dashboard
+- **Goal:** Build the interactive real-time telemetry dashboard (Distress Risk Score gauge, status indicators, breakdown cards for pitch, intensity, pauses, spectral strain, and session timeline).
+- **Inputs:** `useRiskEngine`, `useFeatureExtractor`, `useAudioMonitor`.
+- **Aesthetic:** High-fidelity, dark safety-monitoring interface with smooth micro-animations.

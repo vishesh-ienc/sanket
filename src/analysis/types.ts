@@ -93,7 +93,7 @@ export interface BaselineProfile {
   frameCount: number;
 }
 
-export type RiskLevel = 'NORMAL' | 'ELEVATED' | 'SUSPECTED' | 'CRITICAL';
+export type RiskLevel = 'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK';
 
 export interface RiskEvent {
   id: string;
@@ -140,4 +140,126 @@ export interface FeatureExtractorConfig {
    * (default: 0.001)
    */
   spectralCentroidMinMagnitude: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 3: Risk Engine Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Describes the contribution of one signal to the composite risk score.
+ * Exposed so the dashboard can explain WHY the score changed.
+ */
+export interface SignalContribution {
+  /** Identifier for the signal channel (e.g. 'pitch', 'silence', 'rms') */
+  signal: string;
+  /** Numeric contribution added to the composite score this evaluation (0–max weight) */
+  contribution: number;
+  /** Human-readable reason string for UI / audit log display */
+  reason: string;
+}
+
+/**
+ * The complete result of one RiskEngine.evaluate() call.
+ * Replaces or extends RiskEvent for live risk telemetry.
+ *
+ * Design note:
+ * - riskScore is the SMOOTHED score after decay/persistence, not a raw frame score.
+ * - contributingSignals lists only signals that contributed > 0 this frame.
+ * - confirmedSignals is the count of simultaneously active signals.
+ * - A separate RiskEvent is emitted only when level transitions.
+ */
+export interface RiskEvaluation {
+  /** Monotonically-incrementing millisecond timestamp */
+  timestamp: number;
+  /** Smoothed composite risk score [0, 100] */
+  riskScore: number;
+  /** Discrete risk level derived from riskScore */
+  riskLevel: RiskLevel;
+  /** Per-signal breakdown, only signals with contribution > 0 */
+  contributingSignals: SignalContribution[];
+  /** Number of distinct signals with positive contribution this frame */
+  confirmedSignals: number;
+  /** Number of consecutive evaluation frames where any signal was active */
+  persistenceFrames: number;
+  /** Whether the engine considers the current elevated risk confirmed (multi-frame) */
+  isConfirmed: boolean;
+}
+
+/**
+ * Configuration for the RiskEngine.
+ *
+ * All values are PROTOTYPE heuristics. They are NOT scientifically or
+ * medically validated distress thresholds. They are starting points
+ * for demonstration and should be calibrated against a personal baseline
+ * in Phase 7.
+ */
+export interface RiskEngineConfig {
+  // ── Signal sensitivity thresholds ──────────────────────────────────────────
+
+  /**
+   * RMS deviation ratio above which vocal intensity is flagged.
+   * Example: 0.08 means RMS increased by 0.08 above the prototype reference.
+   * Prototype reference value (Phase 7 will replace with personal baseline mean).
+   */
+  rmsBaselineRef: number;
+  /** Maximum expected RMS range for scoring saturation (default: 0.25) */
+  rmsRange: number;
+
+  /**
+   * Prototype reference pitch in Hz. Used until personal baseline is available.
+   * Covers approximate mid-range of male + female speech (default: 165 Hz).
+   */
+  pitchBaselineRef: number;
+  /** Hz deviation from reference above which pitch is considered elevated (default: 40 Hz) */
+  pitchDeviationThreshold: number;
+  /** Hz of deviation that saturates pitch score (default: 120 Hz) */
+  pitchSaturationRange: number;
+
+  /** Seconds of silence that begins contributing to the silence signal (default: 1.5s) */
+  silenceOnsetSec: number;
+  /** Seconds of silence where the silence signal saturates (default: 6.0s) */
+  silenceSaturationSec: number;
+
+  /** RMS below which a VAD=true frame with dropping energy is flagged (default: 0.025) */
+  whisperRmsThreshold: number;
+
+  // ── Score dynamics ─────────────────────────────────────────────────────────
+
+  /**
+   * Exponential decay factor applied to the carry-over score each frame.
+   * Range: (0, 1). Lower = faster decay. (default: 0.78)
+   * This makes the score decay toward 0 when signals normalize,
+   * rather than snapping instantly to 0.
+   */
+  decayFactor: number;
+
+  /**
+   * Number of consecutive abnormal frames before confirming elevated risk.
+   * Prevents single-frame spikes from triggering high-risk levels. (default: 3)
+   */
+  confirmationFrames: number;
+
+  /**
+   * Per-signal maximum contributions (sum of all weights = 100).
+   * These define the ceiling contribution from each independent signal.
+   * PROTOTYPE WEIGHTS — not scientifically validated.
+   */
+  weights: {
+    pitch: number;        // default: 22
+    rms: number;          // default: 18
+    silence: number;      // default: 20
+    voiceActivity: number;// default: 15
+    spectral: number;     // default: 10
+    zcr: number;          // default:  5
+    persistence: number;  // default: 10
+  };
+
+  // ── Risk level thresholds ──────────────────────────────────────────────────
+  /** Score at or above which level = ELEVATED (default: 30) */
+  elevatedThreshold: number;
+  /** Score at or above which level = SUSPICIOUS (default: 50) */
+  suspiciousThreshold: number;
+  /** Score at or above which level = HIGH_RISK (default: 70) */
+  highRiskThreshold: number;
 }

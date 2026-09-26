@@ -113,11 +113,46 @@
 
 ---
 
+## Phase 3 — Multi-Signal Distress Risk Engine (`COMPLETED`)
+
+- [x] **`src/analysis/types.ts`** — Extended contracts for Phase 3:
+  - `RiskLevel`: `'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK'`
+  - `RiskEvaluation`: Full evaluation snapshot with `riskScore`, `riskLevel`, `contributingSignals`, `confirmedSignals`, `persistenceFrames`, `isConfirmed`
+  - `SignalContribution`: Per-channel breakdown `{ signal, contribution, reason }` for explainability
+  - `RiskEngineConfig`: Configurable baseline references, sensitivity thresholds, EMA decay factor, confirmation frames, weights, and risk level thresholds
+
+- [x] **`src/analysis/riskEngine.ts`** — Stateful heuristic decision engine:
+  - Input: `FeatureSet` stream from `FeatureExtractor` (~10Hz)
+  - Output: `RiskEvaluation` with smoothed score [0, 100], discrete level, and explainable signal breakdown
+  - Pure TypeScript: **Zero React, zero DOM, zero browser API dependencies**
+  - Linear bounded scoring for:
+    - `pitch`: deviation from reference (weight: 20)
+    - `rms`: vocal intensity deviation and whisper detection (weight: 15)
+    - `silence`: prolonged hesitation/silence (weight: 15)
+    - `voiceActivity`: session voice ratio deficit (weight: 15)
+    - `spectral`: high-frequency strain centroid (weight: 10)
+    - `zcr`: breathiness/turbulent airflow (weight: 10)
+    - `persistence`: sustained abnormality confirmation bonus (weight: 15)
+  - Mathematical single-signal ceiling: Max single signal is 20 + 15 persistence = 35 < 70 (`HIGH_RISK`). **No single signal can independently produce `HIGH_RISK`.**
+  - Exponential moving average smoothing (`decayFactor: 0.78`): gradual recovery when speech returns to normal, no abrupt jumping or latching.
+  - `injectExternalSignal()`: bounded additive boost channel for future code-word (Phase 5) or breathing (Phase 8) signals.
+  - `reset()`, `getState()`, `getConfig()`, `updateConfig()` methods.
+
+- [x] **`src/analysis/useRiskEngine.ts`** — React hook:
+  - Connects `FeatureSet` from `useFeatureExtractor` to `RiskEngine`
+  - Evaluates at ~10Hz
+  - Deferral via `setTimeout(0)` to prevent synchronous `setState`-in-effect warnings
+  - Clears evaluation and resets engine on monitoring stop
+  - 0 oxlint warnings
+
+- [x] **`src/analysis/__tests__/riskEngine.test.ts`** — Deterministic test suite:
+  - 59 comprehensive unit tests, **59 passed, 0 failed** (105 total across both suites)
+  - Validates normal features, single-signal ceiling, multi-signal combination, temporal persistence, brief spike suppression, sustained multi-signal HIGH_RISK, score decay upon recovery, null pitch safety, bounded [0, 100], threshold determinism, engine reset, external signal injection bounds, signal explainability, and helper functions.
+
+---
+
 ## NOT Completed Yet (Intentionally Scheduled for Later Phases)
 
-- [ ] Distress Risk Score calculation heuristic (Scheduled: Phase 3)
-- [ ] Risk classification thresholds (NORMAL / ELEVATED / SUSPECTED / CRITICAL) (Scheduled: Phase 3)
-- [ ] Temporal multi-signal co-occurrence weighting (Scheduled: Phase 3)
 - [ ] Real-time telemetry dashboard with charts/gauges (Scheduled: Phase 4)
 - [ ] Configurable covert code-word detection (Scheduled: Phase 5)
 - [ ] Silent alert dispatch simulation & audit modal (Scheduled: Phase 6)
@@ -127,7 +162,7 @@
 
 ---
 
-## Current Working Functionality (Phase 1 + Phase 2)
+## Current Working Functionality (Phase 1 + Phase 2 + Phase 3)
 
 1. **Browser Microphone Capture:** `getUserMedia` with echo cancellation and noise suppression.
 2. **AudioContext + AnalyserNode DSP Pipeline:** Frame generation at `fftSize=2048`.
@@ -142,6 +177,11 @@
 11. **Voice Activity Detection (VAD):** Simple energy threshold gate.
 12. **Silence Duration Tracking:** Cross-frame accumulator; resets on voice resumption.
 13. **Speech Timing:** Cumulative speech duration and segment count per session.
+14. **Multi-Signal Distress Risk Scoring:** Bounded 0–100 heuristic scoring across 6 acoustic channels + persistence.
+15. **Discrete Risk Level Classification:** 0–29 `NORMAL`, 30–49 `ELEVATED`, 50–69 `SUSPICIOUS`, 70–100 `HIGH_RISK`.
+16. **Single-Signal Ceiling Safety Invariant:** Provably impossible for any isolated signal to reach `HIGH_RISK`.
+17. **Exponential Moving Average Score Decay:** Gradual recovery when signals return to normal calm conversational speech.
+18. **Explainable Risk Telemetry:** Every evaluation itemizes active signals with numeric contributions and human-readable reasons.
 
 ---
 

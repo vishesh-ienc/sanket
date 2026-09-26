@@ -74,11 +74,20 @@
 ---
 
 ### Phase 3: Distress Risk Scoring Engine
-- **Status:** `NOT STARTED`
-- **Goal:** Implement the mathematical core that aggregates acoustic deviations into a composite Distress Risk Score ($0–100$).
-- **Expected Functionality:** Rule-based heuristic scoring engine combining vocal strain, energy anomalies, and pause duration. Implements graceful score decay over time when voice returns to normal.
+- **Status:** `COMPLETED`
+- **Goal:** Implement the mathematical core that aggregates acoustic deviations into an explainable Distress Risk Score ($0–100$).
+- **Implemented:**
+  - `RiskEngine` class — pure TypeScript stateful heuristic decision engine (zero React/DOM/browser dependencies)
+  - Multi-signal weighted scoring across 6 channels (pitch, RMS, silence, voice activity, spectral centroid, ZCR) + persistence bonus
+  - Exponential moving average smoothing (`decayFactor: 0.78`) with gradual score decay upon recovery
+  - Single-signal ceiling guarantee: max single signal weight is 20, ceiling with persistence is 35 < 70 (`HIGH_RISK`)
+  - Discrete risk classification: `NORMAL` (0–29), `ELEVATED` (30–49), `SUSPICIOUS` (50–69), `HIGH_RISK` (70–100)
+  - `SignalContribution` explainability breakdown for every evaluation frame
+  - `injectExternalSignal()` hook for future Phase 5 (code-word) and Phase 8 (breathing) integration
+  - `useRiskEngine` React hook operating at ~10Hz with clean lifecycle reset
+  - 59 deterministic unit tests (**59 passed, 0 failed**)
 - **Inputs:** `FeatureSet` stream from Phase 2.
-- **Outputs:** Continuous numeric Distress Risk Score ($0–100$) and `RiskEvent` emissions.
+- **Outputs:** `RiskEvaluation` with continuous numeric score ($0–100$), `RiskLevel`, contributing signal reasons, and persistence state.
 - **Dependencies:** Phase 2.
 
 ---
