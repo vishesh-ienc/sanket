@@ -60,6 +60,15 @@
 
 ---
 
+### DECISION 007: Expose `AnalyserNode` Directly for Canvas Waveform Rendering
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** The `LiveWaveform` component needs to call `getFloatTimeDomainData()` at every `requestAnimationFrame` tick (~60fps). Copying a 2048-element `Float32Array` through React state on every tick would cause significant garbage collection pressure and unnecessary React re-renders.
+- **Decision:** `AudioInputService.getAnalyserNode()` exposes the `AnalyserNode` instance directly to the canvas rendering component. The canvas draw loop reads directly from the analyser without involving React state. React state is only updated for lower-frequency UI telemetry (~20Hz RMS/activity reads).
+- **Consequences:** The `LiveWaveform` component holds a reference to `audioService` (not the raw node) and calls `getAnalyserNode()` inside the effect, preserving the architectural boundary while eliminating unnecessary buffer copies.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

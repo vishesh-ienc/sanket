@@ -12,7 +12,7 @@
 | Phase | Title | Status |
 | :--- | :--- | :--- |
 | **Phase 0** | Project Initialization & Documentation Infrastructure | **COMPLETED** |
-| **Phase 1** | Browser Microphone & Live Audio Pipeline | **NOT STARTED** |
+| **Phase 1** | Browser Microphone & Live Audio Pipeline | **COMPLETED** |
 | **Phase 2** | Pitch, Energy, Speech Activity & Silence Detection | **NOT STARTED** |
 | **Phase 3** | Distress Risk Scoring Engine | **NOT STARTED** |
 | **Phase 4** | Live Sanket Safety Dashboard | **NOT STARTED** |
@@ -38,11 +38,19 @@
 ---
 
 ### Phase 1: Browser Microphone & Live Audio Pipeline
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED`
 - **Goal:** Connect the browser `getUserMedia` audio input safely with graceful permission handling, stream lifecycle management, and audio frame generation.
-- **Expected Functionality:** User clicks "Start Monitoring", browser requests mic permission, `AudioContext` initializes, raw audio stream is fed into `AnalyserNode` and discretizes into uniform `AudioFrame` buffers. Safe cleanup on stop.
-- **Inputs:** User microphone permission and browser audio hardware stream.
-- **Outputs:** Stream of typed `AudioFrame` structures (time-domain and frequency-domain arrays).
+- **Implemented:**
+  - `AudioInputService` class managing full `getUserMedia` → `AudioContext` → `AnalyserNode` → `AudioFrame` pipeline.
+  - Real-time PCM time-domain and frequency capture via `getFloatTimeDomainData` / `getFloatFrequencyData`.
+  - RMS energy calculation per frame; ACTIVE/QUIET threshold classifier.
+  - `useAudioMonitor` React hook with throttled ~20Hz React state updates.
+  - `LiveWaveform` canvas component rendering actual PCM samples at RAF speed.
+  - `AudioActivityMeter` component displaying RMS and activity state.
+  - Full resource cleanup on stop and unmount.
+  - 5-state monitoring machine in `App.tsx` with error handling.
+- **Inputs:** Browser microphone permission + Web Audio API.
+- **Outputs:** `AudioFrame` stream with `timeDomainData`, `frequencyData`, `rmsEnergy`.
 - **Dependencies:** Phase 0.
 
 ---

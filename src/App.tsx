@@ -1,19 +1,75 @@
-import { useState } from 'react';
-import { Activity, Shield, Radio, Info, Lock } from 'lucide-react';
+/**
+ * Sanket Main Application Shell — Phase 1 Audio Foundation
+ * Demonstrates real microphone input, live waveform oscilloscope, and basic activity metering.
+ * Strictly decoupled from low-level Web Audio API via useAudioMonitor hook.
+ */
+
+import { Shield, Radio, Square, Info, Lock, Activity, AlertCircle, Loader2 } from 'lucide-react';
+import { useAudioMonitor } from './audio/useAudioMonitor';
+import { LiveWaveform } from './components/LiveWaveform';
+import { AudioActivityMeter } from './components/AudioActivityMeter';
 
 export function App() {
-  const [sessionState, setSessionState] = useState<'IDLE' | 'PREPARED'>('IDLE');
+  const {
+    monitoringState,
+    activity,
+    error,
+    startMonitoring,
+    stopMonitoring,
+    audioService,
+  } = useAudioMonitor({
+    activeThresholdRms: 0.02,
+  });
 
-  const handleStartMonitoring = () => {
-    setSessionState('PREPARED');
+  const isLive = monitoringState === 'MONITORING_ACTIVE';
+  const isRequesting = monitoringState === 'REQUESTING_PERMISSION';
+  const isDenied = monitoringState === 'PERMISSION_DENIED';
+  const isError = monitoringState === 'ERROR' || monitoringState === 'NOT_SUPPORTED';
+
+  const getStatusDisplay = () => {
+    switch (monitoringState) {
+      case 'REQUESTING_PERMISSION':
+        return {
+          containerClass: 'status-badge-requesting status-requesting',
+          label: 'REQUESTING MICROPHONE',
+        };
+      case 'MONITORING_ACTIVE':
+        return {
+          containerClass: 'status-badge-active status-active',
+          label: 'MONITORING ACTIVE',
+        };
+      case 'PERMISSION_DENIED':
+        return {
+          containerClass: 'status-badge-denied status-denied',
+          label: 'MICROPHONE ACCESS DENIED',
+        };
+      case 'NOT_SUPPORTED':
+        return {
+          containerClass: 'status-badge-error status-error',
+          label: 'MICROPHONE NOT SUPPORTED',
+        };
+      case 'ERROR':
+        return {
+          containerClass: 'status-badge-error status-error',
+          label: 'MICROPHONE ERROR',
+        };
+      case 'SYSTEM_READY':
+      default:
+        return {
+          containerClass: 'status-badge-ready status-ready',
+          label: 'SYSTEM READY',
+        };
+    }
   };
+
+  const status = getStatusDisplay();
 
   return (
     <div className="app-container">
       {/* Top Protocol Badge */}
       <div className="top-pill">
-        <span className="top-pill-dot"></span>
-        <span>Acoustic Risk Estimation Pipeline</span>
+        <span className="top-pill-dot" />
+        <span>Phase 1 — Browser Microphone Audio Engine</span>
       </div>
 
       {/* Main Safety HUD Card */}
@@ -27,34 +83,84 @@ export function App() {
         <h1 className="brand-title">SANKET</h1>
         <p className="brand-subtitle">Voice Distress-Risk Detection</p>
 
-        {/* System Status Display */}
-        <div className="status-badge-container">
+        {/* Dynamic System Status Indicator */}
+        <div className={`status-badge-container ${status.containerClass}`}>
           <div className="status-beacon">
-            <span className="status-beacon-ping"></span>
-            <span className="status-beacon-core"></span>
+            <span className="status-beacon-ping" />
+            <span className="status-beacon-core" />
           </div>
           <span className="status-label">Status:</span>
-          <span className="status-value">SYSTEM READY</span>
+          <span className="status-value">{status.label}</span>
         </div>
 
-        {/* Primary Action Button */}
-        <div>
-          <button
-            type="button"
-            className="cta-button"
-            id="start-monitoring-btn"
-            onClick={handleStartMonitoring}
-          >
-            <Radio size={18} />
-            <span>START MONITORING</span>
-          </button>
-        </div>
-
-        {sessionState === 'PREPARED' && (
-          <p className="cta-button-notice" role="status">
-            ✓ System primed. Web Audio capture pipeline scheduled for Phase 1.
-          </p>
+        {/* Error / Permission Guidance Banner */}
+        {error && (
+          <div className="error-banner" role="alert">
+            <div className="error-banner-header">
+              <AlertCircle size={16} />
+              <span>{isDenied ? 'Microphone Permission Required' : 'Audio Hardware Notice'}</span>
+            </div>
+            <p className="error-banner-body">{error.userMessage}</p>
+          </div>
         )}
+
+        {/* Real-time Oscilloscope Waveform */}
+        <LiveWaveform
+          audioService={audioService}
+          isActive={isLive}
+          height={110}
+        />
+
+        {/* Basic Audio Activity & RMS Level Meter */}
+        <AudioActivityMeter
+          activity={activity}
+          isActive={isLive}
+        />
+
+        {/* Primary Action Button Controls */}
+        <div className="cta-button-group">
+          {isLive ? (
+            <button
+              type="button"
+              className="cta-button cta-button-stop"
+              id="stop-monitoring-btn"
+              onClick={stopMonitoring}
+            >
+              <Square size={16} fill="currentColor" />
+              <span>STOP MONITORING</span>
+            </button>
+          ) : isDenied || isError ? (
+            <button
+              type="button"
+              className="cta-button cta-button-retry"
+              id="retry-monitoring-btn"
+              onClick={startMonitoring}
+            >
+              <Radio size={18} />
+              <span>RETRY ACCESS</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="cta-button cta-button-start"
+              id="start-monitoring-btn"
+              disabled={isRequesting}
+              onClick={startMonitoring}
+            >
+              {isRequesting ? (
+                <>
+                  <Loader2 size={18} className="spin-animation" />
+                  <span>INITIALIZING...</span>
+                </>
+              ) : (
+                <>
+                  <Radio size={18} />
+                  <span>START MONITORING</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         {/* Prototype Scope & Input Declaration Section */}
         <section className="notice-box" aria-label="Prototype Scope">
@@ -65,9 +171,9 @@ export function App() {
           <p className="notice-text">
             <span className="notice-emphasis">Prototype mode — browser microphone input</span>
             <br />
-            The browser microphone serves as the prototype audio-input layer. The underlying
-            detection engine is strictly decoupled and designed to receive permitted mobile
-            microphone, call, or VoIP audio in production deployment.
+            The browser microphone serves as the prototype audio-input layer. Real-time time-domain
+            samples and RMS levels are captured locally via the Web Audio API. The underlying
+            detection pipeline is decoupled and input-agnostic.
           </p>
         </section>
       </main>
@@ -80,10 +186,10 @@ export function App() {
         </div>
         <div className="footer-item">
           <Activity size={12} />
-          <span>Decoupled DSP Engine</span>
+          <span>Real-time Web Audio DSP</span>
         </div>
         <div className="footer-item">
-          <span>Phase 0: Ready</span>
+          <span>Phase 1: Active</span>
         </div>
       </footer>
     </div>
