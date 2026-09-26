@@ -8,10 +8,10 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 1 — Browser Microphone + Live Audio Analysis**
+- **Current Phase:** **Phase 2 — Voice Feature Extraction**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 2 — Pitch, Energy, Speech Activity & Silence Detection**
+- **Next Phase:** **Phase 3 — Multi-Signal Distress Risk Engine**
 
 ---
 
@@ -53,49 +53,82 @@
   - Renders a neon blue oscilloscope via Canvas 2D API at native `requestAnimationFrame` rate
   - HiDPI (`devicePixelRatio`) aware
   - Zero React re-renders during waveform draw loop
-  - Shows dormant flat-line when idle; live PCM trace when monitoring
 - [x] `AudioActivityMeter` component (`src/components/AudioActivityMeter.tsx`)
   - Displays real RMS energy value with 4 decimal precision
   - ACTIVE / QUIET / STANDBY pill indicator driven by RMS vs threshold
   - Visual VU-style meter bar with non-linear RMS scaling
-  - Amber threshold marker tick on meter track
 - [x] Updated `AudioInputConfig` and `AudioFrame` types (`src/audio/types.ts`)
-  - Added `frameSize`, `rmsEnergy` to `AudioFrame`
-  - Added `activeThresholdRms` to `AudioInputConfig`
-  - Added `MonitoringState`, `AudioInputError`, `AudioActivityState` types
 - [x] Updated `App.tsx` with full Phase 1 state machine
-  - Dynamic status badge (color + label per state)
-  - Error/permission denial banner with user-friendly guidance
-  - Start / Stop / Retry control buttons
-  - Spinner for REQUESTING_PERMISSION transition
 - [x] Updated `index.css` with full Phase 1 design tokens
-  - Status badge variants (ready / requesting / active / denied / error)
-  - Waveform container and canvas styles
-  - Activity meter panel, pill, bar, threshold marker
-  - Error banner styles
-  - Button variants (start, stop, retry)
 - [x] Build validated: `npm run build` → **0 TypeScript errors, 0 lint errors**
+
+---
+
+## Completed in Phase 2 (NEW)
+
+- [x] **`src/analysis/types.ts`** — Extended `FeatureSet` with all Phase 2 fields:
+  - `rmsEnergy` (raw amplitude)
+  - `zeroCrossingRate` (fraction of sign changes per sample pair)
+  - `spectralCentroid: number | null` (weighted mean Hz; null for silence)
+  - `pitchHz: number | null` (F0 from autocorrelation; null when unvoiced)
+  - `isSpeech` (VAD result)
+  - `silenceDurationSec` (accumulates across frames; resets on voice activity)
+  - `speechActivityDurationSec` (cumulative voiced duration this session)
+  - `speechSegmentCount` (voice ON transitions since monitoring start)
+  - Added `FeatureExtractorConfig` interface for all configurable thresholds
+
+- [x] **`src/analysis/featureFunctions.ts`** — Pure stateless DSP functions:
+  - `calculateRms(samples)` — RMS from Float32Array PCM
+  - `calculateZeroCrossingRate(samples)` — Normalized ZCR
+  - `calculateSpectralCentroid(frequencyData, sampleRate, minMagnitude)` — Weighted Hz centroid from dBFS bins; null on silence
+  - `estimatePitch(samples, sampleRate, minHz, maxHz, confidenceThreshold)` — Autocorrelation monophonic F0 estimator; null on unvoiced/low-energy/low-confidence
+  - `detectVoiceActivity(rms, threshold)` — Simple energy-gate VAD
+  - All functions: no React, no DOM, no browser globals
+
+- [x] **`src/analysis/featureExtractor.ts`** — Stateful `FeatureExtractor` class:
+  - `processFrame(frame: AudioFrame): FeatureSet` — main integration point
+  - Calls all DSP functions, maintains cross-frame temporal state
+  - Pitch only estimated on voiced frames (performance optimization)
+  - `reset()` — clears all temporal state
+  - `getTemporalState()` — read-only snapshot of internal state
+  - `updateConfig(partial)` — live threshold updates
+  - Analysis interval: designed for ~10Hz caller frequency (every 100ms)
+
+- [x] **`src/analysis/useFeatureExtractor.ts`** — React hook:
+  - Runs `FeatureExtractor.processFrame()` at configurable interval (default 10Hz)
+  - Resets extractor on monitoring stop
+  - `FeatureExtractor` stored in `useState` (not useRef) — satisfies oxlint react/refs rule
+  - 0 oxlint warnings
+
+- [x] **`src/analysis/__tests__/featureExtraction.test.ts`** — Deterministic unit tests:
+  - 46 tests, **46 passed, 0 failed**
+  - Synthetic audio signals only (no browser, no DOM, no microphone)
+  - Tests: RMS from sine/silence/constant, ZCR from square waves, spectral centroid from single-bin spectra, pitch from 150/220/300 Hz sine tones (within 15–20 Hz tolerance), VAD boundary conditions, silence accumulation state machine, voice→silence→voice transitions, speech segment counting, reset()
+
+- [x] **`tsconfig.app.json`** — Excludes `__tests__` dirs from browser build
+- [x] **`tsconfig.test.json`** — Separate test config for tsx runner
+
+- [x] **Build validated:** `npm run build` → **0 TypeScript errors, 0 lint errors**
+- [x] **Tests validated:** `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
 
 ---
 
 ## NOT Completed Yet (Intentionally Scheduled for Later Phases)
 
-- [ ] Pitch ($F_0$) detection via autocorrelation/YIN (Scheduled: Phase 2)
-- [ ] Zero-crossing rate & spectral centroid analysis (Scheduled: Phase 2)
-- [ ] Speech rate and silence duration tracking (Scheduled: Phase 2)
-- [ ] Distress risk scoring mathematical heuristic engine (Scheduled: Phase 3)
-- [ ] Real-time telemetry dashboard & visualizers (Scheduled: Phase 4)
+- [ ] Distress Risk Score calculation heuristic (Scheduled: Phase 3)
+- [ ] Risk classification thresholds (NORMAL / ELEVATED / SUSPECTED / CRITICAL) (Scheduled: Phase 3)
+- [ ] Temporal multi-signal co-occurrence weighting (Scheduled: Phase 3)
+- [ ] Real-time telemetry dashboard with charts/gauges (Scheduled: Phase 4)
 - [ ] Configurable covert code-word detection (Scheduled: Phase 5)
 - [ ] Silent alert dispatch simulation & audit modal (Scheduled: Phase 6)
 - [ ] Personal voice baseline calibration module (Scheduled: Phase 7)
-- [ ] Multi-signal temporal correlation & false-positive filters (Scheduled: Phase 8)
+- [ ] Multi-signal false-positive reduction filters (Scheduled: Phase 8)
 - [ ] Mobile/VoIP native integration (Scheduled: Phase 10)
 
 ---
 
-## Current Working Functionality
+## Current Working Functionality (Phase 1 + Phase 2)
 
-The following functionality is verified and active as of Phase 1:
 1. **Browser Microphone Capture:** `getUserMedia` with echo cancellation and noise suppression.
 2. **AudioContext + AnalyserNode DSP Pipeline:** Frame generation at `fftSize=2048`.
 3. **Real-time PCM Oscilloscope:** Live waveform canvas via `getFloatTimeDomainData`.
@@ -103,24 +136,28 @@ The following functionality is verified and active as of Phase 1:
 5. **ACTIVE/QUIET Classification:** Configurable threshold; currently `0.02` RMS default.
 6. **5-State Monitoring UI:** `SYSTEM_READY → REQUESTING_PERMISSION → MONITORING_ACTIVE`, plus `PERMISSION_DENIED`, `ERROR`, with Retry.
 7. **Full Resource Cleanup:** Tracks stop, nodes disconnect, AudioContext closes on stop/unmount.
-8. **Zero Memory Leaks:** RAF loops cancel, no lingering mic tracks on stop.
+8. **Zero-Crossing Rate:** Per-frame sign-change fraction from PCM buffer.
+9. **Spectral Centroid:** Weighted frequency centroid in Hz; null on silence.
+10. **Pitch Estimation (F0):** Autocorrelation on voiced frames; null on silence/noise.
+11. **Voice Activity Detection (VAD):** Simple energy threshold gate.
+12. **Silence Duration Tracking:** Cross-frame accumulator; resets on voice resumption.
+13. **Speech Timing:** Cumulative speech duration and segment count per session.
 
 ---
 
-## Phase 1 Known Limitations
+## Phase 2 Known Limitations
 
-- Background noise (e.g., fans) can keep RMS above threshold, showing ACTIVE during silence.
-- The waveform canvas resizes on mount but does not dynamically respond to window resize.
-- No personal baseline yet — threshold is a static universal constant, not user-calibrated.
-- Pitch detection, ZCR, spectral centroid not yet extracted (scheduled Phase 2).
+- Autocorrelation is O(N×lag-range) per frame. For 2048 samples at 44100Hz and 80–500Hz range, this is acceptable at 10Hz analysis rate but would be expensive at 60Hz.
+- VAD uses a single RMS threshold; background noise above threshold will keep `isSpeech=true` during actual silence.
+- Spectral centroid currently uses all bins uniformly; a higher-quality implementation would apply frequency weighting or band-pass the input.
+- Pitch estimation is monophonic; multi-speaker or music environments produce unreliable estimates.
+- `silenceDurationSec` measures acoustic silence (below RMS threshold), not human-perceived silence (e.g. whispering may be missed).
+- No personal baseline yet — all thresholds are universal constants.
 
 ---
 
 ## Rules for Future Agents
 
-1. **UPDATE THIS FILE AFTER EVERY MAJOR PHASE:**
-   When you finish a phase, update the "Current Phase", move items from "NOT Completed" to "Completed", and list newly working functionality in "Current Working Functionality".
-2. **NEVER CLAIM FUNCTIONALITY THAT HAS NOT ACTUALLY BEEN IMPLEMENTED AND TESTED:**
-   If a feature is stubbed or partially written, mark it as in-progress; do not mark it as completed until verified with a running build and manual/automated test.
-3. **UPDATE `current_prompt_update.md` AFTER EVERY PROMPT:**
-   Record prompt context, actions taken, file changes, and current repository status after every turn.
+1. **UPDATE THIS FILE AFTER EVERY MAJOR PHASE.**
+2. **NEVER CLAIM FUNCTIONALITY THAT HAS NOT ACTUALLY BEEN IMPLEMENTED AND TESTED.**
+3. **UPDATE `current_prompt_update.md` AFTER EVERY PROMPT.**

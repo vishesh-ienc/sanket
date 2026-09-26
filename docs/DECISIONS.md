@@ -69,6 +69,24 @@
 
 ---
 
+### DECISION 008: Autocorrelation (Not YIN or External Library) for Pitch Estimation
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Pitch estimation is required for Phase 2. Options considered: (a) normalized autocorrelation, (b) YIN algorithm (more accurate but more complex), (c) external DSP library (heavyweight, adds bundle size and dependencies).
+- **Decision:** Implement normalized biased autocorrelation directly in `featureFunctions.ts`. YIN's main advantage is reducing octave errors; for a hackathon prototype where pitch deviation patterns matter more than absolute precision, autocorrelation at ±15–20 Hz accuracy is sufficient. No external library is introduced.
+- **Consequences:** Zero new runtime dependencies; fully auditable ~40 lines of code; marginal pitch accuracy reduction vs YIN at extreme frequencies, acceptable for prototype use. Pitch estimates are returned as `null` (not `0`) when confidence is insufficient, preventing incorrect zero-pitch readings from corrupting the future risk engine.
+
+---
+
+### DECISION 009: FeatureExtractor Stores Temporal State Internally (Not in React)
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Silence duration, speech segment count, and cumulative speech duration are cross-frame accumulators. React state updates are throttled and asynchronous, making them unsuitable for accumulating sub-100ms measurements accurately.
+- **Decision:** `FeatureExtractor` maintains a private `TemporalState` object updated synchronously on every `processFrame()` call. React state (`useFeatureExtractor`) receives a snapshot of the latest `FeatureSet` at the hook's interval rate (10Hz), not on every raw audio frame.
+- **Consequences:** Accurate temporal accumulation independent of React render cycle; clean separation between the analysis engine and UI layer; `FeatureExtractor` is independently testable without React.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

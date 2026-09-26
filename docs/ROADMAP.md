@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Phase 0** | Project Initialization & Documentation Infrastructure | **COMPLETED** |
 | **Phase 1** | Browser Microphone & Live Audio Pipeline | **COMPLETED** |
-| **Phase 2** | Pitch, Energy, Speech Activity & Silence Detection | **NOT STARTED** |
+| **Phase 2** | Pitch, Energy, Speech Activity & Silence Detection | **COMPLETED** |
 | **Phase 3** | Distress Risk Scoring Engine | **NOT STARTED** |
 | **Phase 4** | Live Sanket Safety Dashboard | **NOT STARTED** |
 | **Phase 5** | Configurable Code-Word Detection | **NOT STARTED** |
@@ -56,11 +56,19 @@
 ---
 
 ### Phase 2: Pitch, Energy, Speech Activity & Silence Detection
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED`
 - **Goal:** Implement the `FeatureExtractor` module to parse acoustic primitives from `AudioFrame` in real-time.
-- **Expected Functionality:** Calculate RMS energy, compute fundamental frequency ($F_0$) via autocorrelation / YIN, calculate Zero-Crossing Rate (ZCR), compute Spectral Centroid, and detect Voice Activity (speech vs. silence).
+- **Implemented:**
+  - `calculateRms()` — RMS energy from PCM samples (re-usable, self-contained)
+  - `calculateZeroCrossingRate()` — Normalized ZCR from PCM buffer
+  - `calculateSpectralCentroid()` — Weighted mean Hz from dBFS frequency data, with null for silence
+  - `estimatePitch()` — Autocorrelation-based monophonic F0 estimation (80–500 Hz), null for unvoiced
+  - `detectVoiceActivity()` — Energy-threshold VAD gate
+  - `FeatureExtractor` class — Stateful wrapper maintaining silence duration, speech segment count, speech activity duration across frames
+  - `useFeatureExtractor` — React hook running analysis at configurable interval (default 10Hz)
+  - 46 deterministic unit tests covering all functions and temporal state transitions
 - **Inputs:** `AudioFrame` stream from Phase 1.
-- **Outputs:** Stream of typed `FeatureSet` objects with normalized values.
+- **Outputs:** Stream of typed `FeatureSet` objects (`rmsEnergy`, `zeroCrossingRate`, `spectralCentroid`, `pitchHz`, `isSpeech`, `silenceDurationSec`, `speechActivityDurationSec`, `speechSegmentCount`).
 - **Dependencies:** Phase 1.
 
 ---
