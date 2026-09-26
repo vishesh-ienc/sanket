@@ -151,3 +151,5 @@ Dashboard (Pure presentation UI)
 15. **Preserve the separation between audio input and the analysis engine.**
 16. **Do not generate fake mobile/call integration.**
 17. **Never generate image assets unless explicitly requested.**
+18. **Update `current_prompt_update.md` after EVERY single prompt with the latest actions, file changes, and repo status.**
+

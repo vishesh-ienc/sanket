@@ -67,3 +67,6 @@ The following functionality is verified and active right now:
    When you finish a phase, update the "Current Phase", move items from "NOT Completed" to "Completed", and list newly working functionality in "Current Working Functionality".
 2. **NEVER CLAIM FUNCTIONALITY THAT HAS NOT ACTUALLY BEEN IMPLEMENTED AND TESTED:**
    If a feature is stubbed or partially written, mark it as in-progress; do not mark it as completed until verified with a running build and manual/automated test.
+3. **UPDATE `current_prompt_update.md` AFTER EVERY PROMPT:**
+   Record prompt context, actions taken, file changes, and current repository status after every turn.
+
