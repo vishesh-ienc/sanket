@@ -14,12 +14,12 @@
 | **Phase 0** | Project Initialization & Documentation Infrastructure | **COMPLETED** |
 | **Phase 1** | Browser Microphone & Live Audio Pipeline | **COMPLETED** |
 | **Phase 2** | Pitch, Energy, Speech Activity & Silence Detection | **COMPLETED** |
-| **Phase 3** | Distress Risk Scoring Engine | **NOT STARTED** |
-| **Phase 4** | Live Sanket Safety Dashboard | **NOT STARTED** |
-| **Phase 5** | Configurable Code-Word Detection | **NOT STARTED** |
-| **Phase 6** | Silent Alert Simulation | **NOT STARTED** |
-| **Phase 7** | Personal Voice Baseline & Calibration | **NOT STARTED** |
-| **Phase 8** | Multi-Signal Temporal Correlation & False Alarm Reduction | **NOT STARTED** |
+| **Phase 3** | Distress Risk Scoring Engine | **COMPLETED** |
+| **Phase 4** | Live Sanket Safety Dashboard | **COMPLETED** |
+| **Phase 5** | Configurable Code-Word Detection | **COMPLETED** |
+| **Phase 6** | Personal Voice Baseline & Calibration | **COMPLETED** |
+| **Phase 7** | Silent Alert Dispatch & Forensic Event System | **COMPLETED** |
+| **Phase 8** | Multi-Signal Temporal Correlation & False Alarm Reduction | **COMPLETED** |
 | **Phase 9** | Polish & Judge Demonstration Flow | **NOT STARTED** |
 | **Phase 10** | Mobile Deployment Architecture & Future Integration Docs | **NOT STARTED** |
 
@@ -125,19 +125,37 @@
 ---
 
 ### Phase 6: Personal Voice Baseline & Calibration
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED`
 - **Goal:** Implement a personal voice calibration mode and rolling baseline to measure relative deviations instead of universal constants.
-- **Expected Functionality:** 15–20 second calibration phase where the user speaks naturally; records baseline pitch mean, variance, volume floor; calculates real-time statistical $Z$-scores for subsequent evaluation.
-- **Inputs:** User speech frames during calibration mode.
-- **Outputs:** `BaselineProfile` applied dynamically to `FeatureExtractor` and `RiskEngine`.
+- **Implemented:**
+  - `BaselineBuilder` class using Welford's online one-pass algorithm (O(1) memory, zero raw audio storage).
+  - Voice activity filtering: excludes silence/unvoiced frames from pitch and resonance statistics.
+  - `calculateBaselineDeviation()` computes per-channel statistical Z-scores with floor protection and cap clamping.
+  - `baselineToRiskEngineConfig()` dynamically adapts `RiskEngineConfig` thresholds to the user's vocal physiology.
+  - `useCalibration` React hook with 4 lifecycle states, auto-finalize, and `localStorage` persistence.
+  - `CalibrationPanel` HUD component with circular SVG countdown timer and summary statistics grid.
+  - 92 deterministic unit tests.
+- **Inputs:** FeatureSet stream during active calibration.
+- **Outputs:** `BaselineProfile` applied dynamically to `RiskEngine`.
 - **Dependencies:** Phase 5.
 
 ---
 
-### Phase 7: Silent Alert Simulation
-- **Status:** `NOT STARTED`
-- **Goal:** Simulate the silent dispatch of an emergency alert when the Distress Risk Score enters the Critical zone ($80+$).
-- **Expected Functionality:** Confirmation hold-down (avoids instant false triggers), mock GPS coordinate generator, visual alert modal showing mock SMS dispatch to trusted contacts, audio alert freeze, detailed forensic trigger reasons.
+### Phase 7: Silent Alert Dispatch & Forensic Event System
+- **Status:** `COMPLETED`
+- **Goal:** Implement simulated silent alert dispatching and structured forensic incident inspection upon sustained confirmed `HIGH_RISK`.
+- **Implemented:**
+  - `silentAlertDispatcher`: Gated dispatcher generating unique alert/incident records in `SIMULATED_LOCAL` mode.
+  - `incidentManager`: Incident latch state machine preventing duplicate dispatches during sustained crises and resetting cleanly upon normalization.
+  - `alertHistory`: Local storage audit log retaining up to 50 incidents (`sanket_alert_history_v1`) with full error resilience.
+  - `useIncidentManager`: React hook managing incident state, acknowledgement, resolution, and modal triggers.
+  - `IncidentBanner`: Silent, high-visibility dashboard distress alert bar showing live score, source, and quick action.
+  - `ForensicEventModal`: Complete metadata audit modal showing contributing signals, baseline Z-scores, feature snapshot, and privacy declarations.
+  - `AlertHistory`: Dashboard historical incident viewer with inspect and clear actions.
+  - 95 deterministic unit tests (**348 total across all 5 suites**).
+- **Inputs:** `RiskEvaluation` stream from `RiskEngine` + `IncidentContext`.
+- **Outputs:** `DistressIncident` audit log and simulated silent alerts.
+- **Dependencies:** Phase 6.
 - **Inputs:** `RiskEvent` with level `HIGH_DISTRESS_RISK` from Phase 3.
 - **Outputs:** Simulated dispatch UI notification, audit event logged with timestamp and trigger telemetry.
 - **Dependencies:** Phase 6.
@@ -147,12 +165,17 @@
 ---
 
 ### Phase 8: Multi-Signal Temporal Correlation & False Alarm Reduction
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED`
 - **Goal:** Harden the scoring engine against false positives caused by laughing, coughing, loud background noises, or standard conversational enthusiasm.
-- **Expected Functionality:** Sliding-window temporal co-occurrence matrix; requires at least 2 distinct signal classes to trigger critical escalation; sudden single transient spikes are suppressed.
-- **Inputs:** Rolling historical buffer of `FeatureSet` and signal flags over a 10-second window.
-- **Outputs:** Filtered, robust Distress Risk Score with reduced false-positive rate.
-- **Dependencies:** Phase 3, Phase 7.
+- **Implemented:**
+  - `TemporalContextAnalyzer`: Bounded sliding-window history buffer tracking transient spikes, sustained anomalies, and cross-signal co-occurrence.
+  - False-positive suppression gate in `IncidentManager`: Blocks isolated transient spikes without muting sustained or multi-signal crises.
+  - Voice-derived pause/breathing regularity proxy: Analyzes pause duration, count, and variance without medical claims.
+  - `TemporalContextCard`: Live HUD metrics with status badges, correlation gauge, and explainability banner.
+  - 89 deterministic unit tests (**437 total across all 6 suites**).
+- **Inputs:** Rolling historical buffer of `FeatureSet` and personal baseline deviations.
+- **Outputs:** Temporal context metadata and gated silent emergency alerts.
+- **Dependencies:** Phase 3, Phase 6, Phase 7.
 
 ---
 

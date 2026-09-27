@@ -42,6 +42,9 @@ import { useFeatureExtractor } from './analysis/useFeatureExtractor';
 import { useRiskEngine } from './analysis/useRiskEngine';
 import { useCodeWordDetector } from './analysis/useCodeWordDetector';
 import { useCalibration } from './analysis/useCalibration';
+import { useTemporalContext } from './analysis/useTemporalContext';
+import { useIncidentManager } from './services/useIncidentManager';
+import { calculateBaselineDeviation } from './analysis/baselineDeviation';
 import { LiveWaveform } from './components/LiveWaveform';
 import { RiskScoreGauge } from './components/RiskScoreGauge';
 import { SignalBreakdown } from './components/SignalBreakdown';
@@ -49,12 +52,16 @@ import { DetectionTimeline } from './components/DetectionTimeline';
 import { MonitoringStatus } from './components/MonitoringStatus';
 import { CodeWordConfig } from './components/CodeWordConfig';
 import { CalibrationPanel } from './components/CalibrationPanel';
+import { TemporalContextCard } from './components/TemporalContextCard';
+import { IncidentBanner } from './components/IncidentBanner';
+import { ForensicEventModal } from './components/ForensicEventModal';
+import { AlertHistory } from './components/AlertHistory';
 import { DemoScenarios } from './components/DemoScenarios';
 import {
   type DemoScenarioKey,
   getDemoScenarioFeatures,
 } from './utils/demoScenariosData';
-import type { FeatureSet } from './analysis/types';
+import type { FeatureSet, IncidentContext } from './analysis/types';
 
 export function App() {
   // ── Step 1: Microphone & Web Audio Engine (Phase 1) ───────────────────────
@@ -137,6 +144,64 @@ export function App() {
     clearBaseline,
   } = useCalibration(effectiveFeatures, isLive, { riskEngine: riskEngineInstance });
 
+  // ── Step 6: Incident Context & Silent Alert Dispatcher (Phase 7) ──────────
+  const baselineDevResult =
+    calibrationState.status === 'COMPLETE' && calibrationState.profile && effectiveFeatures
+      ? calculateBaselineDeviation(effectiveFeatures, calibrationState.profile)
+      : null;
+
+  const baselineDeviations =
+    baselineDevResult && baselineDevResult.baselineAvailable
+      ? {
+          pitch: baselineDevResult.pitchZScore ?? undefined,
+          rms: baselineDevResult.energyZScore ?? undefined,
+          silence: baselineDevResult.silenceExcessRatio ?? undefined,
+          spectral: baselineDevResult.spectralZScore ?? undefined,
+          zcr: baselineDevResult.zcrZScore ?? undefined,
+        }
+      : undefined;
+
+  // ── Step 6: Temporal Context & False-Positive Filter (Phase 8) ───────────
+  const { temporalContext } = useTemporalContext(
+    effectiveFeatures,
+    baselineDevResult,
+    isLive
+  );
+
+  // ── Step 7: Incident Context & Silent Alert Dispatcher (Phase 7) ──────────
+  const incidentContext: IncidentContext = {
+    source: activeScenario === 'LIVE_MIC' ? 'MICROPHONE' : 'SIMULATION',
+    baselineAvailable: calibrationState.status === 'COMPLETE' && calibrationState.profile !== null,
+    baselineDeviations,
+    codeWordDetected: codeWordDetection?.detected ?? false,
+    featureSnapshot: effectiveFeatures
+      ? {
+          pitchHz: effectiveFeatures.pitchHz,
+          rms: effectiveFeatures.rmsEnergy,
+          voiceActivity: effectiveFeatures.isSpeech ? 1 : 0,
+          silenceDurationSec: effectiveFeatures.silenceDurationSec,
+          spectralCentroid: effectiveFeatures.spectralCentroid,
+          zeroCrossingRate: effectiveFeatures.zeroCrossingRate,
+        }
+      : undefined,
+    temporalContext: temporalContext ?? undefined,
+  };
+
+  const {
+    currentIncident,
+    alertHistory,
+    isModalOpen,
+    modalIncident,
+    acknowledgeIncident,
+    resolveIncident,
+    clearAlertHistory,
+    openModal,
+    closeModal,
+  } = useIncidentManager(latestEvaluation, {
+    context: incidentContext,
+    isActive: isLive,
+  });
+
   const handleSelectScenario = (scenario: DemoScenarioKey) => {
     setActiveScenario(scenario);
     if (scenario === 'CODE_WORD_ONLY' || scenario === 'MULTI_SIGNAL_WITH_CODE_WORD') {
@@ -185,7 +250,15 @@ export function App() {
           <span className="pipe-arrow">→</span>
           <span className="pipe-step active">Risk Engine</span>
           <span className="pipe-arrow">→</span>
+          <span className={`pipe-step active ${temporalContext?.isTransient ? 'temporal-transient' : ''}`}>
+            Temporal Filter
+          </span>
+          <span className="pipe-arrow">→</span>
           <span className="pipe-step active highlight">Console</span>
+          <span className="pipe-arrow">→</span>
+          <span className={`pipe-step ${currentIncident ? 'active alert-step-active' : 'pipe-step-dim'}`}>
+            Alert Dispatch
+          </span>
         </div>
 
         {/* Primary Action Button */}
@@ -244,6 +317,13 @@ export function App() {
           <p className="error-banner-body">{error.userMessage}</p>
         </div>
       )}
+
+      {/* Active Distress Incident Banner (Phase 7) */}
+      <IncidentBanner
+        incident={currentIncident}
+        onViewEvent={() => openModal(currentIncident)}
+        onAcknowledge={() => acknowledgeIncident(currentIncident?.id)}
+      />
 
       {/* Main Console Grid */}
       <main className="console-dashboard-layout">
@@ -307,7 +387,15 @@ export function App() {
           />
         </section>
 
-        {/* ROW 3: Detection Timeline & Monitoring Status Side-by-Side */}
+        {/* ROW 3: Temporal Stability & False-Positive Reduction (Phase 8) */}
+        <section className="console-row">
+          <TemporalContextCard
+            temporalContext={temporalContext}
+            isMonitoring={isLive}
+          />
+        </section>
+
+        {/* ROW 4: Detection Timeline & Monitoring Status Side-by-Side */}
         <section className="console-row split-row">
           {/* 3. DETECTION TIMELINE */}
           <div className="console-col">
@@ -329,7 +417,7 @@ export function App() {
           </div>
         </section>
 
-        {/* ROW 4: Covert Code-Word Configuration (Phase 5) */}
+        {/* ROW 5: Covert Code-Word Configuration (Phase 5) */}
         <section className="console-row">
           <CodeWordConfig
             config={codeWordConfig}
@@ -340,7 +428,7 @@ export function App() {
           />
         </section>
 
-        {/* ROW 5: Personal Voice Baseline & Calibration (Phase 6) */}
+        {/* ROW 6: Personal Voice Baseline & Calibration (Phase 6) */}
         <section className="console-row">
           <CalibrationPanel
             calibrationState={calibrationState}
@@ -352,7 +440,16 @@ export function App() {
           />
         </section>
 
-        {/* ROW 5: Interactive Preset Scenarios (Hackathon Evaluator) */}
+        {/* ROW 7: Alert History & Audit Log (Phase 7) */}
+        <section className="console-row">
+          <AlertHistory
+            history={alertHistory}
+            onSelectIncident={(inc) => openModal(inc)}
+            onClearHistory={clearAlertHistory}
+          />
+        </section>
+
+        {/* ROW 8: Interactive Preset Scenarios (Hackathon Evaluator) */}
         <section className="console-row">
           <DemoScenarios
             activeScenario={activeScenario}
@@ -361,6 +458,15 @@ export function App() {
           />
         </section>
       </main>
+
+      {/* Forensic Event Modal (Phase 7) */}
+      <ForensicEventModal
+        isOpen={isModalOpen}
+        incident={modalIncident}
+        onClose={closeModal}
+        onAcknowledge={acknowledgeIncident}
+        onResolve={resolveIncident}
+      />
 
       {/* Footer Bar */}
       <footer className="console-footer">
@@ -376,7 +482,7 @@ export function App() {
           <span>React 19 + TypeScript + Web Audio API</span>
           <span className="footer-sep">•</span>
           <Layers size={12} />
-          <span>Phase 6 Personal Baseline{calibrationState.status === 'COMPLETE' ? ' ✓' : ''}</span>
+          <span>Phase 8 Multi-Signal Temporal Filter ✓</span>
         </div>
       </footer>
     </div>

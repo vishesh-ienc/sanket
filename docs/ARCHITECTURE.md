@@ -124,6 +124,16 @@
   - **Code-Word Detector (Contextual):** Matches spoken trigger phrases configured by the user (using Web Speech API or local pattern matching).
 - **Output:** Set of individual signal anomalies with confidence values $[0.0, 1.0]$.
 
+### 2.5b Temporal Context & False-Positive Reduction (`TemporalContextAnalyzer`)
+- **Role:** Evaluates short-term temporal stability, transient vocal spikes, cross-signal temporal correlation, and voice-derived pause regularity.
+- **Components:**
+  - **Bounded Ring-Buffer:** Maintains rolling window of derived feature observations (default 30 frames, zero raw audio retention).
+  - **Transient Spike Detection:** Identifies isolated 1–2 frame anomalies (e.g. coughs, laughs, single pitch bursts) and tags them `TRANSIENT_SPIKE` (`isTransient: true`).
+  - **Sustained Anomaly Tracking:** Requires $\ge 3$ consecutive frames of anomalous features before marking `SUSTAINED_ANOMALY` (`isSustained: true`).
+  - **Cross-Signal Correlation:** Computes co-occurrence metric across 10-frame window; flags `isMultiSignal: true` when $\ge 2$ independent channels are anomalous within the temporal correlation window.
+  - **Voice-Derived Pause Regularity Proxy:** Analyzes pause count, mean duration, and variance across 40-frame window. Flags `BREATHING_PATTERN_ANOMALY` for erratic conversational turn-pacing or prolonged freezes ($> 3.5s$). Strictly disclaimed as conversational turn-pacing proxy, NOT medical/respiratory sensing.
+- **False-Positive Suppression Gate:** Isolated transient spikes (`isTransient && !isSustained && !isMultiSignal`) are held back by `IncidentManager` from triggering emergency alert dispatch. Sustained or multi-signal crises are never suppressed. The existing `RiskEngine` remains the sole authority for scoring.
+
 ### 2.6 Risk Scoring Engine (`RiskEngine`)
 - **Role:** Temporal multi-signal fusion.
 - **Principles:**
@@ -152,12 +162,13 @@
   }
   ```
 
-### 2.8 Alert Engine (`AlertEngine`)
-- **Role:** Evaluates whether a `RiskEvent` warrants intervention.
-- **Features:**
-  - **Debouncing & Hold-down Timers:** Requires high risk to persist for a minimum confirmation duration (e.g., 3 consecutive seconds) or receive immediate verification from a code phrase.
-  - **Silent Simulation Mode (Prototype):** Dispatches a simulated silent alert payload containing timestamp, approximate simulated GPS coordinates, and contributing acoustic signals.
-  - **Cooldown:** Prevents alert spam by enforcing a 60-second lockout between trigger actions.
+### 2.8 Alert Engine & Incident Management (`silentAlertDispatcher`, `incidentManager`, `alertHistory`)
+- **Role:** Evaluates whether a confirmed `HIGH_RISK` `RiskEvaluation` warrants an incident record and simulated silent alert.
+- **Implemented Modules:**
+  - **`silentAlertDispatcher`:** Pure deterministic service strictly requiring `riskLevel === 'HIGH_RISK'` AND `isConfirmed === true`. Emits typed `SilentAlertEvent` in `SIMULATED_LOCAL` mode. Never contacts police or external emergency services, plays zero audio, and triggers zero OS popups.
+  - **`incidentManager`:** Incident latch state machine. Dispatches exactly once per incident; prevents duplicate alert emissions during sustained crises; automatically unlatches and marks incident `RESOLVED` when risk normalizes; cleanly handles subsequent re-triggering.
+  - **`alertHistory`:** Bounded local storage audit log (`sanket_alert_history_v1`, clamped to 50 items) with robust error resilience for corrupted or unavailable browser storage.
+  - **`ForensicEventModal` & `IncidentBanner`:** Presentation components rendering explainable forensic telemetry (contributing signals, personal baseline Z-scores, feature snapshot, confirmation hold-down) with strict privacy guarantees (zero raw audio retention).
 
 ### 2.9 Dashboard / Event Log
 - **Role:** Visual presentation layer for human monitoring and hackathon demonstrations.

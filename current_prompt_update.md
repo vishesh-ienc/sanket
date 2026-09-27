@@ -1,35 +1,62 @@
-# Current Prompt Update — Git Push & Phase 6 Integration
+# Current Prompt Update — Phase 8: Multi-Signal False-Positive Reduction & Temporal Correlation
 
 **Updated:** 2026-09-27  
-**Operation:** Push Phase 6 changes to GitHub repository  
-**Phase Completed:** Phase 6 — Personal Voice Baseline & Calibration  
-**Status:** COMMITTED & PUSHED ✅
+**Phase Completed:** Phase 8 — Multi-Signal False-Positive Reduction & Temporal Correlation  
+**Status:** COMPLETE ✅
 
 ---
 
-## Changes Included in Push
+## What Was Implemented
 
 ### 1. New Source & Component Modules
-- `src/analysis/baselineBuilder.ts`: Welford's online single-pass variance algorithm for audio frames without storing raw PCM.
-- `src/analysis/baselineDeviation.ts`: Statistical Z-score deviation calculator and dynamic `RiskEngineConfig` baseline adapter.
-- `src/analysis/useCalibration.ts`: React hook managing calibration session lifecycle, validation, and `localStorage` persistence.
-- `src/components/CalibrationPanel.tsx`: 4-state HUD panel (`IDLE`, `CALIBRATING`, `COMPLETE`, `ERROR`) with circular SVG countdown timer and summary statistics grid.
-- `src/analysis/__tests__/baseline.test.ts`: 92 comprehensive unit tests covering all calibration algorithms and edge cases.
+| File | Purpose |
+|------|---------|
+| `src/analysis/temporalContext.ts` | Pure TypeScript `TemporalContextAnalyzer` implementing bounded ring-buffer analysis for transient vocal spike detection, sustained anomaly tracking, cross-signal co-occurrence correlation, and voice-derived pause regularity proxy. |
+| `src/analysis/useTemporalContext.ts` | React lifecycle hook bridging `TemporalContextAnalyzer` with live feature sets, baseline deviations, and UI state. |
+| `src/components/TemporalContextCard.tsx` | Dashboard HUD card showing real-time temporal status badges (`STABLE`, `TRANSIENT SPIKE`, `SUSTAINED`, `MULTI-SIGNAL`, `PAUSE PATTERN IRREGULAR`), 4-metric grid, and explainability banner. |
+| `src/analysis/__tests__/temporalContext.test.ts` | 89 comprehensive deterministic unit and integration tests across 7 test sections. |
 
-### 2. Core Updates
-- `src/analysis/types.ts`: Extended `BaselineProfile` with `zcrMean`, `zcrStdDev`, `spectralMean`, `spectralStdDev`.
-- `src/App.tsx`: Wired `useCalibration` and `CalibrationPanel` into the Sanket safety console; wired active baseline profile into `riskEngineInstance`.
-- `src/index.css`: Added clean styling for calibration states, progress ring, profile metrics, and reset controls.
+### 2. Core Updates & Integrations
+- `src/analysis/types.ts`:
+  - Added `TemporalEventType`, `BreathingPatternContext`, `TemporalContext`, `TemporalContextConfig`.
+  - Extended `IncidentContext` and `DistressIncident` with `temporalContext?: TemporalContext`.
+- `src/services/incidentManager.ts`:
+  - Integrated false-positive suppression gate: isolated transient spikes (`isTransient && !isSustained && !isMultiSignal`) are held back from dispatching emergency alerts. Sustained or multi-signal crises are never suppressed.
+- `src/services/silentAlertDispatcher.ts`:
+  - Preserved `temporalContext` snapshot in created `DistressIncident` records.
+- `src/components/ForensicEventModal.tsx`:
+  - Added `modal-temporal-box` displaying forensic temporal correlation analysis, sustained window, cross-signal correlation %, and pause regularity.
+- `src/utils/demoScenariosData.ts` & `src/components/DemoScenarios.tsx`:
+  - Added 3 interactive preset scenarios: `TRANSIENT_PITCH_SPIKE`, `TRANSIENT_LOUD_EVENT`, and `IRREGULAR_PAUSE_PATTERN`.
+- `src/App.tsx`:
+  - Connected `useTemporalContext`, passed `temporalContext` into `incidentContext`, added "Temporal Filter" step to pipeline trace, and rendered `TemporalContextCard`.
+- `src/index.css`:
+  - Added rich glassmorphic styles for `temporal-context-card`, badges, metrics grid, and modal temporal telemetry box.
+- `package.json`:
+  - Appended `temporalContext.test.ts` to `npm test`.
 
 ### 3. Documentation Updates
-- `docs/PROGRESS.md`: Phase 6 marked COMPLETED with detailed verification checklist.
-- `docs/DECISIONS.md`: Added DECISION 013 (Welford's Algorithm and Zero-Audio Baseline Calibration).
-- `docs/AGENT_HANDOFF.md`: Updated test count to 253/253, marked Phase 6 complete, and outlined Phase 7 requirements.
+- `docs/PROGRESS.md`: Marked Phase 8 as `COMPLETED` with detailed verification breakdown.
+- `docs/ROADMAP.md`: Updated Phase 8 status to `COMPLETED`.
+- `docs/ARCHITECTURE.md`: Documented Section 2.5 with Temporal Context Analyzer & False-Positive Suppression.
+- `docs/DECISIONS.md`: Added `DECISION 015` (Bounded Temporal Context Ring-Buffer, Transient Spike Suppression Gate, and Voice-Derived Prosodic Regularity Proxy).
+- `docs/AGENT_HANDOFF.md`: Updated total test count to 437 and outlined Phase 9 requirements.
 
 ---
 
-## Verification Summary
-- **Tests:** 253/253 tests passing across all 4 test suites (Phase 2, Phase 3, Phase 5, Phase 6).
-- **TypeScript Build:** `npm run build` cleanly compiled with 0 errors.
-- **ESLint:** `npm run lint` cleanly passed with 0 warnings/errors.
-- **Git Push:** Remote `origin/main` updated successfully.
+## Test & Build Results
+- **Phase 2 Feature Extraction:** 46 passed, 0 failed
+- **Phase 3 Risk Engine:** 59 passed, 0 failed
+- **Phase 5 Code-Word Detector:** 56 passed, 0 failed
+- **Phase 6 Voice Baseline:** 92 passed, 0 failed
+- **Phase 7 Incident & Alert System:** 95 passed, 0 failed
+- **Phase 8 Temporal Context System:** 89 passed, 0 failed
+- **Total:** **437 passed, 0 failed**
+- **Build (`npm run build`):** Clean compilation, 0 TypeScript errors
+- **Lint (`npm run lint`):** 0 warnings, 0 errors
+
+---
+
+## Next Phase
+**Phase 9 — Polish & Judge Demonstration Flow**
+- Interactive judge demo flows, guided simulation sequencing, presentation hardening, and mobile integration documentation prep.

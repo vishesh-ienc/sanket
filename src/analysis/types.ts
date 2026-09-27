@@ -326,3 +326,197 @@ export interface RiskEngineConfig {
   /** Score at or above which level = HIGH_RISK (default: 70) */
   highRiskThreshold: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 7: Incident & Silent Alert Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Baseline deviation snapshot attached to a distress incident.
+ * Expressed as statistical Z-scores or deviation ratios.
+ */
+export interface IncidentBaselineDeviations {
+  pitch?: number;
+  rms?: number;
+  silence?: number;
+  voiceActivity?: number;
+  spectral?: number;
+  zcr?: number;
+}
+
+/**
+ * Compact snapshot of acoustic features observed at the moment of alert dispatch.
+ * Does not retain raw audio buffers or time-domain waveforms.
+ */
+export interface IncidentFeatureSnapshot {
+  pitchHz: number | null;
+  rms: number;
+  voiceActivity: number;
+  silenceDurationSec: number;
+  spectralCentroid: number | null;
+  zeroCrossingRate: number;
+}
+
+/**
+ * Contextual metadata supplied when evaluating or creating a distress incident.
+ */
+export interface IncidentContext {
+  /** Execution source: live microphone vs preset demo simulation */
+  source: 'MICROPHONE' | 'SIMULATION';
+  /** Whether a personal voice baseline was active */
+  baselineAvailable: boolean;
+  /** Deviation magnitudes from baseline at event trigger */
+  baselineDeviations?: IncidentBaselineDeviations;
+  /** Whether a covert code-word was matched in this session */
+  codeWordDetected: boolean;
+  /** Acoustic feature snapshot at incident creation */
+  featureSnapshot?: IncidentFeatureSnapshot;
+  /** Temporal stability and correlation assessment (Phase 8) */
+  temporalContext?: TemporalContext;
+}
+
+/**
+ * Lifecycle status of a recorded distress incident.
+ */
+export type IncidentStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
+
+/**
+ * Structured incident model representing a confirmed distress event.
+ */
+export interface DistressIncident {
+  /** Unique incident identifier (e.g. "inc-1727438100000-abcd") */
+  id: string;
+  /** Unix epoch ms timestamp when the incident was created */
+  timestamp: number;
+
+  /** Composite risk score [0, 100] at confirmation */
+  riskScore: number;
+  /** Risk classification (always 'HIGH_RISK' at dispatch) */
+  riskLevel: RiskLevel;
+
+  /** Detailed list of contributing signals with scores and explanations */
+  contributingSignals: SignalContribution[];
+  /** Array of active confirmed signal channel names (e.g. ['pitch', 'rms', 'silence']) */
+  confirmedSignals: string[];
+
+  /** Number of consecutive abnormal frames sustained */
+  persistenceFrames: number;
+
+  /** Whether personal voice baseline was active */
+  baselineAvailable: boolean;
+  /** Deviation metrics relative to baseline */
+  baselineDeviations?: IncidentBaselineDeviations;
+
+  /** Whether a covert code-word was part of the incident evidence */
+  codeWordDetected: boolean;
+
+  /** Compact feature snapshot at time of confirmation */
+  featureSnapshot?: IncidentFeatureSnapshot;
+
+  /** Operational status of the incident */
+  status: IncidentStatus;
+
+  /** Origin of the detection */
+  source: 'MICROPHONE' | 'SIMULATION';
+
+  /** Whether the simulated silent alert has been dispatched */
+  alertDispatched: boolean;
+
+  /** Temporal stability and correlation metadata (Phase 8) */
+  temporalContext?: TemporalContext;
+}
+
+/**
+ * Simulated silent alert dispatch event record.
+ */
+export interface SilentAlertEvent {
+  /** Unique alert event identifier */
+  id: string;
+  /** Associated incident ID */
+  incidentId: string;
+  /** Unix epoch ms when alert was dispatched */
+  timestamp: number;
+  /** True when successfully dispatched in simulation mode */
+  dispatched: boolean;
+  /** Strictly 'SIMULATED_LOCAL' for prototype safety */
+  dispatchMode: 'SIMULATED_LOCAL';
+  /** Human-readable explanation of why the alert dispatched */
+  reason: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 8: Temporal Context & False-Positive Reduction Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Classification of observed temporal behavior.
+ */
+export type TemporalEventType =
+  | 'NONE'
+  | 'TRANSIENT_SPIKE'
+  | 'SUSTAINED_ANOMALY'
+  | 'MULTI_SIGNAL_CORRELATION'
+  | 'BREATHING_PATTERN_ANOMALY';
+
+/**
+ * Voice-derived pause/breathing prosodic pattern telemetry.
+ *
+ * IMPORTANT: This represents voice-derived speech/pause regularity.
+ * It is NOT physiological or medical respiratory sensing.
+ */
+export interface BreathingPatternContext {
+  /** Number of observation frames in the analysis window */
+  sampleCount: number;
+  /** Number of discrete pause episodes observed */
+  pauseCount: number;
+  /** Mean duration of detected pauses in seconds */
+  meanPauseDurationSec: number;
+  /** Sample variance of pause durations */
+  pauseVariability: number;
+  /** Regularity score [0.0 = erratic/frozen, 1.0 = rhythmic speech] */
+  regularityScore: number;
+  /** Whether the pause pattern is classified as irregular or abnormal */
+  isIrregular: boolean;
+}
+
+/**
+ * Structured temporal stability and correlation assessment.
+ */
+export interface TemporalContext {
+  /** Dominant temporal classification */
+  eventType: TemporalEventType;
+  /** Number of consecutive abnormal frames sustained */
+  sustainedFrames: number;
+  /** Number of frames in a detected transient burst */
+  transientFrames: number;
+  /** Degree of cross-signal correlation [0.0, 1.0] across rolling window */
+  multiSignalCorrelation: number;
+  /** True if the anomaly is short-lived (< minimumSustainedFrames) */
+  isTransient: boolean;
+  /** True if the anomaly has persisted for >= minimumSustainedFrames */
+  isSustained: boolean;
+  /** True if multiple corroborating channels are active within window */
+  isMultiSignal: boolean;
+  /** Voice-derived pause/breathing prosody context */
+  breathingPattern?: BreathingPatternContext;
+  /** Non-diagnostic explainability string describing current evidence */
+  explanation: string;
+}
+
+/**
+ * Configuration for the TemporalContextAnalyzer.
+ */
+export interface TemporalContextConfig {
+  /** Size of rolling feature window in frames (default: 30) */
+  windowSize: number;
+  /** Max consecutive frames considered an isolated transient spike (default: 2) */
+  transientWindowFrames: number;
+  /** Minimum consecutive abnormal frames required for sustained status (default: 3) */
+  minimumSustainedFrames: number;
+  /** Rolling window in frames to evaluate cross-signal co-occurrence (default: 10) */
+  correlationWindowFrames: number;
+  /** Rolling window in frames to evaluate pause/breathing regularity (default: 40) */
+  breathingWindowFrames: number;
+}
+
+

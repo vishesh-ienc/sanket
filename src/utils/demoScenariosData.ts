@@ -14,6 +14,9 @@ export type DemoScenarioKey =
   | 'CODE_WORD_ONLY'
   | 'MULTI_SIGNAL_DISTRESS'
   | 'MULTI_SIGNAL_WITH_CODE_WORD'
+  | 'TRANSIENT_PITCH_SPIKE'
+  | 'TRANSIENT_LOUD_EVENT'
+  | 'IRREGULAR_PAUSE_PATTERN'
   | 'RECOVERY_NORMALIZING';
 
 /** Helper generator returning synthetic FeatureSet for demo scenarios */
@@ -121,6 +124,56 @@ export function getDemoScenarioFeatures(
         speechActivityDurationSec: 0.5,
         speechSegmentCount: 1,
       };
+
+    case 'TRANSIENT_PITCH_SPIKE': {
+      // Short-lived isolated pitch burst (coughs, laugh burst, surprise spike):
+      // Spikes for only 2 frames (tick 4 & 5), calm before and after
+      const isSpike = tick % 20 === 4 || tick % 20 === 5;
+      return {
+        timestamp,
+        rmsEnergy: isSpike ? 0.18 : 0.055,
+        zeroCrossingRate: isSpike ? 0.14 : 0.08,
+        spectralCentroid: isSpike ? 2400 : 1400,
+        pitchHz: isSpike ? 385 : 165,
+        isSpeech: true,
+        silenceDurationSec: 0,
+        speechActivityDurationSec: 3.5,
+        speechSegmentCount: 2,
+      };
+    }
+
+    case 'TRANSIENT_LOUD_EVENT': {
+      // Sudden brief volume surge (throat clearing, single loud exclamation):
+      // Spikes for 2 frames, returns immediately to baseline
+      const isLoud = tick % 20 === 4 || tick % 20 === 5;
+      return {
+        timestamp,
+        rmsEnergy: isLoud ? 0.36 : 0.058,
+        zeroCrossingRate: isLoud ? 0.18 : 0.08,
+        spectralCentroid: isLoud ? 2200 : 1450,
+        pitchHz: 170,
+        isSpeech: true,
+        silenceDurationSec: 0,
+        speechActivityDurationSec: 4.0,
+        speechSegmentCount: 2,
+      };
+    }
+
+    case 'IRREGULAR_PAUSE_PATTERN': {
+      // Alternates between brief fragmented speech (0.3s) and erratic prolonged silence (4.2s)
+      const isFragmentedVoice = (tick % 15) < 3;
+      return {
+        timestamp,
+        rmsEnergy: isFragmentedVoice ? 0.06 : 0.002,
+        zeroCrossingRate: isFragmentedVoice ? 0.08 : 0.01,
+        spectralCentroid: isFragmentedVoice ? 1500 : null,
+        pitchHz: isFragmentedVoice ? 175 : null,
+        isSpeech: isFragmentedVoice,
+        silenceDurationSec: isFragmentedVoice ? 0 : 4.2 + (tick % 10) * 0.1,
+        speechActivityDurationSec: 1.2,
+        speechSegmentCount: 5,
+      };
+    }
 
     case 'RECOVERY_NORMALIZING':
       // Returning to calm speech: signals normalize and let score decay

@@ -140,6 +140,42 @@
 
 ---
 
+### DECISION 014: Simulated Local Silent Alert Dispatch, Incident Latching, and Bounded Metadata-Only Forensic Audit Log
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** When the multi-signal `RiskEngine` detects sustained confirmed `HIGH_RISK`, the application must demonstrate full end-to-end safety workflow capabilities to users and evaluators without:
+  1. Making real emergency phone calls, SMS, or dispatching actual first responders.
+  2. Generating audible sounds or notification popups that could endanger an individual in a coercion or domestic threat situation.
+  3. Generating a flood of duplicate alert records every 100ms frame while the sustained incident remains active.
+  4. Persisting raw audio or conversation logs that compromise user privacy.
+- **Decision:**
+  1. **Strict Dispatch Gating:** A silent alert requires both `riskLevel === 'HIGH_RISK'` and `isConfirmed === true` (multi-frame temporal confirmation).
+  2. **SIMULATED_LOCAL Dispatch Mode:** Alerts are purely local simulation objects (`SilentAlertEvent`) with `dispatchMode: 'SIMULATED_LOCAL'`. No external network requests, telephony, or audible audio cues are emitted.
+  3. **Incident Latch State Machine:** Once a confirmed `HIGH_RISK` event triggers an incident, the system latches. During the entire continuous crisis window, live peak metrics are updated in-place without generating duplicate alert dispatches or redundant history entries.
+  4. **Automatic Normalization & Unlatching:** When risk falls below `HIGH_RISK`, the active incident automatically transitions to `RESOLVED` and the latch resets, allowing future crisis events to cleanly generate fresh incident IDs.
+  5. **Bounded Local Audit Log:** The `alertHistory` service limits storage to 50 items under `sanket_alert_history_v1`. It persists only derived scores, timestamps, and contributing signals; raw audio, PCM samples, and waveform buffers are strictly excluded.
+- **Consequences:** The prototype provides a complete, realistic safety response workflow while preserving absolute user privacy, zero bystander alert risks, zero alert flooding, and complete offline testability.
+
+---
+
+### DECISION 015: Bounded Temporal Context Ring-Buffer, Transient Spike Suppression Gate, and Voice-Derived Prosodic Regularity Proxy
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Everyday vocal acoustic events—such as coughing, hearty laughing, sudden throat-clearing, or loud bursts of conversational laughter—can produce sharp, isolated spikes in RMS energy and fundamental frequency ($F_0$). If evaluated frame-by-frame in isolation, these transient bursts can produce borderline risk elevations that trigger false emergency incidents. However:
+  1. We must NOT build a machine-learning model or heavy neural network that breaks real-time browser execution.
+  2. We must NOT create a competing second risk score or rewrite the existing authoritative `RiskEngine`.
+  3. We must NOT claim medical or respiratory diagnosis from browser microphone streams.
+  4. We must NOT retain raw audio buffers in memory.
+- **Decision:**
+  1. **Pure Heuristic Sliding Window:** Implement `TemporalContextAnalyzer` using a compact bounded ring-buffer (30 frames) storing only derived scalar features and channel anomaly flags.
+  2. **Transient vs Sustained Separation:** Classify anomalies lasting $\le 2$ frames as `TRANSIENT_SPIKE` (`isTransient: true`), requiring $\ge 3$ consecutive frames for `SUSTAINED_ANOMALY` (`isSustained: true`).
+  3. **Cross-Signal Temporal Correlation:** Track co-occurrence of distinct anomalous channels across a 10-frame window; multi-signal events (`isMultiSignal: true`) require $\ge 2$ independent channels.
+  4. **Voice-Derived Pause Regularity Proxy:** Track speech-to-pause transitions over a 40-frame window to identify prolonged freezes ($> 3.5s$) or erratic pause variances ($> 2.0$). Strictly document and label this in code and UI as a *voice-derived conversational turn-pacing proxy*, NOT medical respiratory sensing.
+  5. **Contextual Gating in IncidentManager:** Prevent isolated transient spikes (`isTransient && !isSustained && !isMultiSignal`) from triggering emergency alert dispatch. Sustained or multi-signal crises are never suppressed.
+- **Consequences:** Eliminates false alarms caused by short, isolated vocal bursts without compromising sensitivity to genuine multi-signal or sustained distress; maintains zero raw audio retention; strictly preserves single-authority risk scoring.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]
@@ -149,5 +185,6 @@
 - **Decision:** [What was decided?]
 - **Consequences:** [What are the positive and negative implications?]
 ```
+
 
 

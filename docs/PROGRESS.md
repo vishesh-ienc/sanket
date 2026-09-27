@@ -8,14 +8,87 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 6 — Personal Voice Baseline & Calibration**
+- **Current Phase:** **Phase 8 — Multi-Signal False-Positive Reduction & Temporal Correlation**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 7 — Silent Alert Dispatch & Forensic Modal**
+- **Next Phase:** **Phase 9 — Polish & Judge Demonstration Flow**
 
 ---
 
-## Completed in Phase 6
+## Completed in Phase 8
+
+- [x] `src/analysis/temporalContext.ts` — `TemporalContextAnalyzer` class
+  - Sliding-window bounded history buffer (default 30 frames, zero raw audio retention)
+  - Transient event detection (`isTransient`, `transientFrames`, `TRANSIENT_SPIKE`) for short isolated spikes (e.g. 1–2 frames of cough, laugh, or pitch burst)
+  - Sustained anomaly detection (`isSustained`, `sustainedFrames`, `SUSTAINED_ANOMALY`) requiring $\ge 3$ consecutive frames
+  - Cross-signal temporal correlation (`multiSignalCorrelation`, `isMultiSignal`, `MULTI_SIGNAL_CORRELATION`) measuring co-occurrence of abnormal channels across 10-frame window
+  - Voice-derived pause and breathing regularity proxy (`BreathingPatternContext`, `BREATHING_PATTERN_ANOMALY`): analyzes pause count, mean duration, and variance across 40-frame window; strictly disclaimed as voice-derived conversational turn pacing, NOT medical or respiratory sensing
+  - Seamless baseline deviation Z-score integration ($|Z| \ge 2.0$) with fallback to prototype heuristic thresholds
+- [x] `src/analysis/useTemporalContext.ts` — React lifecycle hook bridging analyzer with live feature frames and baseline deviations
+- [x] `src/services/incidentManager.ts` — False-positive suppression gate
+  - Gating condition: isolated transient spikes (`isTransient && !isSustained && !isMultiSignal`) suppress emergency alert dispatch
+  - Multi-signal or sustained crises are never suppressed and pass to alert dispatch
+  - Preserves single authoritative scoring role of `RiskEngine` without formula tampering
+- [x] `src/services/silentAlertDispatcher.ts` — Forensic metadata preservation
+  - Preserves `temporalContext` snapshot in created `DistressIncident` models
+- [x] `src/components/TemporalContextCard.tsx` — Dashboard HUD card
+  - Status badges: `STABLE`, `TRANSIENT SPIKE`, `SUSTAINED`, `MULTI-SIGNAL`, `PAUSE PATTERN IRREGULAR`
+  - 4-metric grid: Sustained Frames, Transient Frames, Cross-Signal Correlation %, and Voice-Derived Pause Regularity
+  - Real-time non-diagnostic explainability banner
+- [x] `src/components/ForensicEventModal.tsx` — Extended with temporal context audit box
+- [x] `src/utils/demoScenariosData.ts` & `src/components/DemoScenarios.tsx` — Added 3 interactive preset scenarios: `TRANSIENT_PITCH_SPIKE`, `TRANSIENT_LOUD_EVENT`, and `IRREGULAR_PAUSE_PATTERN`
+- [x] `src/analysis/__tests__/temporalContext.test.ts` — **89 deterministic unit tests** covering transient spikes, sustained anomalies, cross-signal correlation, baseline deviation activation, pause proxy regularity, bounds/safety, and suppression integration
+- [x] Full Test Suite: **437 / 437 tests passing** (Phase 2: 46, Phase 3: 59, Phase 5: 56, Phase 6: 92, Phase 7: 95, Phase 8: 89)
+- [x] Build & Lint: 0 TypeScript errors, 0 ESLint warnings/errors
+
+---
+
+## Completed in Phase 7
+
+- [x] `src/services/silentAlertDispatcher.ts` — Simulated silent alert dispatch service
+  - Strict dispatch gating: requires `riskLevel === 'HIGH_RISK'` AND `isConfirmed === true`
+  - Generates unique structured incident ID (`inc-...`) and alert ID (`alt-...`)
+  - Strictly `SIMULATED_LOCAL` mode — never plays audio, never uses OS popups, never contacts emergency services
+  - `createDistressIncident()` creates structured incident metadata with zero raw audio retention
+- [x] `src/services/incidentManager.ts` — Incident latch & duplicate alert protection state machine
+  - Latch prevents duplicate alerts during sustained HIGH_RISK episodes (dispatches exactly once per incident)
+  - Continues updating live peak risk score, persistence frames, and corroborating signals in place
+  - Automatically resolves active incident and unlatches when risk returns below HIGH_RISK
+  - Allows subsequent confirmed HIGH_RISK events to cleanly trigger brand new incidents
+  - Exposes manual acknowledgment, manual resolution, and latch reset APIs
+- [x] `src/services/alertHistory.ts` — Local bounded incident audit log
+  - Persists up to 50 incidents in `localStorage` under `sanket_alert_history_v1`
+  - Sorts newest first; supports `getIncidents()`, `getIncidentById()`, `acknowledgeIncident()`, `resolveIncident()`, `clearHistory()`
+  - Resilient storage error handling: handles malformed JSON, corrupted structures, and restricted environments gracefully
+- [x] `src/services/useIncidentManager.ts` — React lifecycle hook bridging engine and UI
+  - Tracks `currentIncident`, `latestAlert`, `alertHistory`, `alertDispatched`, and modal state
+  - Supports manual acknowledgment, resolution, and inspection modal opening/closing
+- [x] `src/components/IncidentBanner.tsx` — Prominent, silent dashboard distress alert bar
+  - Displays risk score, risk level, timestamp, confirmed signals count, persistence frames
+  - Distinguishes between `LIVE MICROPHONE` and `DEMO SIMULATION`
+  - Actions for "VIEW EVENT" and "ACKNOWLEDGE" without audible noise
+- [x] `src/components/ForensicEventModal.tsx` — Interactive forensic incident inspection modal
+  - Event summary: ID, timestamp, origin, risk classification, score
+  - Contributing signals table: name, score added, baseline deviation (e.g. 2.4σ from baseline), heuristic reason
+  - Multi-signal confirmation: persistence frames, corroborating channel count, code-word status
+  - Feature snapshot: pitch, energy, silence, centroid, ZCR at confirmation moment
+  - Explicit privacy guarantee & simulated local dispatch disclaimer
+- [x] `src/components/AlertHistory.tsx` — Dashboard incident audit panel
+  - Chronological list of past incidents with status pills (`ACTIVE`, `ACKNOWLEDGED`, `RESOLVED`)
+  - Clicking any incident opens its full forensic modal
+  - Empty state and clear history action
+- [x] `src/App.tsx` & `src/index.css` — Integrated Phase 7 UI
+  - Added "Alert Dispatch" step to pipeline trace
+  - Prominent `IncidentBanner` and dashboard `AlertHistory` card
+  - Rich glassmorphic HUD styles with zero layout shift
+- [x] `src/services/__tests__/incidentSystem.test.ts` — **95 deterministic unit tests**
+  - Gating invariants (unconfirmed/non-HIGH_RISK blocked)
+  - Duplicate alert prevention during sustained incidents
+  - Latch release upon recovery and fresh incident creation upon recurrence
+  - History bounding (50 items max), ordering, status updates, and storage error resilience
+  - Forensic metadata preservation and privacy invariants (zero raw audio)
+- [x] Full Test Suite: **348 / 348 tests passing** (Phase 2: 46, Phase 3: 59, Phase 5: 56, Phase 6: 92, Phase 7: 95)
+- [x] Build & Lint: 0 TypeScript errors, 0 ESLint warnings/errors
 
 - [x] `src/analysis/baselineBuilder.ts` — `BaselineBuilder` class using Welford's Online Algorithm
   - Single-pass O(1) per sample — never stores raw audio frames or PCM data
