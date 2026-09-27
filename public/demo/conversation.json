@@ -1,0 +1,119 @@
+{
+  "id": "walk-home-call",
+  "title": "Walk-home phone call",
+  "description": "Two friends on a call. The monitored speaker notices she is being followed; her voice tightens and she slips the covert code phrase into the conversation.",
+  "audio": "demo/conversation.wav",
+  "durationSec": 52.84,
+  "codePhrase": "Remember to feed the cat",
+  "synthetic": true,
+  "credits": "Synthetic speech generated offline with Piper TTS (voices: amy, ryan). Not a real person.",
+  "timeline": [
+    {
+      "startSec": 0,
+      "endSec": 17.36,
+      "label": "Calm conversation",
+      "expectation": "Risk stays NORMAL",
+      "tone": "calm"
+    },
+    {
+      "startSec": 17.36,
+      "endSec": 24.87,
+      "label": "Voice tightens",
+      "expectation": "Signals begin to rise",
+      "tone": "transition"
+    },
+    {
+      "startSec": 24.87,
+      "endSec": 52.84,
+      "label": "Distress + code phrase",
+      "expectation": "Multi-signal HIGH_RISK \u2192 silent alert",
+      "tone": "distress"
+    }
+  ],
+  "cues": [
+    {
+      "atSec": 0.4,
+      "finalSec": 2.08,
+      "speaker": "friend",
+      "text": "Hey Asha! Are you on your way back?"
+    },
+    {
+      "atSec": 2.43,
+      "finalSec": 7.67,
+      "speaker": "user",
+      "text": "Hi! Yeah, I just left the office. The metro was packed today."
+    },
+    {
+      "atSec": 8.02,
+      "finalSec": 10.07,
+      "speaker": "friend",
+      "text": "Nice. Do you want me to order dinner for us?"
+    },
+    {
+      "atSec": 10.37,
+      "finalSec": 14.96,
+      "speaker": "user",
+      "text": "That would be great. Maybe something light, I had a big lunch."
+    },
+    {
+      "atSec": 15.46,
+      "finalSec": 16.76,
+      "speaker": "friend",
+      "text": "Okay. I'll wait for you then."
+    },
+    {
+      "atSec": 17.36,
+      "finalSec": 22.67,
+      "speaker": "user",
+      "text": "Wait. Someone is walking right behind me. I think he followed me off the train."
+    },
+    {
+      "atSec": 22.92,
+      "finalSec": 24.57,
+      "speaker": "friend",
+      "text": "What? Are you okay? Where are you right now?"
+    },
+    {
+      "atSec": 24.87,
+      "finalSec": 30.58,
+      "speaker": "user",
+      "text": "I'm fine. I'm fine. I'm just walking faster now. It's really dark on this street."
+    },
+    {
+      "atSec": 32.18,
+      "finalSec": 32.78,
+      "speaker": "friend",
+      "text": "Asha? Hello?"
+    },
+    {
+      "atSec": 32.98,
+      "finalSec": 36.4,
+      "speaker": "user",
+      "text": "Everything is fine. Remember to feed the cat, okay?"
+    },
+    {
+      "atSec": 36.65,
+      "finalSec": 38.53,
+      "speaker": "friend",
+      "text": "The cat? Asha, what do you mean?"
+    },
+    {
+      "atSec": 38.73,
+      "finalSec": 45.18,
+      "speaker": "user",
+      "text": "Just do it. Please. He is still right behind me and I can't stop walking. I can't talk right now."
+    },
+    {
+      "atSec": 45.48,
+      "finalSec": 49.24,
+      "speaker": "user",
+      "text": "Please, just do it now. I'm walking towards the main road."
+    },
+    {
+      "atSec": 49.84,
+      "finalSec": 52.04,
+      "speaker": "friend",
+      "text": "Okay. Okay, I understand. I'm on it."
+    }
+  ]
+}

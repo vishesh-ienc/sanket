@@ -27,7 +27,7 @@ import {
   SAMPLE_CALL_TRANSCRIPT,
   renderTranscriptCue,
 } from '../sampleRecording';
-import type { AudioFrame } from '../types';
+import { AudioFrameBuilder, FRAME_SIZE } from '../frameBuilder';
 import { FeatureExtractor } from '../../analysis/featureExtractor';
 import { RiskEngine } from '../../analysis/riskEngine';
 import { TemporalContextAnalyzer } from '../../analysis/temporalContext';
@@ -56,54 +56,7 @@ function printSection(label: string): void {
   console.log(`\n─── ${label} ───`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AnalyserNode emulation (fftSize 2048, Blackman window, 0.8 smoothing, dBFS)
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FFT_SIZE = 2048;
-
-function fftMagnitudes(input: Float32Array): Float32Array {
-  const n = input.length;
-  const re = new Float64Array(n);
-  const im = new Float64Array(n);
-  // Blackman window (as used by Web Audio AnalyserNode)
-  for (let i = 0; i < n; i++) {
-    const a = (2 * Math.PI * i) / n;
-    const w = 0.42 - 0.5 * Math.cos(a) + 0.08 * Math.cos(2 * a);
-    re[i] = input[i] * w;
-  }
-  // Bit-reversal permutation
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1;
-    for (; j & bit; bit >>= 1) j ^= bit;
-    j ^= bit;
-    if (i < j) {
-      [re[i], re[j]] = [re[j], re[i]];
-      [im[i], im[j]] = [im[j], im[i]];
-    }
-  }
-  // Iterative radix-2 Cooley–Tukey
-  for (let len = 2; len <= n; len <<= 1) {
-    const ang = (-2 * Math.PI) / len;
-    for (let i = 0; i < n; i += len) {
-      for (let k = 0; k < len / 2; k++) {
-        const wr = Math.cos(ang * k);
-        const wi = Math.sin(ang * k);
-        const ur = re[i + k];
-        const ui = im[i + k];
-        const vr = re[i + k + len / 2] * wr - im[i + k + len / 2] * wi;
-        const vi = re[i + k + len / 2] * wi + im[i + k + len / 2] * wr;
-        re[i + k] = ur + vr;
-        im[i + k] = ui + vi;
-        re[i + k + len / 2] = ur - vr;
-        im[i + k + len / 2] = ui - vi;
-      }
-    }
-  }
-  const mags = new Float32Array(n / 2);
-  for (let i = 0; i < n / 2; i++) mags[i] = Math.hypot(re[i], im[i]) / n;
-  return mags;
-}
+const FFT_SIZE = FRAME_SIZE;
 
 interface PipelineTrace {
   timeSec: number;
@@ -126,30 +79,14 @@ function runPipeline(
   const engine = new RiskEngine();
   const temporal = new TemporalContextAnalyzer();
   const incidents = new IncidentManager();
-  const smoothed = new Float32Array(FFT_SIZE / 2);
+  const builder = new AudioFrameBuilder();
   const trace: PipelineTrace[] = [];
 
   const hop = Math.floor(sampleRate * 0.1); // 10 Hz analysis cadence
   for (let end = FFT_SIZE; end <= samples.length; end += hop) {
     const td = samples.slice(end - FFT_SIZE, end);
-    const mags = fftMagnitudes(td);
-    const freq = new Float32Array(FFT_SIZE / 2);
-    for (let i = 0; i < mags.length; i++) {
-      smoothed[i] = 0.8 * smoothed[i] + 0.2 * mags[i];
-      freq[i] = 20 * Math.log10(smoothed[i] + 1e-12);
-    }
-    let sumSq = 0;
-    for (let i = 0; i < td.length; i++) sumSq += td[i] * td[i];
-
     const timeSec = end / sampleRate;
-    const frame: AudioFrame = {
-      timestamp: timeSec * 1000,
-      sampleRate,
-      frameSize: FFT_SIZE,
-      timeDomainData: td,
-      frequencyData: freq,
-      rmsEnergy: Math.sqrt(sumSq / td.length),
-    };
+    const frame = builder.build(td, sampleRate, timeSec * 1000);
 
     while (pendingCues.length > 0 && pendingCues[0].atSec <= timeSec) {
       const cue = pendingCues.shift()!;

@@ -29,6 +29,9 @@ function toWallClock(timestamp: number): number {
   return timestamp < 1e12 ? Math.round(performance.timeOrigin + timestamp) : timestamp;
 }
 
+/** ~4 s at 10 Hz: an incident stays open through the natural dips of real speech */
+const INCIDENT_RELEASE_FRAMES = 40;
+
 export interface UseIncidentManagerOptions {
   context?: IncidentContext;
   isActive?: boolean;
@@ -54,7 +57,7 @@ export function useIncidentManager(
   options: UseIncidentManagerOptions = {}
 ): UseIncidentManagerReturn {
   const { context, isActive = true } = options;
-  const [manager] = useState(() => new IncidentManager());
+  const [manager] = useState(() => new IncidentManager({ releaseFrames: INCIDENT_RELEASE_FRAMES }));
 
   const [currentIncident, setCurrentIncident] = useState<DistressIncident | null>(null);
   const [latestAlert, setLatestAlert] = useState<SilentAlertEvent | null>(null);
