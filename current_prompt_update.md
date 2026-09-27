@@ -1,7 +1,7 @@
-# Current Prompt Update — Phase 8: Multi-Signal False-Positive Reduction & Temporal Correlation
+# Current Prompt Update — Phase 9: Polish & Judge Demonstration Flow
 
 **Updated:** 2026-09-27  
-**Phase Completed:** Phase 8 — Multi-Signal False-Positive Reduction & Temporal Correlation  
+**Phase Completed:** Phase 9 — Polish & Judge Demonstration Flow  
 **Status:** COMPLETE ✅
 
 ---
@@ -11,36 +11,31 @@
 ### 1. New Source & Component Modules
 | File | Purpose |
 |------|---------|
-| `src/analysis/temporalContext.ts` | Pure TypeScript `TemporalContextAnalyzer` implementing bounded ring-buffer analysis for transient vocal spike detection, sustained anomaly tracking, cross-signal co-occurrence correlation, and voice-derived pause regularity proxy. |
-| `src/analysis/useTemporalContext.ts` | React lifecycle hook bridging `TemporalContextAnalyzer` with live feature sets, baseline deviations, and UI state. |
-| `src/components/TemporalContextCard.tsx` | Dashboard HUD card showing real-time temporal status badges (`STABLE`, `TRANSIENT SPIKE`, `SUSTAINED`, `MULTI-SIGNAL`, `PAUSE PATTERN IRREGULAR`), 4-metric grid, and explainability banner. |
-| `src/analysis/__tests__/temporalContext.test.ts` | 89 comprehensive deterministic unit and integration tests across 7 test sections. |
+| `src/demo/types.ts` | Type definitions for the 6-step guided judge demonstration sequence (`DemoStepId`, `DemoStepDefinition`, `DemoControllerState`). |
+| `src/demo/demoController.ts` | Pure TypeScript `DemoController` state machine governing the 6-step guided walkthrough (Baseline → Normal → Transient Filter → Multi-Signal Distress → Silent Alert → Forensic Review). |
+| `src/demo/useDemoController.ts` | React lifecycle hook bridging `DemoController` state machine with UI lifecycle. |
+| `src/components/JudgeDemoPanel.tsx` | Executive HUD panel for hackathon judges featuring step progress chips, narration box, judge highlight differentiator pill, observed outcome, and bidirectional navigation. |
+| `src/demo/__tests__/demoController.test.ts` | 87 deterministic unit tests covering state initialization, next/prev navigation, direct jumps, boundary guards, subscriber notifications, and step contracts. |
 
 ### 2. Core Updates & Integrations
-- `src/analysis/types.ts`:
-  - Added `TemporalEventType`, `BreathingPatternContext`, `TemporalContext`, `TemporalContextConfig`.
-  - Extended `IncidentContext` and `DistressIncident` with `temporalContext?: TemporalContext`.
-- `src/services/incidentManager.ts`:
-  - Integrated false-positive suppression gate: isolated transient spikes (`isTransient && !isSustained && !isMultiSignal`) are held back from dispatching emergency alerts. Sustained or multi-signal crises are never suppressed.
-- `src/services/silentAlertDispatcher.ts`:
-  - Preserved `temporalContext` snapshot in created `DistressIncident` records.
-- `src/components/ForensicEventModal.tsx`:
-  - Added `modal-temporal-box` displaying forensic temporal correlation analysis, sustained window, cross-signal correlation %, and pause regularity.
-- `src/utils/demoScenariosData.ts` & `src/components/DemoScenarios.tsx`:
-  - Added 3 interactive preset scenarios: `TRANSIENT_PITCH_SPIKE`, `TRANSIENT_LOUD_EVENT`, and `IRREGULAR_PAUSE_PATTERN`.
+- `src/analysis/useCalibration.ts`:
+  - Added `loadPresetProfile()` for instant demo baseline activation during Step 1 of the demonstration tour.
 - `src/App.tsx`:
-  - Connected `useTemporalContext`, passed `temporalContext` into `incidentContext`, added "Temporal Filter" step to pipeline trace, and rendered `TemporalContextCard`.
+  - Connected `useDemoController` and rendered `JudgeDemoPanel` as ROW 0 executive command center.
+  - Added "Judge Tour" step indicator to the visual pipeline trace.
+  - Refactored demo step changes to clean event-driven handlers (zero `set-state-in-effect` warnings).
 - `src/index.css`:
-  - Added rich glassmorphic styles for `temporal-context-card`, badges, metrics grid, and modal temporal telemetry box.
+  - Added responsive styling for `judge-demo-panel`, step chips, narration cards, outcome bars, and stepper controls.
 - `package.json`:
-  - Appended `temporalContext.test.ts` to `npm test`.
+  - Appended `demoController.test.ts` to `npm test`.
 
 ### 3. Documentation Updates
-- `docs/PROGRESS.md`: Marked Phase 8 as `COMPLETED` with detailed verification breakdown.
-- `docs/ROADMAP.md`: Updated Phase 8 status to `COMPLETED`.
-- `docs/ARCHITECTURE.md`: Documented Section 2.5 with Temporal Context Analyzer & False-Positive Suppression.
-- `docs/DECISIONS.md`: Added `DECISION 015` (Bounded Temporal Context Ring-Buffer, Transient Spike Suppression Gate, and Voice-Derived Prosodic Regularity Proxy).
-- `docs/AGENT_HANDOFF.md`: Updated total test count to 437 and outlined Phase 9 requirements.
+- `docs/DEMO_FLOW.md`: Rewritten with the 6-step guided tour script, scene-by-scene presenter actions, and updated Q&A defense talking points.
+- `docs/PROGRESS.md`: Marked Phase 9 as `COMPLETED` with full verification checklist.
+- `docs/ROADMAP.md`: Updated Phase 9 status to `COMPLETED`.
+- `docs/ARCHITECTURE.md`: Added Section 2.10 (Guided Judge Demonstration State Machine).
+- `docs/DECISIONS.md`: Added `DECISION 016` (Guided Judge Demonstration State Machine and Event-Driven Scenario Sequencing).
+- `docs/AGENT_HANDOFF.md`: Updated total test count to 524 and set next phase to Phase 10.
 
 ---
 
@@ -51,12 +46,13 @@
 - **Phase 6 Voice Baseline:** 92 passed, 0 failed
 - **Phase 7 Incident & Alert System:** 95 passed, 0 failed
 - **Phase 8 Temporal Context System:** 89 passed, 0 failed
-- **Total:** **437 passed, 0 failed**
+- **Phase 9 Demo Controller:** 87 passed, 0 failed
+- **Total:** **524 passed, 0 failed** across all 7 test suites
 - **Build (`npm run build`):** Clean compilation, 0 TypeScript errors
-- **Lint (`npm run lint`):** 0 warnings, 0 errors
+- **Lint (`npm run lint`):** 0 warnings, 0 errors across 52 files
 
 ---
 
 ## Next Phase
-**Phase 9 — Polish & Judge Demonstration Flow**
-- Interactive judge demo flows, guided simulation sequencing, presentation hardening, and mobile integration documentation prep.
+**Phase 10 — Mobile Deployment Architecture & Future Integration Docs**
+- Document native mobile background audio service integration (Android `AudioRecord`, iOS `AVAudioEngine`), battery-efficient downsampling, encrypted on-device storage, and VoIP integration (`docs/MOBILE_INTEGRATION.md`).

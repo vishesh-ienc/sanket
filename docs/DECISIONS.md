@@ -176,6 +176,25 @@
 
 ---
 
+### DECISION 016: Guided Judge Demonstration State Machine and Event-Driven Scenario Sequencing
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** In a 2–3 minute hackathon judging presentation, evaluators must quickly and clearly comprehend Sanket's core architectural differentiators: personal baseline calibration, normal conversational reference, transient spike filtering, multi-signal distress persistence, silent local dispatch, and forensic explainability. Relying on unpredictable live microphone utterances or forcing judges to manually hunt through disparate buttons introduces demo friction and risk.
+- **Decision:**
+  1. **Deterministic Step State Machine:** Implement `DemoController` as an isolated pure TypeScript state machine decoupled from React and DOM APIs.
+  2. **6-Step Pedagogical Sequence:**
+     - Step 1: Personal Baseline Calibration (auto-applies realistic baseline profile).
+     - Step 2: Normal Conversational Speech (establishes calm reference state).
+     - Step 3: Transient Vocal Spike (proves Phase 8 false-positive suppression).
+     - Step 4: Sustained Multi-Signal Distress (proves multi-channel persistence and risk escalation).
+     - Step 5: Silent Emergency Alert Dispatch (proves local silent dispatch without audible sirens).
+     - Step 6: Forensic Incident Audit (opens forensic telemetry modal with privacy guarantees).
+  3. **Event-Driven Transition Handlers:** Trigger scenario switches and state updates synchronously from user interaction events rather than cascading `useEffect` renders.
+  4. **Executive Dashboard Placement:** Render `JudgeDemoPanel` prominently as ROW 0 of the console layout with visual progress tracking chips and bidirectional navigation.
+- **Consequences:** Gives judges an intuitive, friction-free walkthrough that clearly highlights why Sanket's multi-signal architecture prevents false alarms while protecting user safety; preserves full offline testability and determinism.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

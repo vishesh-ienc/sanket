@@ -8,10 +8,42 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 8 — Multi-Signal False-Positive Reduction & Temporal Correlation**
+- **Current Phase:** **Phase 9 — Polish & Judge Demonstration Flow**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 9 — Polish & Judge Demonstration Flow**
+- **Next Phase:** **Phase 10 — Mobile Deployment Architecture & Future Integration Docs**
+
+---
+
+## Completed in Phase 9
+
+- [x] `src/demo/types.ts` — Data models for guided 6-step judge demonstration tour
+  - `DemoStepId`, `DemoStepDefinition`, `DemoControllerState`
+- [x] `src/demo/demoController.ts` — `DemoController` deterministic state machine
+  - Manages sequential 6-step walkthrough:
+    - Step 1: `BASELINE_CALIBRATION` (Personal Voice Baseline)
+    - Step 2: `NORMAL_MONITORING` (Normal Conversational Reference)
+    - Step 3: `TRANSIENT_EVENT` (Transient Spike Filtering)
+    - Step 4: `MULTI_SIGNAL_DISTRESS` (Sustained Multi-Signal Distress)
+    - Step 5: `SILENT_ALERT` (Silent Local Alert Dispatch)
+    - Step 6: `FORENSIC_REVIEW` (Forensic Incident Audit)
+  - Full navigation API: `startDemo()`, `nextStep()`, `prevStep()`, `goToStep()`, `resetDemo()`, `subscribe()`
+  - Boundary guards protecting against underflow and overflow
+- [x] `src/demo/useDemoController.ts` — React hook integrating controller state with dashboard lifecycle
+- [x] `src/components/JudgeDemoPanel.tsx` — Interactive judge walkthrough HUD panel
+  - Progress step chips with completed (`✓`), active (`●`), and upcoming indicators
+  - Comprehensive narration box + Judge Highlight differentiator box + Observed System Outcome pill
+  - Navigation controls: Previous, Step X of 6, Next Step, Finish Tour, Reset Demo
+  - Idle overview screen with hero CTA
+- [x] `src/analysis/useCalibration.ts` — Added `loadPresetProfile()` for instant demo baseline activation
+- [x] `src/App.tsx` & `src/index.css` — Phase 9 UI integration
+  - Rendered `JudgeDemoPanel` as ROW 0 executive command center
+  - Added "Judge Tour" step indicator to pipeline flow pill
+  - Refactored demo transitions to clean, synchronous event handlers with zero cascading renders
+- [x] `src/demo/__tests__/demoController.test.ts` — **87 deterministic unit tests**
+  - Initial idle state, start sequence, next/prev progression, direct jumps by index and id, boundary guards, subscriber notifications, step contract validation
+- [x] Full Test Suite: **524 / 524 tests passing** across 7 test suites (Phase 2: 46, Phase 3: 59, Phase 5: 56, Phase 6: 92, Phase 7: 95, Phase 8: 89, Phase 9: 87)
+- [x] Build & Lint: 0 TypeScript errors, 0 ESLint/oxlint warnings/errors
 
 ---
 

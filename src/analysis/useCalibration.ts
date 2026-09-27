@@ -279,6 +279,35 @@ export function useCalibration(
     }
   }, [riskEngine]);
 
+  // ── Load Preset Profile (Judge Demonstration & Testing) ────────────────────
+  const loadPresetProfile = useCallback((presetProfile?: BaselineProfile): BaselineProfile => {
+    const p: BaselineProfile = presetProfile || {
+      userId: 'demo-judge',
+      calibratedAt: Date.now(),
+      frameCount: 120,
+      pitchMean: 165.0,
+      pitchStdDev: 14.5,
+      energyMean: 0.058,
+      energyStdDev: 0.012,
+      normalSilenceThresholdSec: 1.5,
+      zcrMean: 0.082,
+      zcrStdDev: 0.018,
+      spectralMean: 1420.0,
+      spectralStdDev: 180.0,
+    };
+    saveStoredProfile(p);
+    setProfile(p);
+    setStatus('COMPLETE');
+    setProgress(1.0);
+    setVoicedFrames(120);
+    setElapsedMs(null);
+    setErrorMessage(null);
+    if (riskEngine) {
+      riskEngine.updateConfig(baselineToRiskEngineConfig(p));
+    }
+    return p;
+  }, [riskEngine]);
+
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
@@ -303,5 +332,6 @@ export function useCalibration(
     cancelCalibration,
     finalizeCalibration,
     clearBaseline,
+    loadPresetProfile,
   };
 }

@@ -61,6 +61,9 @@ import {
   type DemoScenarioKey,
   getDemoScenarioFeatures,
 } from './utils/demoScenariosData';
+import { JudgeDemoPanel } from './components/JudgeDemoPanel';
+import { useDemoController } from './demo/useDemoController';
+import type { DemoStepDefinition } from './demo/types';
 import type { FeatureSet, IncidentContext } from './analysis/types';
 
 export function App() {
@@ -142,6 +145,7 @@ export function App() {
     cancelCalibration,
     finalizeCalibration,
     clearBaseline,
+    loadPresetProfile,
   } = useCalibration(effectiveFeatures, isLive, { riskEngine: riskEngineInstance });
 
   // ── Step 6: Incident Context & Silent Alert Dispatcher (Phase 7) ──────────
@@ -215,6 +219,59 @@ export function App() {
     }
   };
 
+  // ── Step 8: Guided Judge Demonstration Controller (Phase 9) ───────────────
+  const {
+    state: demoState,
+    steps: demoSteps,
+    startDemo,
+    nextStep: nextDemoStep,
+    prevStep: prevDemoStep,
+    goToStep: goToDemoStep,
+    resetDemo,
+  } = useDemoController();
+
+  const applyDemoStep = (targetStep: DemoStepDefinition) => {
+    if (!isLive) {
+      startMonitoring();
+    }
+    if (targetStep.autoCalibrate && calibrationState.status !== 'COMPLETE') {
+      loadPresetProfile();
+    }
+    handleSelectScenario(targetStep.scenario);
+    if (targetStep.autoOpenModal) {
+      if (currentIncident) {
+        openModal(currentIncident);
+      } else if (alertHistory.length > 0) {
+        openModal(alertHistory[0]);
+      }
+    }
+  };
+
+  const handleStartDemo = () => {
+    const nextState = startDemo();
+    if (nextState.step) applyDemoStep(nextState.step);
+  };
+
+  const handleNextDemoStep = () => {
+    const nextState = nextDemoStep();
+    if (nextState.step) applyDemoStep(nextState.step);
+  };
+
+  const handlePrevDemoStep = () => {
+    const nextState = prevDemoStep();
+    if (nextState.step) applyDemoStep(nextState.step);
+  };
+
+  const handleGoToDemoStep = (idx: number) => {
+    const nextState = goToDemoStep(idx);
+    if (nextState.step) applyDemoStep(nextState.step);
+  };
+
+  const handleResetDemoTour = () => {
+    resetDemo();
+    handleSelectScenario('LIVE_MIC');
+  };
+
   // Derived evaluation values with safe defaults
   const currentScore = latestEvaluation?.riskScore ?? 0;
   const currentLevel = latestEvaluation?.riskLevel ?? 'NORMAL';
@@ -258,6 +315,10 @@ export function App() {
           <span className="pipe-arrow">→</span>
           <span className={`pipe-step ${currentIncident ? 'active alert-step-active' : 'pipe-step-dim'}`}>
             Alert Dispatch
+          </span>
+          <span className="pipe-arrow">→</span>
+          <span className={`pipe-step ${demoState.isActive ? 'active demo-step-active' : 'pipe-step-dim'}`}>
+            Judge Tour
           </span>
         </div>
 
@@ -327,6 +388,21 @@ export function App() {
 
       {/* Main Console Grid */}
       <main className="console-dashboard-layout">
+        {/* ROW 0: Guided Judge Demonstration Panel (Phase 9) */}
+        <section className="console-row">
+          <JudgeDemoPanel
+            controllerState={demoState}
+            steps={demoSteps}
+            onStartDemo={handleStartDemo}
+            onNextStep={handleNextDemoStep}
+            onPrevStep={handlePrevDemoStep}
+            onGoToStep={handleGoToDemoStep}
+            onResetDemo={handleResetDemoTour}
+            isMonitoring={isLive}
+            onStartMonitoring={startMonitoring}
+          />
+        </section>
+
         {/* ROW 1: Hero Dual-Card Section — Risk Score & Live Oscilloscope */}
         <section className="console-row hero-row">
           {/* 1. RISK SCORE & STATUS HUD */}
@@ -482,7 +558,7 @@ export function App() {
           <span>React 19 + TypeScript + Web Audio API</span>
           <span className="footer-sep">•</span>
           <Layers size={12} />
-          <span>Phase 8 Multi-Signal Temporal Filter ✓</span>
+          <span>Phase 9 Judge Demo Flow ✓</span>
         </div>
       </footer>
     </div>

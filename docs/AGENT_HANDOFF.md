@@ -11,8 +11,8 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Phase 8 — Multi-Signal False-Positive Reduction & Temporal Correlation** (`COMPLETED`)
-- **Git State:** Clean, all tests passing, ready for Phase 9.
+- **Phase:** **Phase 9 — Polish & Judge Demonstration Flow** (`COMPLETED`)
+- **Git State:** Clean, all tests passing, ready for Phase 10.
 - **Build Status:** `npm run build` passes with 0 TypeScript errors. `npm run lint` passes with 0 warnings/errors.
 - **Tests:**
   - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
@@ -21,14 +21,15 @@
   - `npx tsx src/analysis/__tests__/baseline.test.ts` → **92/92 passed**
   - `npx tsx src/services/__tests__/incidentSystem.test.ts` → **95/95 passed**
   - `npx tsx src/analysis/__tests__/temporalContext.test.ts` → **89/89 passed**
-  - Total: **437 passed, 0 failed**
+  - `npx tsx src/demo/__tests__/demoController.test.ts` → **87/87 passed**
+  - Total: **524 passed, 0 failed**
 - **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
 
 ---
 
 ## 3. Current Phase
-- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection), Phase 6 (Personal Voice Baseline & Calibration), Phase 7 (Silent Alert Dispatch & Forensic Event System), Phase 8 (Multi-Signal False-Positive Reduction & Temporal Correlation).
-- **Next Phase:** **Phase 9 — Polish & Judge Demonstration Flow.**
+- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection), Phase 6 (Personal Voice Baseline & Calibration), Phase 7 (Silent Alert Dispatch & Forensic Event System), Phase 8 (Multi-Signal False-Positive Reduction & Temporal Correlation), Phase 9 (Polish & Judge Demonstration Flow).
+- **Next Phase:** **Phase 10 — Mobile Deployment Architecture & Future Integration Docs.**
 
 ---
 
@@ -125,13 +126,22 @@
   - Passes sustained or multi-signal crises unhindered.
 - **`src/components/TemporalContextCard.tsx`**: Dashboard HUD card with status badges, 4-metric grid, and explainability banner.
 - **`src/components/ForensicEventModal.tsx`**: Updated with temporal telemetry audit box.
-- **`src/utils/demoScenariosData.ts` & `src/components/DemoScenarios.tsx`**: 3 new interactive presets (`TRANSIENT_PITCH_SPIKE`, `TRANSIENT_LOUD_EVENT`, `IRREGULAR_PAUSE_PATTERN`).
-- **`src/analysis/__tests__/temporalContext.test.ts`**: 89 comprehensive deterministic unit tests.
+### Phase 9 (NEW)
+- **`src/demo/types.ts`**: Types for guided judge demonstration mode (`DemoStepId`, `DemoStepDefinition`, `DemoControllerState`).
+- **`src/demo/demoController.ts`**: Pure TypeScript state machine governing the 6-step guided walkthrough.
+  - Step 1: Personal Baseline Calibration
+  - Step 2: Normal Conversational Reference
+  - Step 3: Transient Spike Filtering (False-Positive Reduction)
+  - Step 4: Sustained Multi-Signal Distress
+  - Step 5: Silent Local Alert Dispatch
+  - Step 6: Forensic Incident Audit & Privacy
+- **`src/demo/useDemoController.ts`**: React lifecycle hook.
+- **`src/components/JudgeDemoPanel.tsx`**: Executive HUD panel positioned as ROW 0 with step flow pills, narration box, judge highlights, outcome indicators, and bidirectional navigation.
+- **`src/demo/__tests__/demoController.test.ts`**: 87 deterministic unit tests.
 
 ---
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Polish & Judge Demonstration Flow → Phase 9
 - [ ] Mobile/VoIP native integration → Phase 10
 
 ---

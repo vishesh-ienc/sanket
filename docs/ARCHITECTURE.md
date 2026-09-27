@@ -179,6 +179,19 @@
   - Signal breakdown cards (Pitch, Volume, Silence, Code-Word)
   - Immutable session audit event log
 
+### 2.10 Guided Judge Demonstration State Machine (`DemoController`, `JudgeDemoPanel`)
+- **Role:** Orchestrates a deterministic 6-step walkthrough for hackathon judges and technical evaluators.
+- **Components:**
+  - **`DemoController`:** Pure TypeScript state machine operating on declarative step definitions (`DEMO_STEPS`). Decoupled from React and browser APIs for complete offline testability.
+  - **Sequential Walkthrough:**
+    1. `BASELINE_CALIBRATION`: Activates personal baseline profile ($165\text{Hz } \mu, \pm 14.5\text{Hz } \sigma$).
+    2. `NORMAL_MONITORING`: Reference state with calm conversational speech (Score: 8–15).
+    3. `TRANSIENT_EVENT`: Demonstrates Phase 8 false-positive reduction; isolated pitch/RMS spike is suppressed.
+    4. `MULTI_SIGNAL_DISTRESS`: Sustained multi-signal deviation climbs to confirmed `HIGH_RISK`.
+    5. `SILENT_ALERT`: `IncidentManager` latches and dispatches silent local alert; `IncidentBanner` appears.
+    6. `FORENSIC_REVIEW`: Inspects `ForensicEventModal` with full telemetry and zero raw audio privacy verification.
+  - **`JudgeDemoPanel`:** Glassmorphic HUD panel rendered as ROW 0 executive command center with progress step flow, narration box, judge highlight pill, and bidirectional navigation.
+
 ---
 
 ## 3. Strict Separation of Concerns

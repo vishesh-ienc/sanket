@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "npx tsx src/analysis/__tests__/featureExtraction.test.ts && npx tsx src/analysis/__tests__/riskEngine.test.ts && npx tsx src/analysis/__tests__/codeWordDetector.test.ts && npx tsx src/analysis/__tests__/baseline.test.ts && npx tsx src/services/__tests__/incidentSystem.test.ts && npx tsx src/analysis/__tests__/temporalContext.test.ts",
+    "test": "npx tsx src/analysis/__tests__/featureExtraction.test.ts && npx tsx src/analysis/__tests__/riskEngine.test.ts && npx tsx src/analysis/__tests__/codeWordDetector.test.ts && npx tsx src/analysis/__tests__/baseline.test.ts && npx tsx src/services/__tests__/incidentSystem.test.ts && npx tsx src/analysis/__tests__/temporalContext.test.ts && npx tsx src/demo/__tests__/demoController.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
