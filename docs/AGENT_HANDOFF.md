@@ -11,12 +11,13 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Handoff Completion** (`COMPLETED`, 2026-09-28) — on top of the Final Demo Console.
-- **Build Status:** `npm run build` and `npm run lint` clean.
-- **Tests:** `npm test` → **646 passed, 0 failed** across 10 suites:
-  - featureExtraction 46 · riskEngine 59 · codeWordDetector 56 · baseline 92 · incidentSystem 95
-  - temporalContext 89 · demoController 87 · audioFileInput 54 · **sampleRecording 20** · **trustedContacts 48**
-- **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
+- **Phase:** **UI Overhaul** (`COMPLETED`, 2026-09-28) on `feat/ui-overhaul`, which is stacked on `feat/complete-handoff`.
+- **Build Status:** `npm run build`, `npm run lint`, `npx tsc -b` clean.
+- **Tests:** `npm test` → **730 passed, 0 failed** across 13 suites:
+  - featureExtraction 46 · riskEngine 59 · codeWordDetector 56 · baseline 92 · incidentSystem 95 · temporalContext 89
+  - demoController 87 · audioFileInput 54 · sampleRecording 20 · trustedContacts 48 · **demoConversation 28** · **speechTranscriptSource 30** · **signalSettings 26**
+- **Where things live now:** orchestration is in `src/app/usePipeline.ts` (context: `usePipelineContext()`); views are in `src/views/`; UI primitives are generated shadcn components in `src/components/ui/` (don't hand-edit; lint ignores them). Design tokens are in `src/globals.css`.
+- **Open items:** see `docs/PROGRESS.md` → *Open Items / Needs Input*.
 
 ---
 
@@ -142,9 +143,8 @@
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
 - [ ] Native mobile / VoIP integration (design only — `docs/MOBILE_INTEGRATION.md`)
-- [ ] Speech-to-text for live code-word detection (transcripts are simulated)
+- [ ] Live speech outside Chrome's on-device recognition (Firefox has no API; others need a cloud opt-in)
 - [ ] Real alert delivery (SMS/email/push) or geolocation
-- [ ] Standalone Scenario Simulator without a live audio source (the guided tour works without a mic)
 
 ---
 
@@ -294,7 +294,7 @@ The next agent should build the interactive telemetry UI:
 3. **Read `docs/ARCHITECTURE.md` before modifying architecture.**
 4. **Read `docs/DECISIONS.md` before making major technical decisions.**
 5. **Do not duplicate existing functionality.**
-6. **Do not modify `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.**
+6. **Avoid modifying `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.** (Two deliberate, tested exceptions: sustained external signals in `RiskEngine`, ADR 024; latch hysteresis in `IncidentManager`, ADR 025.)
 7. **Update `docs/PROGRESS.md` after completing meaningful work.**
 8. **Update `docs/AGENT_HANDOFF.md` when architecture changes significantly.**
 9. **Update `docs/DECISIONS.md` when making an important architectural decision.**

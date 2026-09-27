@@ -13,7 +13,7 @@
 ## 1. What Carries Over Unchanged
 
 The prototype was built so the detection logic has **zero DOM / React / Web Audio dependencies**.
-These modules are plain TypeScript and are exercised by 646 deterministic Node tests today:
+These modules are plain TypeScript and are exercised by 730 deterministic Node tests today:
 
 | Module | Role | Mobile reuse |
 | :--- | :--- | :--- |
@@ -49,10 +49,9 @@ interface AudioFrame {
 
 The browser gets `frequencyData` from Web Audio's `AnalyserNode` (Blackman window, magnitude / N,
 `smoothingTimeConstant = 0.8`, 20·log10). A native adapter must reproduce that transform or the
-spectral thresholds drift. A reference implementation already exists and is tested:
-`src/audio/__tests__/sampleRecording.test.ts` (`fftMagnitudes` + smoothing loop), which runs a
-synthesized call through the real pipeline in Node. **Recommendation:** promote it to
-`src/audio/frameBuilder.ts` and use the same code on every platform.
+spectral thresholds drift. This now exists as `src/audio/frameBuilder.ts` (`AudioFrameBuilder`,
+`decodePcm16Wav`). It is used by the Node test suites that run the bundled demo call through the real
+pipeline. Use the same code on every platform.
 
 Sample-rate note: ZCR is a per-sample fraction, so thresholds assume ~44.1–48 kHz. If a mobile
 adapter downsamples (e.g. to 16 kHz for battery), re-tune `zcr` and spectral thresholds, or
@@ -114,8 +113,9 @@ calibrate them through the personal baseline.
 
 ## 6. Code-Word Detection On-Device
 
-The prototype has no speech-to-text; the demo feeds scripted transcripts through the
-`TranscriptSource` interface (`src/analysis/transcriptTypes.ts`). Production options, all
+In the browser, `BrowserSpeechTranscriptSource` already uses Chrome's on-device recognition
+(`processLocally`) behind the `TranscriptSource` interface; the demo call feeds a scripted transcript
+track through the same interface. Production options, all
 **on-device** to keep the zero-cloud-audio promise:
 
 - Android `SpeechRecognizer` on-device recognition (API 31+), or iOS `SFSpeechRecognizer` with
@@ -127,8 +127,8 @@ The prototype has no speech-to-text; the demo feeds scripted transcripts through
 Whatever the engine, keep the current invariant: transcripts are matched and **discarded
 immediately**; only the detection event (never the text) enters history.
 
-The **browser** Web Speech API was deliberately *not* wired into the prototype: in Chromium it
-may stream audio to a cloud service by default, which would break the privacy positioning.
+In the browser, cloud recognition (the Chromium default without `processLocally`) is used only after an
+explicit user opt-in (DECISION 022).
 
 ---
 
@@ -176,8 +176,8 @@ haptic prompt on a watch) before relay, since the engine produces risk estimates
 
 ## 10. Suggested Milestones
 
-1. Extract `frameBuilder.ts` from the test harness; add parity tests (browser `AnalyserNode` vs
-   `frameBuilder`) on recorded fixtures.
+1. ~~Extract `frameBuilder.ts`~~ (done). Add parity tests (browser `AnalyserNode` vs `frameBuilder`)
+   on recorded fixtures.
 2. React Native shell running the engine against bundled sample audio (no mic) — proves the port.
 3. Android foreground-service mic adapter + pause/interruption handling.
 4. iOS background audio adapter.

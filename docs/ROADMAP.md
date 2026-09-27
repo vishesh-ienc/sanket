@@ -205,3 +205,9 @@
 - Built-in synthesized sample call for the file-based demo, with a scripted transcript track and a 20-test end-to-end pipeline suite.
 - Trusted contacts roster and simulated silent-alert dispatch payload (48 tests).
 - Fixes: demo simulator clock starving under live mic input, wall-clock incident timestamps, guided-tour evidence auto-open, frozen file progress bar, file waveform rendering, mobile horizontal overflow.
+
+### UI Overhaul (2026-09-28)
+- Tailwind v4 + shadcn/ui app shell (sidebar / bottom tabs, 5 views, sheets), light/dark/system themes.
+- Customisable signals dashboard with an enforced single-signal ceiling.
+- Live code word via on-device speech recognition; bundled TTS demo conversation with transcript track.
+- Engine fixes: sustained code-word context, incident latch hysteresis.

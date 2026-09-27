@@ -155,7 +155,7 @@ The system is strictly divided into decoupled, modular layers:
 - **Framework:** React 19 + TypeScript
 - **Bundler & Tooling:** Vite, Oxlint
 - **Audio Processing:** Browser Web Audio API (`AudioContext`, `AnalyserNode`, `ScriptProcessorNode` / `AudioWorklet`)
-- **UI Styling:** Vanilla CSS design tokens with dark safety-monitoring visual identity (see DECISION 019)
+- **UI Styling:** Tailwind CSS v4 + shadcn/ui, light/dark/system themes with semantic risk colours (see DECISION 021)
 - **State Management:** Reactive React hooks / modular service subscriptions (no heavy external state libraries required)
 - **Backend / Database / Auth:** None in this phase (Zero friction, completely client-side for rapid hackathon execution)
 
@@ -164,8 +164,8 @@ The system is strictly divided into decoupled, modular layers:
 ## 12. Current Development Status
 
 - **Status:** Hackathon prototype complete (Phases 0–10; Phase 10 is a design document).
-- **Working:** Source-agnostic audio (microphone or file, including a built-in synthesized sample call), feature extraction, personal baseline, multi-signal risk engine, temporal false-positive filter, code-word detection (simulated transcript input), latched silent-alert simulation with trusted-contact dispatch preview, forensic audit, guided judge tour.
-- **Not built:** Native mobile apps, real speech-to-text, real alert transport. See `docs/PROGRESS.md` and `docs/MOBILE_INTEGRATION.md`.
+- **Working:** Source-agnostic audio (microphone, built-in demo conversation, uploaded file, or simulated scenarios), feature extraction, personal baseline, customisable multi-signal risk engine, temporal false-positive filter, code-word detection (live on-device speech in Chrome, or the demo call's transcript track), latched silent-alert simulation with trusted-contact dispatch preview, forensic evidence, and a guided judge tour, all in a responsive themed app shell.
+- **Not built:** Native mobile apps, real alert transport, live speech outside Chrome's on-device engine. See `docs/PROGRESS.md` and `docs/MOBILE_INTEGRATION.md`.
 
 ---
 

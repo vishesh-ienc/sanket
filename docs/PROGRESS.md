@@ -8,10 +8,47 @@
 
 ## Current Status
 
-- **Current Phase:** **Handoff Completion — Sample Call, Trusted Contacts, Phase 10 Docs & Bug Fixes**
-- **Status:** `COMPLETED`
+- **Current Phase:** **UI Overhaul, Live Code Word, Customisable Signals & Built-in Conversation**
+- **Status:** `COMPLETED` on branch `feat/ui-overhaul` (stacked on `feat/complete-handoff`), pending review and merge
 - **Last Updated:** 2026-09-28
-- **Next Phase:** None planned — see "Known Gaps" below and `docs/MOBILE_INTEGRATION.md` §11.
+- **Tests:** **730 / 730** across 13 suites · `npm run lint` clean · `npm run build` clean
+
+---
+
+## Completed in UI Overhaul (2026-09-28)
+
+### Requests from the product owner & team → outcome
+| Request | Outcome |
+| :--- | :--- |
+| Much better, less cluttered UI; sections/sidebars; details on click | ✅ App shell with sidebar (desktop) / bottom tabs (phone); 5 views; activity feed where events appear as they trigger; click → detail sheets (event / incident evidence) |
+| Light & dark themes | ✅ Light / Dark / System (top-bar toggle + Settings), no flash on load |
+| Works cleanly on PC and mobile | ✅ Verified at 1440 px and 375–390 px (no horizontal scroll, bottom sheets, risk gauge first on phones) |
+| Use the plugins | ✅ shadcn/ui via the shadcn MCP/CLI, 21st.dev theme ("Teal Mist") and layout references via the 21st MCP, context7 for shadcn/Tailwind v4 setup, Playwright MCP for all browser verification |
+| Live code-word detection ("great feature to see") | ✅ On-device Web Speech (`processLocally`), cloud only by explicit opt-in; verified install → downloading → available in Chrome |
+| Scenario simulator shouldn't need a live source | ✅ Scenarios drive the engine without any audio |
+| Keep real-time alert delivery on hold | ⏸ Unchanged — alerts remain simulated (dispatch preview only) |
+| Teammate: site is a demo of a source-agnostic pipeline, **customisable signals dashboard**, **pre-downloaded conversation built in** | ✅ Signals view (toggle/weight/threshold/sensitivity/code-word weight); bundled 53 s two-voice call with transcript captions; "any source" framing across Monitor + pipeline strip |
+
+### Engine / behaviour fixes found while testing with real speech
+- Code word was forgotten by the EMA in < 1 s → now sustained ~15 s context (ADR 024).
+- One incident produced 10 alerts with natural speech dips → latch hysteresis (ADR 025).
+- Activity feed flooded by Elevated ↔ Suspicious flips → level changes post only after ~1.2 s settle.
+- Alert banner vanished when the incident auto-resolved → persists until dismissed.
+
+### New modules & tests
+- `src/app/*` (pipeline hook/context, activity model, scenario catalogue, signal metadata), `src/views/*`, `src/components/{sanket,shell,theme,ui}/*`
+- `src/analysis/signalSettings.ts` (+26 tests), `speechTranscriptSource.ts` (+30 tests), `useLiveSpeech.ts`
+- `src/audio/frameBuilder.ts`, `demoConversations.ts`, `public/demo/conversation.{wav,json}`, `scripts/generate_demo_conversation.py`
+- `src/audio/__tests__/demoConversation.test.ts` (+28 tests)
+
+## Open Items / Needs Input
+
+- **Real, consented demo recording (team):** the built-in call is synthetic TTS. An acted recording by a teammate would be more convincing; drop it in `public/demo/` with a manifest (see README).
+- **Live speech on non-Chrome browsers:** Firefox has no Web Speech API; Safari/Edge on-device support varies. Those users get the typed test or the cloud opt-in.
+- **Live-mic code word needs a human test:** on-device recognition was verified to install and report `available`, but transcription of a real spoken phrase can't be automated here. Please try: Monitor → Mic → say *"remember to feed the cat"*.
+- **Real alert delivery:** on hold by request (options in `MOBILE_INTEGRATION.md` §7).
+- **Temporal filter vs signal toggles:** disabling a signal removes it from scoring, but the temporal-context analyser still counts that channel when judging "multi-signal". Minor; noted in ADR 026.
+- **Legacy synthetic tone call:** `src/audio/sampleRecording.ts` is no longer in the UI but kept as an engine regression test.
 
 ---
 
