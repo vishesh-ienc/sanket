@@ -155,7 +155,7 @@ The system is strictly divided into decoupled, modular layers:
 - **Framework:** React 19 + TypeScript
 - **Bundler & Tooling:** Vite, Oxlint
 - **Audio Processing:** Browser Web Audio API (`AudioContext`, `AnalyserNode`, `ScriptProcessorNode` / `AudioWorklet`)
-- **UI Styling:** Vanilla CSS / Modern Tailwind CSS design tokens with dark safety-monitoring visual identity
+- **UI Styling:** Vanilla CSS design tokens with dark safety-monitoring visual identity (see DECISION 019)
 - **State Management:** Reactive React hooks / modular service subscriptions (no heavy external state libraries required)
 - **Backend / Database / Auth:** None in this phase (Zero friction, completely client-side for rapid hackathon execution)
 
@@ -163,9 +163,9 @@ The system is strictly divided into decoupled, modular layers:
 
 ## 12. Current Development Status
 
-- **Current Phase:** **Phase 0 — Project Initialization**
-- **Status:** Initialization complete. Architecture, documentation, repository setup, and initial UI shell established.
-- **Microphone / Detection / Alerting:** Intentionally not started; scheduled for subsequent phases.
+- **Status:** Hackathon prototype complete (Phases 0–10; Phase 10 is a design document).
+- **Working:** Source-agnostic audio (microphone or file, including a built-in synthesized sample call), feature extraction, personal baseline, multi-signal risk engine, temporal false-positive filter, code-word detection (simulated transcript input), latched silent-alert simulation with trusted-contact dispatch preview, forensic audit, guided judge tour.
+- **Not built:** Native mobile apps, real speech-to-text, real alert transport. See `docs/PROGRESS.md` and `docs/MOBILE_INTEGRATION.md`.
 
 ---
 

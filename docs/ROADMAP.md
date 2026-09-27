@@ -21,7 +21,7 @@
 | **Phase 7** | Silent Alert Dispatch & Forensic Event System | **COMPLETED** |
 | **Phase 8** | Multi-Signal Temporal Correlation & False Alarm Reduction | **COMPLETED** |
 | **Phase 9** | Polish & Judge Demonstration Flow | **COMPLETED** |
-| **Phase 10** | Mobile Deployment Architecture & Future Integration Docs | **NOT STARTED** |
+| **Phase 10** | Mobile Deployment Architecture & Future Integration Docs | **COMPLETED** (design doc) |
 
 ---
 
@@ -194,9 +194,14 @@
 ---
 
 ### Phase 10: Mobile Deployment Architecture & Future Integration Docs
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED` (documentation only — no native code exists)
 - **Goal:** Document the concrete technical bridge from the browser prototype to native iOS/Android background service integration.
-- **Expected Functionality:** Architectural blueprints for mobile background audio permissions, battery-efficient downsampling, VoIP call integration, and encrypted on-device storage.
-- **Inputs:** Final prototype learnings and architecture.
-- **Outputs:** Technical whitepaper and developer guide (`docs/MOBILE_INTEGRATION.md`).
+- **Implemented:** [`docs/MOBILE_INTEGRATION.md`](MOBILE_INTEGRATION.md) covering the portable engine modules, the `AudioFrame` contract a native adapter must honour, recommended React Native runtime shape, Android foreground-service and iOS background-audio constraints (including the fact that third-party apps cannot capture cellular call audio), on-device code-word recognition, alert transport options, encrypted storage, consent, milestones, and open product questions.
 - **Dependencies:** Phase 9.
+
+---
+
+### Post-Phase Handoff Additions (2026-09-28)
+- Built-in synthesized sample call for the file-based demo, with a scripted transcript track and a 20-test end-to-end pipeline suite.
+- Trusted contacts roster and simulated silent-alert dispatch payload (48 tests).
+- Fixes: demo simulator clock starving under live mic input, wall-clock incident timestamps, guided-tour evidence auto-open, frozen file progress bar, file waveform rendering, mobile horizontal overflow.

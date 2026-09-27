@@ -3,7 +3,8 @@
 > **Non-Verbal Distress Detection via Voice Pattern Analysis**  
 > Sanket is a multimodal voice distress-risk detection prototype designed to identify potential distress through subtle changes in voice and conversational patterns without requiring physical interaction or explicit panic calls.
 
-[![Phase: Phase 0 Completed](https://img.shields.io/badge/Phase-Phase%200%20(Initialization)-blue)](docs/PROGRESS.md)
+[![Status: Prototype Complete](https://img.shields.io/badge/Status-Prototype%20Complete-blue)](docs/PROGRESS.md)
+[![Tests: 646 passing](https://img.shields.io/badge/Tests-646%20passing-emerald)](#running-tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
 [![Local First](https://img.shields.io/badge/Privacy-100%25%20On--Device-green)](#privacy--security-first)
 
@@ -101,17 +102,19 @@ Detailed technical specs are available in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 
 ---
 
-## Planned Detection Signals
+## Detection Signals
 
 | Signal Channel | Detection Mechanism | Status |
 | :--- | :--- | :--- |
-| **Pitch Deviation ($F_0$)** | Autocorrelation / YIN algorithm detecting vocal cord tension | 📋 Planned (Phase 2) |
-| **RMS Energy Dynamics** | Volume envelope tracking sudden yelling or suppressed whispers | 📋 Planned (Phase 2) |
-| **Zero-Crossing Rate (ZCR)** | High-frequency noise ratio to detect forced, breathy whispers | 📋 Planned (Phase 2) |
-| **Prolonged Silence / Hesitation** | VAD-based timer detecting conversational freezing | 📋 Planned (Phase 2) |
-| **Personal Voice Baseline** | Statistical $Z$-score deviation from user's calibrated norm | 📋 Planned (Phase 7) |
-| **Covert Code-Word Phrases** | Local phrase matching (e.g., *"Remember to feed the cat"*) | 📋 Planned (Phase 5) |
-| **Multi-Signal Correlation** | Temporal co-occurrence filter to eliminate false alarms | 📋 Planned (Phase 8) |
+| **Pitch Deviation ($F_0$)** | Autocorrelation pitch estimate vs reference / personal baseline | ✅ Implemented |
+| **RMS Energy Dynamics** | Loudness spikes and suppressed whispers | ✅ Implemented |
+| **Zero-Crossing Rate (ZCR)** | Breathy / turbulent airflow indicator | ✅ Implemented |
+| **Spectral Centroid** | High-frequency vocal strain | ✅ Implemented |
+| **Prolonged Silence / Voice Activity** | VAD-based freeze and low-voicing detection | ✅ Implemented |
+| **Personal Voice Baseline** | Welford mean/σ calibration → Z-score deviations | ✅ Implemented |
+| **Covert Code-Word Phrases** | Token-aware local phrase matching (transcript input is simulated — no speech-to-text yet) | ✅ Implemented |
+| **Temporal Correlation** | Transient-spike suppression, sustained + cross-signal confirmation | ✅ Implemented |
+| **Silent Alert Simulation** | Latched incident, trusted-contact dispatch preview (never sent), forensic audit | ✅ Implemented |
 
 ---
 
@@ -140,7 +143,7 @@ Full script documented in [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
 - **Frontend Core:** React 19, TypeScript
 - **Tooling & Bundler:** Vite, Oxlint
 - **Audio DSP:** Browser Web Audio API (`AudioContext`, `AnalyserNode`)
-- **Icons & Styling:** Lucide React, Modern Dark Theme Safety HUD (Vanilla CSS / Tailwind)
+- **Icons & Styling:** Lucide React, dark safety-HUD design system in vanilla CSS (`src/index.css`)
 - **Backend / DB / Auth:** None in this phase (Zero-friction local execution)
 
 ---
@@ -156,8 +159,10 @@ sanket/
 │   ├── PROGRESS.md             # Real-time implementation status
 │   ├── DECISIONS.md            # Architecture Decision Records (ADRs)
 │   ├── DEMO_FLOW.md            # Judge demonstration script
+│   ├── MOBILE_INTEGRATION.md   # Phase 10 native deployment design
 │   └── AGENT_HANDOFF.md        # Onboarding manifest for AI agents & engineers
 ├── src/
+│   ├── demo/                   # Guided judge tour state machine
 │   ├── components/             # React presentation components
 │   ├── audio/                  # Web Audio capture & frame processing
 │   ├── analysis/               # Feature extraction, baseline, and risk scoring
@@ -177,17 +182,17 @@ sanket/
 
 ## Development Roadmap Status
 
-- [x] **Phase 0: Project Initialization & Documentation Infrastructure** ✅ `Implemented`
-- [ ] **Phase 1: Browser Microphone & Live Audio Analysis** 🚧 `In Development`
-- [ ] **Phase 2: Pitch, Energy, Speech Activity & Silence Detection** 📋 `Planned`
-- [ ] **Phase 3: Distress Risk Scoring Engine** 📋 `Planned`
-- [ ] **Phase 4: Live Sanket Safety Dashboard** 📋 `Planned`
-- [ ] **Phase 5: Configurable Code-Word Detection** 📋 `Planned`
-- [ ] **Phase 6: Silent Alert Simulation** 📋 `Planned`
-- [ ] **Phase 7: Personal Voice Baseline & Calibration** 📋 `Planned`
-- [ ] **Phase 8: Multi-Signal Temporal Correlation & False Alarm Reduction** 📋 `Planned`
-- [ ] **Phase 9: Polish & Judge Demonstration Flow** 📋 `Planned`
-- [ ] **Phase 10: Mobile Deployment Architecture Documentation** 📋 `Planned`
+- [x] **Phase 0–1:** Project setup, browser microphone & live audio pipeline
+- [x] **Phase 2:** Pitch, energy, speech activity & silence features
+- [x] **Phase 3:** Multi-signal distress risk engine
+- [x] **Phase 4:** Live safety dashboard
+- [x] **Phase 5:** Configurable code-word detection
+- [x] **Phase 6:** Personal voice baseline & calibration
+- [x] **Phase 7:** Silent alert dispatch & forensic event system
+- [x] **Phase 8:** Temporal correlation & false-alarm reduction
+- [x] **Phase 9:** Guided judge demonstration flow
+- [x] **Final console:** Source-agnostic audio (microphone or file), built-in sample call, trusted contacts
+- [x] **Phase 10:** Mobile deployment architecture — design doc only, see [docs/MOBILE_INTEGRATION.md](docs/MOBILE_INTEGRATION.md)
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for full phase details.
 
@@ -198,6 +203,9 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for full phase details.
 - **Ambient Noise Sensitivity:** Sudden background noises (appliances, street traffic) can skew acoustic metrics; requires dynamic noise floors.
 - **Microphone Hardware Diversity:** Laptop built-in microphones exhibit different frequency responses and gain levels compared to smartphone or headset microphones.
 - **Browser Lifecycle:** Web Audio streams pause if mobile browser tabs are backgrounded without specific media sessions.
+- **No Speech-to-Text:** Code-word detection is fed by typed or scripted transcripts; on-device recognition is a future adapter (see [docs/MOBILE_INTEGRATION.md](docs/MOBILE_INTEGRATION.md)).
+- **Acoustic Ceiling by Design:** Acoustic channels alone top out just below `HIGH_RISK`; a corroborating signal (code word, prolonged silence, low voice activity) is required for an alert.
+- **Simulated Alerts:** No SMS, email, or emergency service is ever contacted; the dispatch payload is a local preview.
 
 ---
 
@@ -213,24 +221,38 @@ The architecture is specifically structured so the core detection logic in `/src
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v20+ recommended)
-- npm or pnpm
+- Node.js 20+ and npm
+- A Chromium-based browser or Firefox (microphone access requires `localhost` or HTTPS)
 
-### Installation & Run
+### Install & Run
 
 ```bash
-# Clone the repository
 git clone https://github.com/vishesh-ienc/sanket.git
 cd sanket
-
-# Install dependencies
 npm install
-
-# Start Vite development server
-npm run dev
+npm run dev          # http://localhost:5173
 ```
 
-Visit `http://localhost:5173` in your browser.
+### Three Ways to Demo
+
+1. **Guided tour (no mic needed to follow along):** click **START GUIDED TOUR** and step through
+   baseline → normal speech → transient spike (suppressed) → sustained multi-signal distress →
+   silent alert → forensic audit. Synthetic scenario data drives the engine, so it works even if
+   microphone access is denied.
+2. **Sample call (recommended for judges):** open **Simulated Call Audio → USE SAMPLE CALL → PLAY**.
+   A 36-second call synthesized in the browser goes from calm to strained; the scripted transcript
+   slips in the code word at 0:22, and the silent alert latches shortly after.
+3. **Live microphone:** **Live Microphone → START MONITORING** and talk. Open
+   **CONFIGURE PARAMETERS** to calibrate your personal baseline, set the code word, and add trusted
+   contacts (stored locally, never messaged).
+
+### Running Tests
+
+```bash
+npm test            # 10 deterministic suites, 646 tests — no browser or mic required
+npm run lint        # oxlint
+npm run build       # type-check + production bundle
+```
 
 ---
 

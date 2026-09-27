@@ -195,6 +195,45 @@
 
 ---
 
+### DECISION 017: Built-in Synthesized Sample Call with Scripted Transcript Track
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** The primary demo flow (`DEMO_FLOW.md` §2) requires a prepared recording, but none shipped with the repository. Committing a real person's voice raises consent issues, and binary fixtures bloat the repo. Separately, the risk engine's acoustic channels saturate at ~70 combined, so a purely acoustic recording sits at the HIGH_RISK boundary by design (single-signal ceiling, DECISION 011).
+- **Decision:**
+  1. Synthesize a deterministic 36 s voice-like call in the browser (`src/audio/sampleRecording.ts`), encoded to WAV and fed through the unchanged `AudioFileInputService`.
+  2. Ship a scripted transcript track whose covert-phrase cue uses the user's configured code word, fed to the real `CodeWordDetector` as the playhead passes. Label it `SIMULATED TRANSCRIPT` in the UI.
+  3. Verify it end-to-end in Node with an AnalyserNode-equivalent FFT harness: acoustic-only must escalate but never reach HIGH_RISK; with the phrase, exactly one latched alert.
+- **Consequences:** Judges can run the file-based demo with one click and no assets; the demo tells the honest multi-signal story (acoustics raise risk, corroboration triggers the alert). The synthetic voice is not a realistic human recording and must not be presented as one.
+
+---
+
+### DECISION 018: Trusted Contacts & Simulated Dispatch Payload (Never Transmitted)
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Documentation promised a simulated dispatch to trusted contacts with location, timestamp and rationale; `SilentAlertPayload` existed but was unused.
+- **Decision:** Store up to 5 contacts in localStorage only; build a pure, deterministic payload (`services/dispatchPayload.ts`) with masked addresses, ordered rationale, a non-diagnostic message and fixed placeholder coordinates. Never request geolocation. Payload is always `transmitted: false` / `SIMULATED_LOCAL` and is shown only in the forensic modal.
+- **Consequences:** Completes the alert story without any network or location access. Production transport options are documented in `MOBILE_INTEGRATION.md` §7.
+
+---
+
+### DECISION 019: Keep the Vanilla-CSS Design System (No Tailwind / shadcn Migration)
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** The console already has a cohesive dark safety-HUD design system (~4.5k lines in `src/index.css`, shared tokens on `:root`). A shadcn/ui component library would require adding Tailwind and would mix two component styles across ~25 components.
+- **Decision:** Extend the existing design language for all new UI (sample-call storyline, trusted contacts, dispatch preview, awaiting-confirmation cue) using the existing tokens and class conventions.
+- **Consequences:** Visual consistency and no new build tooling. A future migration to a component library should be a deliberate, whole-app decision.
+
+---
+
+### DECISION 020: No Browser Web Speech API for Live Code-Word Detection
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Wiring `SpeechRecognition` would make the code word work live from the mic, but Chromium's implementation may send audio to a cloud recognizer, contradicting the zero-cloud-audio positioning.
+- **Decision:** Keep transcript input simulated (manual test input, demo presets, sample-call track) in the prototype; specify on-device recognizers for production.
+- **Consequences:** Live-mic code-word detection is not available in the browser demo. Revisit if an explicitly on-device browser recognizer is adopted, with an opt-in disclosure.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

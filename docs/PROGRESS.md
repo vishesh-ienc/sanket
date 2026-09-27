@@ -8,10 +8,35 @@
 
 ## Current Status
 
-- **Current Phase:** **Final Demo Console — Source-Agnostic Audio & UI Simplification**
+- **Current Phase:** **Handoff Completion — Sample Call, Trusted Contacts, Phase 10 Docs & Bug Fixes**
 - **Status:** `COMPLETED`
-- **Last Updated:** 2026-09-27
-- **Next Phase:** None (Hackathon Prototype Finalized)
+- **Last Updated:** 2026-09-28
+- **Next Phase:** None planned — see "Known Gaps" below and `docs/MOBILE_INTEGRATION.md` §11.
+
+---
+
+## Completed in Handoff Completion (2026-09-28)
+
+- [x] **Bug fixes (verified in a real Chromium session):**
+  - Demo simulator interval was re-created on every live-mic frame, starving synthetic frames; the Multi-Signal scenario plateaued at ~66–68 and the guided tour often never raised an alert. Now a steady 10 Hz clock per scenario.
+  - Incidents were stamped with `performance.now()` and displayed as 1970 in the forensic modal/history; converted to epoch ms in `useIncidentManager`.
+  - Guided tour step 6 now opens the evidence modal once the incident latches; steps 5–6 show an "awaiting confirmation" cue.
+  - File playback progress bar and playhead froze during playback (status only refreshed on state transitions).
+  - File waveform received a new shim object every render; now uses the file service directly.
+  - Top-nav pipeline trace caused horizontal page scroll on phones (489 px content at 390 px).
+  - Guided tour silently did nothing if microphone access was denied or unavailable; it now runs on its synthetic scenario data regardless.
+- [x] **Built-in sample call** — `src/audio/sampleRecording.ts`, "USE SAMPLE CALL" in the Audio Source panel, storyline strip (segments, playhead, simulated transcript captions).
+  - `src/audio/__tests__/sampleRecording.test.ts` — **20 tests**, full pipeline in Node via AnalyserNode-equivalent FFT.
+- [x] **Trusted contacts & dispatch preview** — `services/trustedContacts.ts`, `services/dispatchPayload.ts`, `services/useTrustedContacts.ts`, `components/TrustedContactsPanel.tsx`, forensic modal §5, banner recipient count.
+  - `src/services/__tests__/trustedContacts.test.ts` — **48 tests** incl. privacy invariants.
+- [x] **Phase 10** — `docs/MOBILE_INTEGRATION.md` (design only).
+- [x] **Totals:** **646 / 646 tests** across 10 suites; `npm run build` and `npm run lint` clean.
+
+## Known Gaps (Not Implemented)
+
+- No speech-to-text: code-word input is manual, preset, or the sample call's scripted transcript (DECISION 020).
+- The standalone Scenario Simulator cards still require a live audio source (the guided tour does not).
+- No native mobile app, real alert transport, or geolocation.
 
 ---
 

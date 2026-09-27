@@ -52,8 +52,10 @@ The primary demonstration allows evaluators to feed a prepared audio recording i
 
 2. **Select Audio Source (10 seconds):**
    - Click the **"Simulated Call Audio"** tab.
-   - Click **"Choose Audio File"** and load a prepared evaluation recording (`.wav`, `.mp3`, or `.ogg`).
-   - The file is decoded in-browser using Web Audio API into the identical `AudioFrame` format consumed by the feature extractor.
+   - Click **"USE SAMPLE CALL"** (built-in, synthesized in the browser — no file needed), or **"LOAD YOUR OWN FILE"** for a prepared `.wav` / `.mp3` / `.ogg`.
+   - The audio is decoded in-browser using Web Audio API into the identical `AudioFrame` format consumed by the feature extractor.
+   - With the sample call, a storyline strip shows the segments (calm 0:00–0:14 → voice tightens → sustained distress 0:18–0:36) and live **SIMULATED TRANSCRIPT** captions. Say so out loud: the prototype has no speech-to-text, so the call carries a scripted transcript.
+   - *Optional prep:* under **CONFIGURE PARAMETERS**, add one or two trusted contacts so the forensic modal shows a populated dispatch preview.
 
 3. **Begin Playback & Observe Normal Conversation (20 seconds):**
    - Click **"PLAY"**.
@@ -83,6 +85,8 @@ The primary demonstration allows evaluators to feed a prepared audio recording i
      - Subtext: *"Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission."*
      - No audible siren sounds (simulated silent dispatch to prevent endangering a victim).
 
+   - With the sample call: acoustics alone push the score into `SUSPICIOUS` (~65–68). At **0:22** the caller says the code phrase inside an innocuous sentence; that corroborating signal pushes the score past 70 and the alert latches a moment later. This is the multi-signal story: no single channel, however extreme, triggers an alert.
+
 7. **Forensic Evidence Inspection (30 seconds):**
    - Click **"VIEW EVIDENCE"** on the banner.
    - The **Forensic Event Modal** displays:
@@ -90,6 +94,7 @@ The primary demonstration allows evaluators to feed a prepared audio recording i
      - Contributing signals with point-by-point breakdown.
      - Baseline deviation $Z$-scores.
      - Short-term temporal correlation and pause regularity metrics.
+     - **Silent Alert Dispatch Preview:** masked trusted-contact recipients, the discreet message, a placeholder location, and the raw JSON payload — marked `NOT SENT • SIMULATED`.
      - Privacy Guarantee: Zero raw audio streaming, zero raw audio storage, local DSP only.
 
 8. **Source Independence Proof (10 seconds):**
