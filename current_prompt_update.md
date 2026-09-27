@@ -1,41 +1,50 @@
-# Current Prompt Update — Phase 9: Polish & Judge Demonstration Flow
+# Current Prompt Update — Final Demo Console: Source-Agnostic Audio & UI Simplification
 
 **Updated:** 2026-09-27  
-**Phase Completed:** Phase 9 — Polish & Judge Demonstration Flow  
+**Phase Completed:** Final Demo Console — UI Simplification & Pre-Recorded Audio Source  
 **Status:** COMPLETE ✅
 
 ---
 
 ## What Was Implemented
 
-### 1. New Source & Component Modules
+### 1. Source-Agnostic Audio Architecture
 | File | Purpose |
 |------|---------|
-| `src/demo/types.ts` | Type definitions for the 6-step guided judge demonstration sequence (`DemoStepId`, `DemoStepDefinition`, `DemoControllerState`). |
-| `src/demo/demoController.ts` | Pure TypeScript `DemoController` state machine governing the 6-step guided walkthrough (Baseline → Normal → Transient Filter → Multi-Signal Distress → Silent Alert → Forensic Review). |
-| `src/demo/useDemoController.ts` | React lifecycle hook bridging `DemoController` state machine with UI lifecycle. |
-| `src/components/JudgeDemoPanel.tsx` | Executive HUD panel for hackathon judges featuring step progress chips, narration box, judge highlight differentiator pill, observed outcome, and bidirectional navigation. |
-| `src/demo/__tests__/demoController.test.ts` | 87 deterministic unit tests covering state initialization, next/prev navigation, direct jumps, boundary guards, subscriber notifications, and step contracts. |
+| `src/audio/audioFileInput.ts` | `AudioFileInputService` decodes pre-recorded audio files (`.wav`, `.mp3`, `.ogg`) via Web Audio API into normalized `AudioFrame` structures (2048 FFT). Features play, pause, restart, onended callbacks, and optional injected context factory for deterministic unit testing. |
+| `src/audio/useAudioFileMonitor.ts` | React lifecycle hook managing file decoding, state subscriptions, telemetry animation frame loop, and playback controls. |
+| `src/components/AudioSourcePanel.tsx` | Top-level dual source selector panel allowing evaluators to seamlessly toggle between `Live Microphone` (Phase 1) and `Simulated Call Audio` (pre-recorded file), proving the engine's source-agnostic design. |
+| `src/audio/__tests__/audioFileInput.test.ts` | **54 deterministic unit tests** covering initial state, subscription lifecycle, file acceptance, decode failure handling, `AudioFrame` schema conformance, playback lifecycle, RMS thresholding, reset/dispose teardown, and source-switching independence. |
 
-### 2. Core Updates & Integrations
-- `src/analysis/useCalibration.ts`:
-  - Added `loadPresetProfile()` for instant demo baseline activation during Step 1 of the demonstration tour.
+### 2. Core UI Simplification & Information Hierarchy
 - `src/App.tsx`:
-  - Connected `useDemoController` and rendered `JudgeDemoPanel` as ROW 0 executive command center.
-  - Added "Judge Tour" step indicator to the visual pipeline trace.
-  - Refactored demo step changes to clean event-driven handlers (zero `set-state-in-effect` warnings).
+  - Reorganized the entire console layout into a clear top-to-bottom detection story:
+    - **Header**: Source-agnostic brand title + live pipeline flow indicator
+    - **Row 0**: Guided Judge Demo Panel (6-step walkthrough)
+    - **Row 1**: Dual Audio Source Selector (`Live Microphone` vs `Simulated Call Audio` with file upload & playback controls)
+    - **Row 2**: Central Hero HUD — Risk Score Gauge (0–100) + Live PCM Oscilloscope
+    - **Row 3**: Multi-Signal Breakdown with live values, baseline reference targets, and contribution score bars
+    - **Row 4**: Temporal Context & False-Positive Reduction Card (transient spike suppression & pause pattern regularity)
+    - **Row 5**: Detection Timeline & Hardware Audio Telemetry
+    - **Row 6**: Alert History with one-click forensic modal review
+    - **Row 7**: Interactive Scenario Simulator
+    - **Row 8**: System Configuration Status summary card (Personal Baseline, Code-Word, Analysis Mode) with clean expansion toggle for technical calibration
+- `src/components/IncidentBanner.tsx`:
+  - Updated terminology to strict prompt specification:
+    - Header Tag: `SILENT DISTRESS ALERT`
+    - Status Badge: `STATUS: CONFIRMED HIGH-RISK EVENT`
+    - Subtext: *"Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission"*
+    - CTA: `VIEW EVIDENCE`
 - `src/index.css`:
-  - Added responsive styling for `judge-demo-panel`, step chips, narration cards, outcome bars, and stepper controls.
+  - Added responsive styling for `AudioSourcePanel`, source tabs, playback controls, progress meters, and `config-overview-card`.
 - `package.json`:
-  - Appended `demoController.test.ts` to `npm test`.
+  - Appended `audioFileInput.test.ts` to `npm test`.
 
 ### 3. Documentation Updates
-- `docs/DEMO_FLOW.md`: Rewritten with the 6-step guided tour script, scene-by-scene presenter actions, and updated Q&A defense talking points.
-- `docs/PROGRESS.md`: Marked Phase 9 as `COMPLETED` with full verification checklist.
-- `docs/ROADMAP.md`: Updated Phase 9 status to `COMPLETED`.
-- `docs/ARCHITECTURE.md`: Added Section 2.10 (Guided Judge Demonstration State Machine).
-- `docs/DECISIONS.md`: Added `DECISION 016` (Guided Judge Demonstration State Machine and Event-Driven Scenario Sequencing).
-- `docs/AGENT_HANDOFF.md`: Updated total test count to 524 and set next phase to Phase 10.
+- `docs/DEMO_FLOW.md`: Rewritten around the source-agnostic detection console and the prepared audio recording flow.
+- `docs/ARCHITECTURE.md`: Updated Section 1 and Section 2.1 to specify the dual audio source adapter layer and normalized frame contract.
+- `docs/PROGRESS.md`: Documented the Final Demo Console phase completion and updated test totals.
+- `docs/AGENT_HANDOFF.md`: Updated status, test count (578), and verified zero mobile claims.
 
 ---
 
@@ -47,12 +56,12 @@
 - **Phase 7 Incident & Alert System:** 95 passed, 0 failed
 - **Phase 8 Temporal Context System:** 89 passed, 0 failed
 - **Phase 9 Demo Controller:** 87 passed, 0 failed
-- **Total:** **524 passed, 0 failed** across all 7 test suites
+- **Final Console Audio File Adapter:** 54 passed, 0 failed
+- **Total:** **578 passed, 0 failed** across all 8 test suites
 - **Build (`npm run build`):** Clean compilation, 0 TypeScript errors
-- **Lint (`npm run lint`):** 0 warnings, 0 errors across 52 files
+- **Lint (`npx oxlint`):** 0 warnings, 0 errors across 55 files
 
 ---
 
-## Next Phase
-**Phase 10 — Mobile Deployment Architecture & Future Integration Docs**
-- Document native mobile background audio service integration (Android `AudioRecord`, iOS `AVAudioEngine`), battery-efficient downsampling, encrypted on-device storage, and VoIP integration (`docs/MOBILE_INTEGRATION.md`).
+## Final Project Status
+- Hackathon Prototype finalized, fully source-agnostic, and verified without browser automation.

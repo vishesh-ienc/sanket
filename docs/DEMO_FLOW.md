@@ -1,109 +1,125 @@
-# Sanket — Judge Demonstration Script & Presentation Flow
+# Sanket — Demonstration Script & Presentation Flow
 
-> **2–3 Minute Hackathon Demo Playbook (Phase 9 Edition)**  
-> This document details the exact narrative, interactive tour controls, and system responses for demonstrating Sanket to hackathon judges.  
-> **Important Disclaimer:** Make clear to judges that this is an engineering prototype demonstrating multi-signal acoustic risk estimation, not a scientifically or medically validated emergency diagnostic system.
-
----
-
-## 1. Demo Overview
-
-- **Target Duration:** 2 minutes 30 seconds
-- **Objective:** Convincingly prove that Sanket detects potential distress risk without false alarms by correlating multiple voice anomalies relative to a personal voice baseline, filtering transient acoustic spikes, and dispatching simulated silent alerts.
-- **Controls:** Interactive **Judge Demonstration Panel** located at the top of the Sanket Console, supporting step-by-step sequential evaluation or one-click live scenarios.
+> **Audio-Source-Agnostic Voice Distress-Risk Detection Console**  
+> This playbook details the judge demonstration narrative, system flow, and evaluation sequence for Sanket.  
+> **Important Disclaimer:** Sanket is an engineering prototype demonstrating multimodal acoustic distress-risk estimation. It is an algorithmic estimation tool, not an emergency certification or medical diagnostic system.
 
 ---
 
-## 2. Interactive 6-Step Guided Demonstration Sequence
+## 1. Product Positioning & Executive Summary
 
-The **Judge Demonstration Panel** in the dashboard guides evaluators through 6 structured scenes with one-click transitions:
+**What is Sanket?**  
+Sanket is a **configurable voice distress-risk detection system**. It is designed to be attached to various audio sources; the underlying feature extraction, baseline deviation tracking, and risk classification engine are **entirely source-agnostic**.
 
-### STEP 1 — PERSONAL BASELINE CALIBRATION
-- **Goal:** Demonstrate personal vocal calibration.
-- **Presenter Narration:**  
-  *"First, Sanket establishes the user's natural vocal baseline (pitch mean & variance, dynamic energy, conversational cadence). This ensures sensitivity without false alarms."*
-- **Judge Highlight:**  
-  *Static thresholds fail for naturally high-pitched or soft-spoken individuals. Sanket measures relative deviation ($Z$-scores) from personal norms.*
-- **System Response:**  
-  - Baseline profile active ($165\text{Hz } \mu, \pm 14.5\text{Hz } \sigma$).
-  - Baseline step in visual pipeline glows active.
-  - Personalized deviation monitoring initialized.
+```
+                AUDIO SOURCES
+                     │
+    ┌────────────────┼────────────────┐
+    │                │                │
+Live Microphone  Simulated Call Audio  Future Authorized Stream
+    │                │                │
+    └────────────────┼────────────────┘
+                     ▼
+           NORMALIZED AUDIO FRAME
+                     ▼
+             FEATURE EXTRACTION
+                     ▼
+           PERSONAL VOICE BASELINE
+                     ▼
+          MULTI-SIGNAL CORRELATION
+                     ▼
+        TEMPORAL CONTEXT FILTERING
+                     ▼
+            RISK CLASSIFICATION
+                     ▼
+           SILENT LOCAL ALERT
+                     ▼
+             FORENSIC AUDIT
+```
 
----
-
-### STEP 2 — NORMAL CONVERSATIONAL SPEECH
-- **Goal:** Show calm conversational reference state.
-- **Presenter Narration:**  
-  *"During normal conversation, voice features remain within standard deviation bounds. The Risk Engine maintains a low risk score."*
-- **Judge Highlight:**  
-  *Zero alarm fatigue. Natural conversational inflections, laughter variations, and pauses hover safely in the normal zone.*
-- **System Response:**  
-  - Risk Score: `8–15 / 100` (`NORMAL`, Green HUD).
-  - Temporal Context: `STABLE`.
-  - Alert Engine: Inactive.
-
----
-
-### STEP 3 — TRANSIENT VOCAL SPIKE FILTERING
-- **Goal:** Demonstrate false-positive reduction (Phase 8).
-- **Presenter Narration:**  
-  *"An isolated vocal spike (coughing, hearty laugh burst, or sudden throat-clearing) occurs. Phase 8 Temporal Context recognizes it as a TRANSIENT_SPIKE and suppresses alert dispatch."*
-- **Judge Highlight:**  
-  *Single-frame anomalies do not equal danger. Temporal stability requires multi-frame persistence before escalating risk.*
-- **System Response:**  
-  - Temporal Filter badge: `TRANSIENT SPIKE`.
-  - IncidentManager gate: 0 incidents created, 0 alerts dispatched.
-  - Explainability: *"Transient vocal spike — isolated burst, monitoring continues without escalation."*
+**Key Judge Message (10–15 Seconds):**  
+> *"Sanket is not a single-purpose phone app — it is a voice distress-risk detection engine. It accepts any normalized audio stream — whether from a live microphone, a pre-recorded call recording, or a future authorized communication adapter — and detects potential distress by measuring multi-signal deviations from an individual voice baseline."*
 
 ---
 
-### STEP 4 — SUSTAINED MULTI-SIGNAL DISTRESS
-- **Goal:** Demonstrate multi-signal co-occurrence and temporal persistence.
-- **Presenter Narration:**  
-  *"Multiple acoustic channels (acute pitch strain, high acoustic energy, spectral distortion) deviate simultaneously and sustain across consecutive frames."*
-- **Judge Highlight:**  
-  *Multi-signal co-occurrence and temporal persistence eliminate single points of failure, confirming genuine distress evidence.*
-- **System Response:**  
-  - Temporal Context: `SUSTAINED & MULTI-SIGNAL`.
-  - Risk Score climbs steadily past 70 into confirmed `HIGH_RISK`.
-  - Risk Score Gauge pulses red with persistence confirmation.
+## 2. Core Demonstration Flow: Prepared Audio File Input
+
+The primary demonstration allows evaluators to feed a prepared audio recording into the identical live analysis pipeline:
+
+1. **Orientation (5 seconds):**
+   - Presenter: *"This is the Sanket detection console. Notice the audio source selector at the top."*
+   - Judge sees the clean top-level Audio Source panel with tabs: `Live Microphone` and `Simulated Call Audio`.
+
+2. **Select Audio Source (10 seconds):**
+   - Click the **"Simulated Call Audio"** tab.
+   - Click **"Choose Audio File"** and load a prepared evaluation recording (`.wav`, `.mp3`, or `.ogg`).
+   - The file is decoded in-browser using Web Audio API into the identical `AudioFrame` format consumed by the feature extractor.
+
+3. **Begin Playback & Observe Normal Conversation (20 seconds):**
+   - Click **"PLAY"**.
+   - Normal conversation plays through the pipeline.
+   - The **PCM Oscilloscope** shows live waveform dynamics.
+   - The **Central Risk Score Gauge** remains in the green zone (`0–25 NORMAL`).
+   - The **Multi-Signal Breakdown** shows nominal pitch and energy within standard bounds.
+   - The **Temporal Context** card indicates `TEMPORALLY STABLE`.
+
+4. **Distress Acoustic Deviations Begin (20 seconds):**
+   - As distress-related acoustic deviations emerge in the audio (acute pitch elevation, vocal strain, irregular pausing):
+   - The **Signal Breakdown** bars dynamically rise:
+     - Pitch Deviation climbs ($>2.0\sigma$ from baseline).
+     - Vocal Intensity exhibits sustained compression or strain.
+     - Conversational turn pacing exhibits irregular pause patterns.
+   - The **Temporal Context** evaluates cross-signal correlation across a rolling 30-frame window.
+
+5. **Risk Classification & Escalation (15 seconds):**
+   - When multiple independent acoustic channels deviate simultaneously and persist beyond transient thresholds:
+   - Temporal status switches to `SUSTAINED & MULTI-SIGNAL`.
+   - Risk score climbs through `ELEVATED` (35+) and `SUSPICIOUS` (50+) into `HIGH_RISK` (70+).
+   - The central HUD pulses with confirmation badges.
+
+6. **Silent Distress Alert Triggered (10 seconds):**
+   - Upon confirmed HIGH_RISK, the **Incident Banner** appears at the top:
+     - Status: `CONFIRMED HIGH-RISK EVENT`.
+     - Subtext: *"Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission."*
+     - No audible siren sounds (simulated silent dispatch to prevent endangering a victim).
+
+7. **Forensic Evidence Inspection (30 seconds):**
+   - Click **"VIEW EVIDENCE"** on the banner.
+   - The **Forensic Event Modal** displays:
+     - Exact timestamp and event ID.
+     - Contributing signals with point-by-point breakdown.
+     - Baseline deviation $Z$-scores.
+     - Short-term temporal correlation and pause regularity metrics.
+     - Privacy Guarantee: Zero raw audio streaming, zero raw audio storage, local DSP only.
+
+8. **Source Independence Proof (10 seconds):**
+   - Switch the source tab to **"Live Microphone"**.
+   - Show that the exact same feature extraction, baseline comparison, and risk engine execute against real-time microphone input with no code or architectural changes.
 
 ---
 
-### STEP 5 — SILENT EMERGENCY ALERT DISPATCH
-- **Goal:** Show silent local dispatch without bystander danger.
-- **Presenter Narration:**  
-  *"Upon confirmed HIGH_RISK, IncidentManager latches and dispatches a silent alert locally. The prominent Incident Banner appears with zero audible sound."*
-- **Judge Highlight:**  
-  *Silent dispatch protects victims in coercion or domestic threat situations where audible sirens or popups endanger life.*
-- **System Response:**  
-  - Top `IncidentBanner` appears silently: displaying score, timestamp, confirmed signal count, and source.
-  - Alert latch prevents duplicate alert spam while tracking live peak metrics in place.
+## 3. Alternative: Interactive 6-Step Guided Demonstration
+
+For rapid evaluations without external files, the top **Judge Demonstration Panel** provides an automated 6-scene walkthrough:
+
+| Step | Scene Name | Demonstrates | System Response |
+| :---: | :--- | :--- | :--- |
+| **1** | Personal Baseline Calibration | Relative $Z$-score tracking vs static thresholds | Activates preset vocal profile ($165\text{ Hz } \mu, \pm 14.5\text{ Hz } \sigma$) |
+| **2** | Normal Conversational Speech | Calm baseline reference state | Score `8–15` (NORMAL), stable temporal context |
+| **3** | Transient Vocal Spike | False-positive reduction via temporal filter | Cough/laugh burst flagged as `TRANSIENT_SPIKE`, alert suppressed |
+| **4** | Sustained Multi-Signal Distress | Cross-channel co-occurrence & persistence | Pitch + Energy + Spectral deviations sustain; score $>70$ |
+| **5** | Silent Alert Dispatch | Silent local dispatch without audible danger | Prominent `SILENT DISTRESS ALERT` banner latches locally |
+| **6** | Forensic Incident Audit | Explainable evidence with zero raw audio | Forensic modal reveals contributing signals & $Z$-scores |
 
 ---
 
-### STEP 6 — FORENSIC INCIDENT AUDIT & PRIVACY
-- **Goal:** Transparent, explainable auditability with zero raw audio retention.
-- **Presenter Narration:**  
-  *"Inspect the generated incident audit record. The forensic modal reveals contributing signals, baseline Z-scores, and confirms zero raw audio retention."*
-- **Judge Highlight:**  
-  *Provides complete explainability for emergency responders and legal review while maintaining zero audio recordings on device.*
-- **System Response:**  
-  - `ForensicEventModal` opens with full event breakdown:
-    - Event ID (`inc-...`), timestamp, origin tag.
-    - Contributing signals breakdown table with exact points added.
-    - Baseline deviation $Z$-scores ($> 2.0\sigma$).
-    - Temporal correlation statistics (sustained frames, channel co-occurrence).
-    - Privacy Declaration: Zero raw audio or complete transcripts retained.
-
----
-
-## 3. Judge Q&A Defense Talking Points
+## 4. Judge Q&A Defense Talking Points
 
 | Expected Judge Question | Recommended Response |
 | :--- | :--- |
-| **"Could someone cough, yell, or laugh and trigger an alert?"** | *"No. As shown in Step 3, Phase 8 Temporal Context Analyzer filters isolated 1–2 frame spikes as TRANSIENT_SPIKE. Alert dispatch strictly requires multi-frame sustained persistence and multi-signal corroboration."* |
+| **"Is Sanket a mobile phone app?"** | *"Sanket is designed as an audio-source-agnostic detection engine. While mobile or VoIP devices represent possible future sources, the engine itself operates on normalized audio frames and can be fed by live microphones, pre-recorded audio files, or any authorized communication stream."* |
+| **"Could someone cough, yell, or laugh and trigger an alert?"** | *"No. The Phase 8 Temporal Context Analyzer filters isolated 1–2 frame spikes as TRANSIENT_SPIKE. Alert dispatch strictly requires multi-frame sustained persistence and multi-signal corroboration."* |
 | **"Are you recording or uploading my voice to an external cloud/AI server?"** | *"No. Sanket processes all audio frames locally in memory using the Web Audio API. Audio buffers are discarded immediately after analytical feature extraction. Zero audio or transcripts leave the client."* |
 | **"Why is a personal baseline necessary?"** | *"Without a baseline, someone who naturally speaks with a higher pitch or softer volume would generate false alarms. Sanket calibrates mean and standard deviation to measure relative deviations (Z-scores) from their personal norm."* |
 | **"Why is the alert silent instead of sounding an alarm?"** | *"In coercive, hostage, or domestic violence situations, an audible alarm or screen popup can immediately escalate danger from an aggressor. A silent local dispatch protects the user."* |
-| **"How will this run on mobile devices?"** | *"The analytical engine is pure TypeScript with zero DOM dependencies. In mobile deployment, the Web Audio layer is swapped for native background audio services (Android AudioRecord / iOS AVAudioEngine) operating at low power."* |
+| **"Does Sanket claim to detect emergencies with certainty?"** | *"No. Sanket calculates an algorithmic voice distress-risk estimate based on acoustic deviations. It provides explainable evidence for human review rather than making unverified medical or emergency claims."* |

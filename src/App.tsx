@@ -1,43 +1,46 @@
 /**
- * Sanket Console — Main Application Shell (Phase 4)
+ * Sanket Console — Main Application Shell (Final Demo Console)
  *
- * Full Multimodal Distress-Risk Detection Pipeline:
+ * Sanket is a configurable voice distress-risk detection system.
+ * It can be attached to different audio sources; the detection engine
+ * is fully source-agnostic.
  *
- *   Real Microphone (getUserMedia + Web Audio API)
- *            ↓
- *   AudioInputService (AudioFrame @ 2048 FFT)
- *            ↓
- *   FeatureExtractor (FeatureSet @ 10Hz: Pitch, RMS, ZCR, Centroid, Silence, VAD)
- *            ↓
- *   RiskEngine (RiskEvaluation @ 10Hz: 0–100 Score, Level, Explainable Signals)
- *            ↓
- *   ┌───────────────────────────────────────────────┐
- *   │                 SANKET CONSOLE                │
- *   │                                               │
- *   │   RISK SCORE (72)       STATUS (HIGH RISK)    │
- *   │                                               │
- *   │   Live Waveform Oscilloscope                  │
- *   │   Signal Breakdown (6 Acoustic Channels)      │
- *   │   Detection Timeline & Real-time Sparkline    │
- *   │   Monitoring & Pipeline Status                │
- *   └───────────────────────────────────────────────┘
+ * Pipeline (source-agnostic):
  *
- * Strict product positioning: Multimodal voice distress-RISK detection prototype.
- * Does not claim to certify emergency or danger.
+ *   ┌────────────────────────────────────────────┐
+ *   │  AUDIO SOURCE (Microphone or File)         │
+ *   │  → AudioInputService / AudioFileInputService│
+ *   └─────────────────┬──────────────────────────┘
+ *                     ↓  AudioFrame (normalized)
+ *            FeatureExtractor  (pitch, RMS, ZCR, centroid, VAD, silence)
+ *                     ↓  FeatureSet
+ *            Personal Voice Baseline  (deviation Z-scores)
+ *                     ↓
+ *            Temporal Context  (stability, false-positive filter)
+ *                     ↓
+ *            Risk Engine  (multi-signal fusion, 0–100 score)
+ *                     ↓
+ *            HIGH_RISK Confirmation Gate
+ *                     ↓
+ *            Silent Alert Dispatch + Forensic Audit
+ *
+ * Strict positioning: multimodal voice distress-RISK detection prototype.
+ * Does NOT claim to certify emergency or danger.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Shield,
-  Radio,
-  Square,
-  AlertCircle,
-  Loader2,
-  Cpu,
+  ChevronDown,
+  ChevronUp,
   Lock,
+  Cpu,
   Layers,
+  AlertCircle,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAudioMonitor } from './audio/useAudioMonitor';
+import { useAudioFileMonitor } from './audio/useAudioFileMonitor';
 import { useFeatureExtractor } from './analysis/useFeatureExtractor';
 import { useRiskEngine } from './analysis/useRiskEngine';
 import { useCodeWordDetector } from './analysis/useCodeWordDetector';
@@ -57,6 +60,8 @@ import { IncidentBanner } from './components/IncidentBanner';
 import { ForensicEventModal } from './components/ForensicEventModal';
 import { AlertHistory } from './components/AlertHistory';
 import { DemoScenarios } from './components/DemoScenarios';
+import { AudioSourcePanel } from './components/AudioSourcePanel';
+import type { AudioSourceMode } from './components/AudioSourcePanel';
 import {
   type DemoScenarioKey,
   getDemoScenarioFeatures,
@@ -67,41 +72,71 @@ import type { DemoStepDefinition } from './demo/types';
 import type { FeatureSet, IncidentContext } from './analysis/types';
 
 export function App() {
-  // ── Step 1: Microphone & Web Audio Engine (Phase 1) ───────────────────────
+  // ── Audio Source Selection ─────────────────────────────────────────────
+  const [audioSourceMode, setAudioSourceMode] = useState<AudioSourceMode>('MICROPHONE');
+
+  // ── Source A: Live Microphone (Phase 1) ───────────────────────────────
   const {
     monitoringState,
-    activity,
-    error,
+    activity: micActivity,
+    error: micError,
     startMonitoring,
     stopMonitoring,
-    audioService,
-  } = useAudioMonitor({
-    activeThresholdRms: 0.015,
-  });
+    audioService: micService,
+  } = useAudioMonitor({ activeThresholdRms: 0.015 });
 
-  const isLive = monitoringState === 'MONITORING_ACTIVE';
-  const isRequesting = monitoringState === 'REQUESTING_PERMISSION';
-  const isDenied = monitoringState === 'PERMISSION_DENIED';
-  const isError = monitoringState === 'ERROR' || monitoringState === 'NOT_SUPPORTED';
+  const isMicLive = monitoringState === 'MONITORING_ACTIVE';
 
-  // ── Step 2: Feature Extraction Pipeline (Phase 2) ─────────────────────────
+  // ── Source B: Pre-recorded Audio File ────────────────────────────────
+  const {
+    service: fileService,
+    playbackStatus: fileStatus,
+    activity: fileActivity,
+    isPlaying: isFilePlaying,
+    loadFile,
+    playFile,
+    pauseFile,
+    restartFile,
+  } = useAudioFileMonitor();
+
+  // ── Unified "is monitoring active" signal ────────────────────────────
+  const isLive =
+    audioSourceMode === 'MICROPHONE' ? isMicLive : isFilePlaying;
+
+  const activity =
+    audioSourceMode === 'MICROPHONE' ? micActivity : fileActivity;
+
+  // The active audio service fed into feature extractor
+  // AudioFileInputService has the same getCurrentFrame / getAnalyserNode interface
+  // We pass the correct service to useFeatureExtractor via a unified ref
+  const activeAudioService =
+    audioSourceMode === 'MICROPHONE'
+      ? micService
+      : (fileService as unknown as typeof micService); // same interface shape
+
+  const activeAnalyserNode =
+    audioSourceMode === 'MICROPHONE'
+      ? micService?.getAnalyserNode() ?? null
+      : fileService.getAnalyserNode();
+
+  const sampleRate =
+    activeAnalyserNode?.context.sampleRate ?? 48000;
+
+  // ── Step 2: Feature Extraction Pipeline (Phase 2) ─────────────────────
   const { latestFeatures: liveFeatures } = useFeatureExtractor(
-    audioService,
+    activeAudioService,
     isLive,
     { intervalMs: 100 }
   );
 
-  // ── Demo Simulator State (for reliable testing & judge presentation) ──────
+  // ── Demo Simulator State ──────────────────────────────────────────────
   const [activeScenario, setActiveScenario] = useState<DemoScenarioKey>('LIVE_MIC');
   const [simulatedFeatures, setSimulatedFeatures] = useState<FeatureSet | null>(null);
   const [simTick, setSimTick] = useState<number>(0);
 
-  // Drive demo simulator when a scenario is selected
   useEffect(() => {
     if (!isLive || activeScenario === 'LIVE_MIC') {
-      const timer = setTimeout(() => {
-        setSimulatedFeatures(null);
-      }, 0);
+      const timer = setTimeout(() => setSimulatedFeatures(null), 0);
       return () => clearTimeout(timer);
     }
 
@@ -114,14 +149,14 @@ export function App() {
     return () => clearInterval(interval);
   }, [isLive, activeScenario, simTick, liveFeatures]);
 
-  // Active features fed to Risk Engine: simulator features if scenario active, else live
   const effectiveFeatures: FeatureSet | null =
     activeScenario === 'LIVE_MIC' ? liveFeatures : simulatedFeatures;
 
-  // ── Step 3: Multi-Signal Risk Engine (Phase 3) ────────────────────────────
-  const { latestEvaluation, injectExternalSignal, engine: riskEngineInstance } = useRiskEngine(effectiveFeatures, isLive);
+  // ── Step 3: Multi-Signal Risk Engine (Phase 3) ────────────────────────
+  const { latestEvaluation, injectExternalSignal, engine: riskEngineInstance } =
+    useRiskEngine(effectiveFeatures, isLive);
 
-  // ── Step 4: Covert Code-Word Detector (Phase 5) ───────────────────────────
+  // ── Step 4: Covert Code-Word Detector (Phase 5) ───────────────────────
   const {
     config: codeWordConfig,
     latestDetection: codeWordDetection,
@@ -130,7 +165,6 @@ export function App() {
     processTranscript: runCodeWordTranscript,
   } = useCodeWordDetector({
     onDetection: (detection) => {
-      // Inject bounded contextual signal (+25 pts) into the RiskEngine
       injectExternalSignal(25, 25, {
         signal: 'codeWord',
         reason: detection.reason ?? 'Configured distress phrase detected',
@@ -138,7 +172,7 @@ export function App() {
     },
   });
 
-  // ── Step 5: Personal Voice Baseline & Calibration (Phase 6) ─────────────
+  // ── Step 5: Personal Voice Baseline (Phase 6) ─────────────────────────
   const {
     calibrationState,
     startCalibration,
@@ -148,7 +182,7 @@ export function App() {
     loadPresetProfile,
   } = useCalibration(effectiveFeatures, isLive, { riskEngine: riskEngineInstance });
 
-  // ── Step 6: Incident Context & Silent Alert Dispatcher (Phase 7) ──────────
+  // ── Step 6: Baseline Deviations ───────────────────────────────────────
   const baselineDevResult =
     calibrationState.status === 'COMPLETE' && calibrationState.profile && effectiveFeatures
       ? calculateBaselineDeviation(effectiveFeatures, calibrationState.profile)
@@ -165,17 +199,19 @@ export function App() {
         }
       : undefined;
 
-  // ── Step 6: Temporal Context & False-Positive Filter (Phase 8) ───────────
-  const { temporalContext } = useTemporalContext(
-    effectiveFeatures,
-    baselineDevResult,
-    isLive
-  );
+  // ── Step 7: Temporal Context & False-Positive Filter (Phase 8) ────────
+  const { temporalContext } = useTemporalContext(effectiveFeatures, baselineDevResult, isLive);
 
-  // ── Step 7: Incident Context & Silent Alert Dispatcher (Phase 7) ──────────
+  // ── Step 8: Incident Context (Phase 7) ────────────────────────────────
   const incidentContext: IncidentContext = {
-    source: activeScenario === 'LIVE_MIC' ? 'MICROPHONE' : 'SIMULATION',
-    baselineAvailable: calibrationState.status === 'COMPLETE' && calibrationState.profile !== null,
+    source:
+      audioSourceMode === 'FILE'
+        ? 'SIMULATION'
+        : activeScenario === 'LIVE_MIC'
+        ? 'MICROPHONE'
+        : 'SIMULATION',
+    baselineAvailable:
+      calibrationState.status === 'COMPLETE' && calibrationState.profile !== null,
     baselineDeviations,
     codeWordDetected: codeWordDetection?.detected ?? false,
     featureSnapshot: effectiveFeatures
@@ -206,20 +242,24 @@ export function App() {
     isActive: isLive,
   });
 
-  const handleSelectScenario = (scenario: DemoScenarioKey) => {
-    setActiveScenario(scenario);
-    if (scenario === 'CODE_WORD_ONLY' || scenario === 'MULTI_SIGNAL_WITH_CODE_WORD') {
-      setTimeout(() => {
-        runCodeWordTranscript(
-          `Please ${codeWordConfig.phrase} when you get home tonight.`,
-          Date.now(),
-          'demo-transcript'
-        );
-      }, 150);
-    }
-  };
+  // ── Scenario selector handler ─────────────────────────────────────────
+  const handleSelectScenario = useCallback(
+    (scenario: DemoScenarioKey) => {
+      setActiveScenario(scenario);
+      if (scenario === 'CODE_WORD_ONLY' || scenario === 'MULTI_SIGNAL_WITH_CODE_WORD') {
+        setTimeout(() => {
+          runCodeWordTranscript(
+            `Please ${codeWordConfig.phrase} when you get home tonight.`,
+            Date.now(),
+            'demo-transcript'
+          );
+        }, 150);
+      }
+    },
+    [codeWordConfig.phrase, runCodeWordTranscript]
+  );
 
-  // ── Step 8: Guided Judge Demonstration Controller (Phase 9) ───────────────
+  // ── Guided Judge Demo Controller (Phase 9) ───────────────────────────
   const {
     state: demoState,
     steps: demoSteps,
@@ -230,22 +270,34 @@ export function App() {
     resetDemo,
   } = useDemoController();
 
-  const applyDemoStep = (targetStep: DemoStepDefinition) => {
-    if (!isLive) {
-      startMonitoring();
-    }
-    if (targetStep.autoCalibrate && calibrationState.status !== 'COMPLETE') {
-      loadPresetProfile();
-    }
-    handleSelectScenario(targetStep.scenario);
-    if (targetStep.autoOpenModal) {
-      if (currentIncident) {
-        openModal(currentIncident);
-      } else if (alertHistory.length > 0) {
-        openModal(alertHistory[0]);
+  const applyDemoStep = useCallback(
+    (targetStep: DemoStepDefinition) => {
+      if (!isMicLive) startMonitoring();
+      // Always use MICROPHONE source for the guided demo
+      setAudioSourceMode('MICROPHONE');
+      if (targetStep.autoCalibrate && calibrationState.status !== 'COMPLETE') {
+        loadPresetProfile();
       }
-    }
-  };
+      handleSelectScenario(targetStep.scenario);
+      if (targetStep.autoOpenModal) {
+        if (currentIncident) {
+          openModal(currentIncident);
+        } else if (alertHistory.length > 0) {
+          openModal(alertHistory[0]);
+        }
+      }
+    },
+    [
+      isMicLive,
+      startMonitoring,
+      calibrationState.status,
+      loadPresetProfile,
+      handleSelectScenario,
+      currentIncident,
+      openModal,
+      alertHistory,
+    ]
+  );
 
   const handleStartDemo = () => {
     const nextState = startDemo();
@@ -272,19 +324,22 @@ export function App() {
     handleSelectScenario('LIVE_MIC');
   };
 
-  // Derived evaluation values with safe defaults
+  // ── UI: Secondary panel toggle ────────────────────────────────────────
+  const [showSecondary, setShowSecondary] = useState(false);
+
+  // Derived evaluation values
   const currentScore = latestEvaluation?.riskScore ?? 0;
   const currentLevel = latestEvaluation?.riskLevel ?? 'NORMAL';
   const isConfirmed = latestEvaluation?.isConfirmed ?? false;
   const persistenceFrames = latestEvaluation?.persistenceFrames ?? 0;
   const confirmedSignals = latestEvaluation?.confirmedSignals ?? 0;
 
-  // Sample rate from active audio service context or default
-  const sampleRate = audioService?.getAnalyserNode()?.context.sampleRate ?? 48000;
+  // Display analyser node from active source for oscilloscope
+  const waveformAnalyserNode = activeAnalyserNode;
 
   return (
     <div className="app-container" id="sanket-console-app">
-      {/* Top Banner / Pipeline Trace */}
+      {/* ── Top Navigation Bar ─────────────────────────────────────────── */}
       <header className="console-top-nav">
         <div className="nav-brand">
           <div className="brand-shield-icon">
@@ -292,18 +347,20 @@ export function App() {
           </div>
           <div className="brand-text-wrap">
             <h1 className="console-main-title">SANKET CONSOLE</h1>
-            <span className="console-main-sub">Non-Verbal Distress Detection System</span>
+            <span className="console-main-sub">Voice Distress-Risk Detection Engine</span>
           </div>
         </div>
 
-        {/* Pipeline Trace Visualizer */}
+        {/* Pipeline trace (compact) */}
         <div className="pipeline-flow-pill">
-          <span className="pipe-step active">Microphone</span>
-          <span className="pipe-arrow">+</span>
-          <span className="pipe-step active">Code Word</span>
+          <span className={`pipe-step ${isLive ? 'active' : 'pipe-step-dim'}`}>
+            {audioSourceMode === 'FILE' ? 'File Audio' : 'Microphone'}
+          </span>
           <span className="pipe-arrow">→</span>
-          <span className="pipe-step active">Feature Extractor</span>
-          <span className={`pipe-step ${calibrationState.status === 'COMPLETE' ? 'active baseline-active' : 'pipe-step-dim'}`}>Baseline</span>
+          <span className="pipe-step active">Features</span>
+          <span className={`pipe-step ${calibrationState.status === 'COMPLETE' ? 'active baseline-active' : 'pipe-step-dim'}`}>
+            Baseline
+          </span>
           <span className="pipe-arrow">→</span>
           <span className="pipe-step active">Risk Engine</span>
           <span className="pipe-arrow">→</span>
@@ -311,84 +368,48 @@ export function App() {
             Temporal Filter
           </span>
           <span className="pipe-arrow">→</span>
-          <span className="pipe-step active highlight">Console</span>
-          <span className="pipe-arrow">→</span>
           <span className={`pipe-step ${currentIncident ? 'active alert-step-active' : 'pipe-step-dim'}`}>
             Alert Dispatch
           </span>
-          <span className="pipe-arrow">→</span>
-          <span className={`pipe-step ${demoState.isActive ? 'active demo-step-active' : 'pipe-step-dim'}`}>
-            Judge Tour
-          </span>
         </div>
 
-        {/* Primary Action Button */}
         <div className="nav-controls">
-          {isLive ? (
-            <button
-              type="button"
-              className="cta-button cta-button-stop"
-              id="stop-monitoring-btn"
-              onClick={stopMonitoring}
-            >
-              <Square size={15} fill="currentColor" />
-              <span>HALT MONITORING</span>
-            </button>
-          ) : isDenied || isError ? (
-            <button
-              type="button"
-              className="cta-button cta-button-retry"
-              id="retry-monitoring-btn"
-              onClick={startMonitoring}
-            >
-              <Radio size={16} />
-              <span>RETRY AUDIO ACCESS</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="cta-button cta-button-start"
-              id="start-monitoring-btn"
-              disabled={isRequesting}
-              onClick={startMonitoring}
-            >
-              {isRequesting ? (
-                <>
-                  <Loader2 size={16} className="spin-animation" />
-                  <span>INITIALIZING DSP...</span>
-                </>
-              ) : (
-                <>
-                  <Radio size={16} />
-                  <span>START MONITORING</span>
-                </>
-              )}
-            </button>
-          )}
+          <span className={`nav-source-badge ${isLive ? 'nav-source-live' : ''}`}>
+            {isLive
+              ? audioSourceMode === 'FILE'
+                ? '● FILE ANALYZING'
+                : '● MIC LIVE'
+              : '○ STANDBY'}
+          </span>
         </div>
       </header>
 
-      {/* Error / Permission Guidance Banner */}
-      {error && (
+      {/* Error Banner */}
+      {micError && audioSourceMode === 'MICROPHONE' && (
         <div className="error-banner" role="alert">
           <div className="error-banner-header">
             <AlertCircle size={16} />
-            <span>{isDenied ? 'Microphone Access Required' : 'Audio Hardware Notice'}</span>
+            <span>
+              {monitoringState === 'PERMISSION_DENIED'
+                ? 'Microphone Access Required'
+                : 'Audio Hardware Notice'}
+            </span>
           </div>
-          <p className="error-banner-body">{error.userMessage}</p>
+          <p className="error-banner-body">{micError.userMessage}</p>
         </div>
       )}
 
-      {/* Active Distress Incident Banner (Phase 7) */}
+      {/* Active Incident Banner */}
       <IncidentBanner
         incident={currentIncident}
         onViewEvent={() => openModal(currentIncident)}
         onAcknowledge={() => acknowledgeIncident(currentIncident?.id)}
       />
 
-      {/* Main Console Grid */}
+      {/* ── Main Console Grid ─────────────────────────────────────────── */}
       <main className="console-dashboard-layout">
-        {/* ROW 0: Guided Judge Demonstration Panel (Phase 9) */}
+
+        {/* ROW 0: Guided Judge Demo Panel */}
         <section className="console-row">
           <JudgeDemoPanel
             controllerState={demoState}
@@ -403,9 +424,26 @@ export function App() {
           />
         </section>
 
-        {/* ROW 1: Hero Dual-Card Section — Risk Score & Live Oscilloscope */}
+        {/* ROW 1: Audio Source Panel */}
+        <section className="console-row">
+          <AudioSourcePanel
+            activeSource={audioSourceMode}
+            onSelectSource={setAudioSourceMode}
+            monitoringState={monitoringState}
+            onStartMic={startMonitoring}
+            onStopMic={stopMonitoring}
+            micError={micError}
+            fileStatus={fileStatus}
+            onLoadFile={loadFile}
+            onPlayFile={playFile}
+            onPauseFile={pauseFile}
+            onRestartFile={restartFile}
+          />
+        </section>
+
+        {/* ROW 2: Hero — Risk Score + Live Waveform */}
         <section className="console-row hero-row">
-          {/* 1. RISK SCORE & STATUS HUD */}
+          {/* Risk Score HUD */}
           <div className="console-card risk-gauge-card">
             <RiskScoreGauge
               score={currentScore}
@@ -417,22 +455,32 @@ export function App() {
             />
           </div>
 
-          {/* 2. LIVE WAVEFORM OSCILLOSCOPE */}
+          {/* Live Waveform */}
           <div className="console-card waveform-card">
             <div className="card-header">
               <div className="card-title-group">
                 <span className="card-icon-dot" />
-                <h2 className="card-title">Live PCM Waveform Oscilloscope</h2>
+                <h2 className="card-title">
+                  {audioSourceMode === 'FILE' ? 'File Audio Waveform' : 'Live PCM Waveform Oscilloscope'}
+                </h2>
               </div>
-              <span className="card-badge">60 FPS Hardware Render</span>
+              <span className="card-badge">
+                {audioSourceMode === 'FILE' ? 'FILE ANALYSIS' : '60 FPS Hardware Render'}
+              </span>
             </div>
 
             <p className="waveform-desc">
-              Real-time time-domain audio samples from AnalyserNode (FFT Size: 2048).
+              {audioSourceMode === 'FILE'
+                ? 'Time-domain analysis of pre-recorded audio — same pipeline as live microphone.'
+                : 'Real-time time-domain audio samples from AnalyserNode (FFT Size: 2048).'}
             </p>
 
             <LiveWaveform
-              audioService={audioService}
+              audioService={
+                audioSourceMode === 'MICROPHONE'
+                  ? micService
+                  : { getAnalyserNode: () => waveformAnalyserNode, getIsRunning: () => isFilePlaying } as unknown as typeof micService
+              }
               isActive={isLive}
               height={140}
             />
@@ -440,21 +488,27 @@ export function App() {
             <div className="waveform-footer">
               <span className="waveform-metric">
                 VAD State:{' '}
-                <strong>
-                  {effectiveFeatures?.isSpeech ? 'VOICED' : 'QUIET'}
-                </strong>
+                <strong>{effectiveFeatures?.isSpeech ? 'VOICED' : 'QUIET'}</strong>
               </span>
               <span className="waveform-metric">
-                Energy: <strong>{((activity.rmsEnergy) * 100).toFixed(2)}%</strong>
+                Energy: <strong>{(activity.rmsEnergy * 100).toFixed(2)}%</strong>
               </span>
               <span className="waveform-metric">
                 Sample Rate: <strong>{(sampleRate / 1000).toFixed(1)} kHz</strong>
+              </span>
+              <span className="waveform-metric">
+                Source:{' '}
+                <strong>
+                  {audioSourceMode === 'FILE'
+                    ? `FILE — ${fileStatus.fileName ?? 'unknown'}`
+                    : 'MICROPHONE'}
+                </strong>
               </span>
             </div>
           </div>
         </section>
 
-        {/* ROW 2: Signal Breakdown (All 6 Acoustic Channels) */}
+        {/* ROW 3: Signal Breakdown */}
         <section className="console-row">
           <SignalBreakdown
             features={effectiveFeatures}
@@ -463,7 +517,7 @@ export function App() {
           />
         </section>
 
-        {/* ROW 3: Temporal Stability & False-Positive Reduction (Phase 8) */}
+        {/* ROW 4: Temporal Stability */}
         <section className="console-row">
           <TemporalContextCard
             temporalContext={temporalContext}
@@ -471,9 +525,8 @@ export function App() {
           />
         </section>
 
-        {/* ROW 4: Detection Timeline & Monitoring Status Side-by-Side */}
+        {/* ROW 5: Detection Timeline + Monitoring Status */}
         <section className="console-row split-row">
-          {/* 3. DETECTION TIMELINE */}
           <div className="console-col">
             <DetectionTimeline
               currentEvaluation={latestEvaluation}
@@ -481,8 +534,6 @@ export function App() {
               codeWordDetection={codeWordDetection}
             />
           </div>
-
-          {/* 4. MONITORING & PIPELINE STATUS */}
           <div className="console-col">
             <MonitoringStatus
               isMonitoring={isLive}
@@ -493,30 +544,7 @@ export function App() {
           </div>
         </section>
 
-        {/* ROW 5: Covert Code-Word Configuration (Phase 5) */}
-        <section className="console-row">
-          <CodeWordConfig
-            config={codeWordConfig}
-            latestDetection={codeWordDetection}
-            onUpdatePhrase={updateCodeWordPhrase}
-            onToggleEnabled={toggleCodeWordEnabled}
-            onTestTranscript={(text) => runCodeWordTranscript(text, Date.now(), 'manual-test')}
-          />
-        </section>
-
-        {/* ROW 6: Personal Voice Baseline & Calibration (Phase 6) */}
-        <section className="console-row">
-          <CalibrationPanel
-            calibrationState={calibrationState}
-            isMonitoring={isLive}
-            onStart={startCalibration}
-            onCancel={cancelCalibration}
-            onFinalize={finalizeCalibration}
-            onClear={clearBaseline}
-          />
-        </section>
-
-        {/* ROW 7: Alert History & Audit Log (Phase 7) */}
+        {/* ROW 6: Alert History */}
         <section className="console-row">
           <AlertHistory
             history={alertHistory}
@@ -525,7 +553,7 @@ export function App() {
           />
         </section>
 
-        {/* ROW 8: Interactive Preset Scenarios (Hackathon Evaluator) */}
+        {/* ROW 7: Interactive Scenario Simulator */}
         <section className="console-row">
           <DemoScenarios
             activeScenario={activeScenario}
@@ -533,9 +561,95 @@ export function App() {
             isMonitoring={isLive}
           />
         </section>
+
+        {/* ── ROW 8: System Configuration Overview (Section 9) ── */}
+        <section className="console-row">
+          <div className="console-card config-overview-card" id="config-overview-panel">
+            <div className="card-header">
+              <div className="card-title-group">
+                <SlidersHorizontal size={16} className="card-icon" />
+                <h2 className="card-title">System Configuration Status</h2>
+                <span className="card-badge">Section 9 Parameter State</span>
+              </div>
+              <button
+                type="button"
+                className="config-toggle-btn"
+                id="toggle-secondary-detail"
+                onClick={() => setShowSecondary((v) => !v)}
+              >
+                {showSecondary ? (
+                  <>
+                    <ChevronUp size={14} />
+                    <span>HIDE DETAILED CONTROLS</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={14} />
+                    <span>CONFIGURE PARAMETERS</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="config-overview-grid">
+              <div className="config-overview-item">
+                <span className="config-overview-label">Personal Voice Baseline:</span>
+                <span className={`config-overview-badge ${calibrationState.status === 'COMPLETE' ? 'cfg-active' : 'cfg-idle'}`}>
+                  {calibrationState.status === 'COMPLETE'
+                    ? '● ACTIVE (Deviation Z-Scores)'
+                    : '○ UNCALIBRATED (Heuristic Norms)'}
+                </span>
+              </div>
+              <div className="config-overview-item">
+                <span className="config-overview-label">Covert Code-Word:</span>
+                <span className={`config-overview-badge ${codeWordConfig.enabled ? 'cfg-active' : 'cfg-idle'}`}>
+                  {codeWordConfig.enabled
+                    ? `● CONFIGURED ("${codeWordConfig.phrase}")`
+                    : '○ DISABLED'}
+                </span>
+              </div>
+              <div className="config-overview-item">
+                <span className="config-overview-label">Analysis Mode:</span>
+                <span className="config-overview-badge cfg-active">
+                  ● MULTI-SIGNAL CORRELATION
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Secondary technical panels — hidden by default for judges */}
+        {showSecondary && (
+          <>
+            {/* Code-Word Configuration */}
+            <section className="console-row">
+              <CodeWordConfig
+                config={codeWordConfig}
+                latestDetection={codeWordDetection}
+                onUpdatePhrase={updateCodeWordPhrase}
+                onToggleEnabled={toggleCodeWordEnabled}
+                onTestTranscript={(text) =>
+                  runCodeWordTranscript(text, Date.now(), 'manual-test')
+                }
+              />
+            </section>
+
+            {/* Personal Voice Baseline Calibration */}
+            <section className="console-row">
+              <CalibrationPanel
+                calibrationState={calibrationState}
+                isMonitoring={isLive}
+                onStart={startCalibration}
+                onCancel={cancelCalibration}
+                onFinalize={finalizeCalibration}
+                onClear={clearBaseline}
+              />
+            </section>
+          </>
+        )}
       </main>
 
-      {/* Forensic Event Modal (Phase 7) */}
+      {/* Forensic Event Modal */}
       <ForensicEventModal
         isOpen={isModalOpen}
         incident={modalIncident}
@@ -544,21 +658,21 @@ export function App() {
         onResolve={resolveIncident}
       />
 
-      {/* Footer Bar */}
+      {/* Footer */}
       <footer className="console-footer">
         <div className="footer-left">
           <Lock size={12} />
-          <span>Local-First DSP • Zero Cloud Streaming</span>
+          <span>Local-First DSP • Zero Cloud Streaming • Zero Raw Audio Retention</span>
         </div>
         <div className="footer-center">
-          <span>Sanket — Non-Verbal Distress-Risk Detection Prototype</span>
+          <span>Sanket — Voice Distress-Risk Detection Engine • Source-Agnostic Pipeline</span>
         </div>
         <div className="footer-right">
           <Cpu size={12} />
           <span>React 19 + TypeScript + Web Audio API</span>
           <span className="footer-sep">•</span>
           <Layers size={12} />
-          <span>Phase 9 Judge Demo Flow ✓</span>
+          <span>Final Demo Console ✓</span>
         </div>
       </footer>
     </div>

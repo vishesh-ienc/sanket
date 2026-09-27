@@ -47,7 +47,10 @@ export const IncidentBanner: React.FC<IncidentBannerProps> = ({
           <div className="banner-title-group">
             <div className="banner-badge-row">
               <span className="banner-tag-urgent">
-                {isAcknowledged ? 'DISTRESS ACKNOWLEDGED' : '⚠ DISTRESS EVENT DETECTED'}
+                SILENT DISTRESS ALERT
+              </span>
+              <span className="banner-status-tag">
+                {isAcknowledged ? 'STATUS: ACKNOWLEDGED' : 'STATUS: CONFIRMED HIGH-RISK EVENT'}
               </span>
               <span
                 className={`banner-source-tag ${
@@ -56,7 +59,7 @@ export const IncidentBanner: React.FC<IncidentBannerProps> = ({
               >
                 {isSimulated ? (
                   <>
-                    <Sparkles size={11} /> DEMO SIMULATION
+                    <Sparkles size={11} /> DEMO SOURCE
                   </>
                 ) : (
                   <>
@@ -66,7 +69,7 @@ export const IncidentBanner: React.FC<IncidentBannerProps> = ({
               </span>
             </div>
             <p className="banner-subtext">
-              Silent alert simulated locally • Zero audio transmitted • {timeFormatted}
+              Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission • {timeFormatted}
             </p>
           </div>
         </div>
@@ -100,7 +103,7 @@ export const IncidentBanner: React.FC<IncidentBannerProps> = ({
             onClick={onViewEvent}
           >
             <Eye size={15} />
-            <span>VIEW EVENT</span>
+            <span>VIEW EVIDENCE</span>
           </button>
 
           {!isAcknowledged && (

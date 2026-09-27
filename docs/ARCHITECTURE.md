@@ -10,16 +10,17 @@
 
 ```
 +-------------------------------------------------------------+
-|                     1. AUDIO INPUT LAYER                    |
-|   (Browser getUserMedia / Mobile Mic / VoIP Audio Stream)   |
+|              1. DUAL AUDIO SOURCE ADAPTER LAYER             |
+|   (Source A: Live Microphone | Source B: Pre-recorded Audio)|
+|   (Future: Any authorized audio stream adapted to frames)   |
 +------------------------------+------------------------------+
-                               | Audio Streams / PCM Chunks
+                               | Normalized Audio Frames
                                v
 +-------------------------------------------------------------+
 |                 2. AUDIO PROCESSING LAYER                   |
 |   (Sampling Rate, Framing, FFT, Windowing, Buffer Mgmt)     |
 +------------------------------+------------------------------+
-                               | AudioFrame
+                               | AudioFrame (2048 FFT)
                                v
 +-------------------------------------------------------------+
 |                3. FEATURE EXTRACTION LAYER                  |
@@ -40,6 +41,12 @@
                                | SignalConfidence & AnomalyFlags
                                v
 +-------------------------------------------------------------+
+|          5b. TEMPORAL CONTEXT & FALSE-POSITIVE FILTER       |
+|    (Transient Spike Suppression, Sustained Anomaly Tracker) |
++------------------------------+------------------------------+
+                               | Filtered Temporal State
+                               v
++-------------------------------------------------------------+
 |                   6. RISK SCORING ENGINE                    |
 |    (Multi-Signal Temporal Correlation, Risk Aggregator)     |
 +------------------------------+------------------------------+
@@ -47,31 +54,33 @@
                                v
 +-------------------------------------------------------------+
 |                   7. RISK CLASSIFICATION                    |
-|        (NORMAL, ELEVATED, SUSPECTED_DISTRESS, CRITICAL)     |
+|        (NORMAL, ELEVATED, SUSPECTED_DISTRESS, HIGH_RISK)    |
 +------------------------------+------------------------------+
-                               | RiskEvent
+                               | RiskEvent & Confirmation Gate
                                v
 +-------------------------------------------------------------+
 |                      8. ALERT ENGINE                        |
 |  (Threshold Verification, Debouncing, Silent Dispatch Sim)  |
 +------------------------------+------------------------------+
-                               | AlertNotification & Telemetry
+                               | SilentAlertEvent & Telemetry
                                v
 +-------------------------------------------------------------+
-|                  9. DASHBOARD / EVENT LOG                   |
-|     (React UI, Waveform HUD, Anomaly Badges, History Log)   |
-+-------------------------------------------------------------+
+|                  9. DEMONSTRATION CONSOLE                   |
+|  (Source Selector, Waveform, Signal Breakdown, Forensics)   |
++------------------------------+------------------------------+
 ```
 
 ---
 
 ## 2. Layer-by-Layer Architectural Breakdown
 
-### 2.1 Audio Input Layer (`AudioInput`)
-- **Role:** Abstracts the physical or virtual audio source.
-- **Prototype Implementation:** Browser Web Audio API `navigator.mediaDevices.getUserMedia({ audio: true })`.
-- **Future Mobile/OS Implementation:** Android `AudioRecord` / iOS `AVAudioEngine` or VoIP call audio tap.
-- **Responsibility:** Acquires permissions, handles audio hardware constraints, emits raw continuous PCM audio chunks or streams to downstream consumers.
+### 2.1 Audio Input Layer (`AudioInput` & `AudioFileInput`)
+- **Role:** Abstracts the physical or pre-recorded audio source. The detection engine is completely source-agnostic.
+- **Implemented Adapters:**
+  - **Live Microphone (`AudioInputService`):** Browser Web Audio API `navigator.mediaDevices.getUserMedia({ audio: true })`.
+  - **Pre-recorded Call Audio (`AudioFileInputService`):** In-browser decoding of `.wav`, `.mp3`, or `.ogg` audio files into uniform PCM frames, feeding the identical downstream analysis pipeline.
+- **Conceptual Future Sources:** Any authorized communication stream (e.g., VoIP streams, telephone audio taps where legally permitted, interview recordings). Mobile is considered solely as one potential future source, not an existing native implementation.
+- **Responsibility:** Normalizes diverse audio inputs into uniform `AudioFrame` structures consumed identically by the feature extractor.
 
 ### 2.2 Audio Processing Layer (`AudioProcessing`)
 - **Role:** Transforms continuous raw time-domain audio into uniform analytical frames.

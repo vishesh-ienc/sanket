@@ -8,42 +8,48 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 9 — Polish & Judge Demonstration Flow**
+- **Current Phase:** **Final Demo Console — Source-Agnostic Audio & UI Simplification**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 10 — Mobile Deployment Architecture & Future Integration Docs**
+- **Next Phase:** None (Hackathon Prototype Finalized)
 
 ---
 
-## Completed in Phase 9
+## Completed in Final Demo Console (Phase 10 / Finalization)
 
-- [x] `src/demo/types.ts` — Data models for guided 6-step judge demonstration tour
-  - `DemoStepId`, `DemoStepDefinition`, `DemoControllerState`
-- [x] `src/demo/demoController.ts` — `DemoController` deterministic state machine
-  - Manages sequential 6-step walkthrough:
-    - Step 1: `BASELINE_CALIBRATION` (Personal Voice Baseline)
-    - Step 2: `NORMAL_MONITORING` (Normal Conversational Reference)
-    - Step 3: `TRANSIENT_EVENT` (Transient Spike Filtering)
-    - Step 4: `MULTI_SIGNAL_DISTRESS` (Sustained Multi-Signal Distress)
-    - Step 5: `SILENT_ALERT` (Silent Local Alert Dispatch)
-    - Step 6: `FORENSIC_REVIEW` (Forensic Incident Audit)
-  - Full navigation API: `startDemo()`, `nextStep()`, `prevStep()`, `goToStep()`, `resetDemo()`, `subscribe()`
-  - Boundary guards protecting against underflow and overflow
-- [x] `src/demo/useDemoController.ts` — React hook integrating controller state with dashboard lifecycle
-- [x] `src/components/JudgeDemoPanel.tsx` — Interactive judge walkthrough HUD panel
-  - Progress step chips with completed (`✓`), active (`●`), and upcoming indicators
-  - Comprehensive narration box + Judge Highlight differentiator box + Observed System Outcome pill
-  - Navigation controls: Previous, Step X of 6, Next Step, Finish Tour, Reset Demo
-  - Idle overview screen with hero CTA
-- [x] `src/analysis/useCalibration.ts` — Added `loadPresetProfile()` for instant demo baseline activation
-- [x] `src/App.tsx` & `src/index.css` — Phase 9 UI integration
-  - Rendered `JudgeDemoPanel` as ROW 0 executive command center
-  - Added "Judge Tour" step indicator to pipeline flow pill
-  - Refactored demo transitions to clean, synchronous event handlers with zero cascading renders
-- [x] `src/demo/__tests__/demoController.test.ts` — **87 deterministic unit tests**
-  - Initial idle state, start sequence, next/prev progression, direct jumps by index and id, boundary guards, subscriber notifications, step contract validation
-- [x] Full Test Suite: **524 / 524 tests passing** across 7 test suites (Phase 2: 46, Phase 3: 59, Phase 5: 56, Phase 6: 92, Phase 7: 95, Phase 8: 89, Phase 9: 87)
-- [x] Build & Lint: 0 TypeScript errors, 0 ESLint/oxlint warnings/errors
+- [x] **Source-Agnostic Audio Architecture:**
+  - `src/audio/audioFileInput.ts` — `AudioFileInputService` decodes pre-recorded audio files (`.wav`, `.mp3`, `.ogg`) into normalized `AudioFrame` (2048 FFT) matching the microphone pipeline. Supports play, pause, restart, onended transitions, and optional injected contexts for unit testing.
+  - `src/audio/useAudioFileMonitor.ts` — `useAudioFileMonitor` React hook managing file decoding, state subscriptions, telemetry animation frame loop, and playback controls.
+  - `src/components/AudioSourcePanel.tsx` — Top-level dual source selector tab panel allowing judges to switch between `Live Microphone` and `Simulated Call Audio` (pre-recorded file), reinforcing that Sanket's detection engine is completely source-agnostic.
+- [x] **UI Simplification & Information Hierarchy:**
+  - `src/App.tsx` & `src/index.css` reorganized into a top-to-bottom story:
+    - Audio Source selection & playback controls
+    - Central Risk Score HUD & Waveform oscilloscope
+    - Multi-signal breakdown with live references and contribution bars
+    - Temporal context & false-positive stability metrics
+    - Detection timeline and monitoring telemetry
+    - Alert history with one-click forensic event review
+    - System Configuration Status summary card on the main dashboard (Personal Baseline, Code-Word, Analysis Mode) with clean expansion toggle for technical calibration
+  - `src/components/IncidentBanner.tsx` updated with precise honest terminology:
+    - Tag: `SILENT DISTRESS ALERT`
+    - Status: `CONFIRMED HIGH-RISK EVENT`
+    - Subtext: *"Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission"*
+    - CTA: `VIEW EVIDENCE`
+- [x] **Comprehensive Audio Adapter Unit Tests:**
+  - `src/audio/__tests__/audioFileInput.test.ts` — **54 deterministic unit tests**
+  - Covers initial state, subscription lifecycle, file acceptance, decode failure handling, `AudioFrame` schema conformance, playback controls, onended callbacks, RMS thresholding, reset/dispose teardown, and source-switching independence.
+- [x] **Full Test Suite & Build Verification:**
+  - **578 / 578 tests passing** across 8 test suites:
+    - Feature Extraction: 46
+    - Risk Engine: 59
+    - Code-Word Detector: 56
+    - Voice Baseline: 92
+    - Incident & Alert System: 95
+    - Temporal Context System: 89
+    - Demo Controller: 87
+    - Audio File Adapter: 54
+  - **Build (`npm run build`):** 0 TypeScript errors, clean production bundle.
+  - **Lint (`npx oxlint`):** 0 warnings, 0 errors across 55 files.
 
 ---
 
