@@ -57,8 +57,11 @@ export function fftMagnitudes(input: Float32Array): Float32Array {
  */
 export class AudioFrameBuilder {
   private smoothed = new Float32Array(FRAME_SIZE / 2);
+  private readonly smoothingTimeConstant: number;
 
-  constructor(private readonly smoothingTimeConstant = 0.8) {}
+  constructor(smoothingTimeConstant = 0.8) {
+    this.smoothingTimeConstant = smoothingTimeConstant;
+  }
 
   build(samples: Float32Array, sampleRate: number, timestampMs: number): AudioFrame {
     const mags = fftMagnitudes(samples);
@@ -91,12 +94,7 @@ export function decodePcm16Wav(bytes: ArrayBuffer): { samples: Float32Array; sam
   const sampleRate = view.getUint32(24, true);
   let offset = 12;
   while (offset + 8 <= view.byteLength) {
-    const id = String.fromCharCode(
-      view.getUint8(offset),
-      view.getUint8(offset + 1),
-      view.getUint8(offset + 2),
-      view.getUint8(offset + 3)
-    );
+    const id = String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
     const size = view.getUint32(offset + 4, true);
     if (id === 'data') {
       const count = Math.floor(size / 2);
