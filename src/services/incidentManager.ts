@@ -43,10 +43,26 @@ export interface IncidentProcessResult {
   isNewIncident: boolean;
 }
 
+export interface IncidentManagerOptions {
+  /**
+   * Consecutive non-HIGH_RISK evaluations required before an active incident
+   * resolves and the latch releases. Natural speech makes the score dip
+   * between phrases; without hysteresis each dip + recovery would dispatch a
+   * duplicate alert. Default 0 = release immediately (original behaviour).
+   */
+  releaseFrames?: number;
+}
+
 export class IncidentManager {
   private activeIncident: DistressIncident | null = null;
   private latched: boolean = false;
   private lastAlert: SilentAlertEvent | null = null;
+  private readonly releaseFrames: number;
+  private framesBelowHighRisk = 0;
+
+  constructor(options: IncidentManagerOptions = {}) {
+    this.releaseFrames = Math.max(0, options.releaseFrames ?? 0);
+  }
 
   /**
    * Evaluates the latest RiskEvaluation against the incident state machine.
@@ -101,6 +117,22 @@ export class IncidentManager {
       };
     }
 
+    if (isHighRiskConfirmed) {
+      this.framesBelowHighRisk = 0;
+    }
+
+    // CASE 2b: Brief dip below HIGH_RISK while latched → HOLD (hysteresis)
+    if (!isHighRiskConfirmed && this.latched && this.activeIncident) {
+      this.framesBelowHighRisk += 1;
+      if (this.framesBelowHighRisk <= this.releaseFrames) {
+        return {
+          incident: this.activeIncident,
+          alert: null,
+          isNewIncident: false,
+        };
+      }
+    }
+
     // CASE 2: High risk continues while already latched → MAINTAIN ACTIVE INCIDENT (NO DUPLICATE DISPATCH)
     if (isHighRiskConfirmed && this.latched && this.activeIncident) {
       // Update ongoing incident metrics (peak score, persistence, signals)
@@ -134,6 +166,7 @@ export class IncidentManager {
       resolveInHistory(resolvedIncident.id);
       this.latched = false;
       this.activeIncident = null;
+      this.framesBelowHighRisk = 0;
 
       return {
         incident: resolvedIncident,
@@ -206,5 +239,6 @@ export class IncidentManager {
     this.activeIncident = null;
     this.latched = false;
     this.lastAlert = null;
+    this.framesBelowHighRisk = 0;
   }
 }

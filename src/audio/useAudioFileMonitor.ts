@@ -58,6 +58,9 @@ export function useAudioFileMonitor() {
             isActive: service.isAudioActive(frame.rmsEnergy),
             threshold: 0.015,
           });
+          // Playhead only changes via notify() on state transitions; poll it
+          // here so progress UI and transcript cues advance during playback.
+          setPlaybackStatus(service.getStatus());
         }
       }
       telemetryRafRef.current = requestAnimationFrame(stepTelemetry);

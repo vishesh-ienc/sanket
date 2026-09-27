@@ -20,6 +20,18 @@ import {
   clearHistory as clearHistoryStorage,
 } from './alertHistory';
 
+/**
+ * The analysis pipeline stamps frames with the monotonic `performance.now()`
+ * clock (ideal for temporal math). Incidents are persisted and shown to humans,
+ * so we convert to Unix epoch ms at this boundary.
+ */
+function toWallClock(timestamp: number): number {
+  return timestamp < 1e12 ? Math.round(performance.timeOrigin + timestamp) : timestamp;
+}
+
+/** ~4 s at 10 Hz: an incident stays open through the natural dips of real speech */
+const INCIDENT_RELEASE_FRAMES = 40;
+
 export interface UseIncidentManagerOptions {
   context?: IncidentContext;
   isActive?: boolean;
@@ -45,7 +57,7 @@ export function useIncidentManager(
   options: UseIncidentManagerOptions = {}
 ): UseIncidentManagerReturn {
   const { context, isActive = true } = options;
-  const [manager] = useState(() => new IncidentManager());
+  const [manager] = useState(() => new IncidentManager({ releaseFrames: INCIDENT_RELEASE_FRAMES }));
 
   const [currentIncident, setCurrentIncident] = useState<DistressIncident | null>(null);
   const [latestAlert, setLatestAlert] = useState<SilentAlertEvent | null>(null);
@@ -67,7 +79,10 @@ export function useIncidentManager(
       return;
     }
 
-    const result = manager.processEvaluation(evaluation, context);
+    const result = manager.processEvaluation(
+      evaluation && { ...evaluation, timestamp: toWallClock(evaluation.timestamp) },
+      context
+    );
 
     if (result.isNewIncident && result.incident) {
       const inc = result.incident;

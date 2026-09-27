@@ -11,26 +11,20 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Final Demo Console — Source-Agnostic Audio Architecture & UI Simplification** (`COMPLETED`)
-- **Git State:** Clean, all tests passing.
-- **Build Status:** `npm run build` passes with 0 TypeScript errors. `npm run lint` passes with 0 warnings/errors.
-- **Tests:**
-  - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
-  - `npx tsx src/analysis/__tests__/riskEngine.test.ts` → **59/59 passed**
-  - `npx tsx src/analysis/__tests__/codeWordDetector.test.ts` → **56/56 passed**
-  - `npx tsx src/analysis/__tests__/baseline.test.ts` → **92/92 passed**
-  - `npx tsx src/services/__tests__/incidentSystem.test.ts` → **95/95 passed**
-  - `npx tsx src/analysis/__tests__/temporalContext.test.ts` → **89/89 passed**
-  - `npx tsx src/demo/__tests__/demoController.test.ts` → **87/87 passed**
-  - `npx tsx src/audio/__tests__/audioFileInput.test.ts` → **54/54 passed**
-  - Total: **578 passed, 0 failed** across 8 test suites
-- **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
+- **Phase:** **UI Overhaul** (`COMPLETED`, 2026-09-28) on `feat/ui-overhaul`, which is stacked on `feat/complete-handoff`.
+- **Build Status:** `npm run build`, `npm run lint`, `npx tsc -b` clean.
+- **Tests:** `npm test` → **730 passed, 0 failed** across 13 suites:
+  - featureExtraction 46 · riskEngine 59 · codeWordDetector 56 · baseline 92 · incidentSystem 95 · temporalContext 89
+  - demoController 87 · audioFileInput 54 · sampleRecording 20 · trustedContacts 48 · **demoConversation 28** · **speechTranscriptSource 30** · **signalSettings 26**
+- **Where things live now:** orchestration is in `src/app/usePipeline.ts` (context: `usePipelineContext()`); views are in `src/views/`; UI primitives are generated shadcn components in `src/components/ui/` (don't hand-edit; lint ignores them). Design tokens are in `src/globals.css`.
+- **Open items & team questions:** see `docs/PROGRESS.md` → *Open Items / Needs Input* and *Pending Questions for the Team*.
 
 ---
 
 ## 3. Current Phase
 - **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection), Phase 6 (Personal Voice Baseline & Calibration), Phase 7 (Silent Alert Dispatch & Forensic Event System), Phase 8 (Multi-Signal False-Positive Reduction & Temporal Correlation), Phase 9 (Polish & Judge Demonstration Flow), Final Demo Console (Source-Agnostic Audio & UI Simplification).
-- **Next Phase:** None (Hackathon Prototype Finalized).
+- **Also completed:** Phase 10 design doc (`docs/MOBILE_INTEGRATION.md`), built-in sample call, trusted contacts + dispatch preview, and six UI/runtime bug fixes (see `docs/PROGRESS.md`).
+- **Next Phase:** None planned.
 
 ---
 
@@ -142,8 +136,15 @@
 
 ---
 
+### Handoff Completion (2026-09-28)
+- **`src/audio/sampleRecording.ts`**: deterministic synthesized 36 s call + WAV encoder + scripted transcript cues (`{phrase}` = configured code word).
+- **`src/services/trustedContacts.ts`**, **`dispatchPayload.ts`**, **`useTrustedContacts.ts`**, **`components/TrustedContactsPanel.tsx`**: local contact roster and never-transmitted alert payload preview.
+- **`docs/MOBILE_INTEGRATION.md`**: Phase 10 design.
+
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Mobile/VoIP native integration → Phase 10
+- [ ] Native mobile / VoIP integration (design only — `docs/MOBILE_INTEGRATION.md`)
+- [ ] Live speech outside Chrome's on-device recognition (Firefox has no API; others need a cloud opt-in)
+- [ ] Real alert delivery (SMS/email/push) or geolocation
 
 ---
 
@@ -293,7 +294,7 @@ The next agent should build the interactive telemetry UI:
 3. **Read `docs/ARCHITECTURE.md` before modifying architecture.**
 4. **Read `docs/DECISIONS.md` before making major technical decisions.**
 5. **Do not duplicate existing functionality.**
-6. **Do not modify `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.**
+6. **Avoid modifying `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.** (Two deliberate, tested exceptions: sustained external signals in `RiskEngine`, ADR 024; latch hysteresis in `IncidentManager`, ADR 025.)
 7. **Update `docs/PROGRESS.md` after completing meaningful work.**
 8. **Update `docs/AGENT_HANDOFF.md` when architecture changes significantly.**
 9. **Update `docs/DECISIONS.md` when making an important architectural decision.**

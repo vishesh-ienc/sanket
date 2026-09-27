@@ -179,16 +179,20 @@
   - **`alertHistory`:** Bounded local storage audit log (`sanket_alert_history_v1`, clamped to 50 items) with robust error resilience for corrupted or unavailable browser storage.
   - **`ForensicEventModal` & `IncidentBanner`:** Presentation components rendering explainable forensic telemetry (contributing signals, personal baseline Z-scores, feature snapshot, confirmation hold-down) with strict privacy guarantees (zero raw audio retention).
 
-### 2.9 Dashboard / Event Log
-- **Role:** Visual presentation layer for human monitoring and hackathon demonstrations.
-- **Responsibility:** Completely decoupled via event listeners or callback subscriptions. Displays:
-  - Real-time live status indicator
-  - Audio waveform and frequency visualization
-  - Real-time Risk Score gauge (0–100)
-  - Signal breakdown cards (Pitch, Volume, Silence, Code-Word)
-  - Immutable session audit event log
+### 2.9 Application Layer & Dashboard (`src/app`, `src/views`, `src/components`)
+- **Orchestration:** `usePipeline()` (`src/app/usePipeline.ts`) wires source → features → baseline → temporal filter → risk engine → incidents, plus the code word (live speech or transcript track), customisable signal settings, the demo conversation library, the scenario simulator and the guided tour. It is exposed once through `PipelineContext`; views never create engine instances.
+- **Sources:** `mic` (`AudioInputService`), `conversation` / `file` (`AudioFileInputService`, fed a bundled manifest's audio or an upload), and simulated scenarios (synthetic `FeatureSet`s at 10 Hz, no audio needed).
+- **Activity feed:** `src/app/activity.ts` turns state changes (settled level changes, filtered transient spikes, code-word matches, alerts, calibration, source start/stop) into events with evidence snapshots. No transcript text is stored.
+- **Views:** Monitor (source card, risk gauge + 15 s trend, live signal tiles, activity feed, pipeline strip), Signals (customisation + temporal filter), Incidents, Demo (tour, conversation library, scenarios), Settings (baseline, code word, live speech, trusted contacts, appearance). Details open in sheets.
+- **Design system:** Tailwind v4 tokens in `src/globals.css` (light/dark, semantic `--risk-*` colours); shadcn/ui primitives in `src/components/ui`.
 
-### 2.10 Guided Judge Demonstration State Machine (`DemoController`, `JudgeDemoPanel`)
+### 2.9b Live Speech Adapter (`speechTranscriptSource.ts`, `useLiveSpeech.ts`)
+- `BrowserSpeechTranscriptSource` implements `TranscriptSource` over Web Speech with `processLocally = true` (on-device) by default; cloud mode only with a stored opt-in. It auto-restarts after the browser's silence timeouts and treats `no-speech`/`aborted` as benign.
+
+### 2.9c Portable Frame Builder (`src/audio/frameBuilder.ts`)
+- Reproduces `AnalyserNode` output (Blackman window, |X|/N, 0.8 smoothing, dBFS) from raw PCM. Used by the Node test harness today; it is the basis for native mobile adapters (see `MOBILE_INTEGRATION.md`).
+
+### 2.10 Guided Judge Demonstration State Machine (`DemoController`, Demo view)
 - **Role:** Orchestrates a deterministic 6-step walkthrough for hackathon judges and technical evaluators.
 - **Components:**
   - **`DemoController`:** Pure TypeScript state machine operating on declarative step definitions (`DEMO_STEPS`). Decoupled from React and browser APIs for complete offline testability.
@@ -197,9 +201,9 @@
     2. `NORMAL_MONITORING`: Reference state with calm conversational speech (Score: 8–15).
     3. `TRANSIENT_EVENT`: Demonstrates Phase 8 false-positive reduction; isolated pitch/RMS spike is suppressed.
     4. `MULTI_SIGNAL_DISTRESS`: Sustained multi-signal deviation climbs to confirmed `HIGH_RISK`.
-    5. `SILENT_ALERT`: `IncidentManager` latches and dispatches silent local alert; `IncidentBanner` appears.
-    6. `FORENSIC_REVIEW`: Inspects `ForensicEventModal` with full telemetry and zero raw audio privacy verification.
-  - **`JudgeDemoPanel`:** Glassmorphic HUD panel rendered as ROW 0 executive command center with progress step flow, narration box, judge highlight pill, and bidirectional navigation.
+    5. `SILENT_ALERT`: `IncidentManager` latches and dispatches a silent local alert; the alert banner appears.
+    6. `FORENSIC_REVIEW`: Opens the evidence sheet automatically, as soon as the incident latches.
+  - **UI:** The Demo view's tour card shows progress, narration, "why it matters" and "watch for" notes, plus a live readout (score, level, temporal filter, latest event). Each step drives a simulated scenario, so no microphone is needed.
 
 ---
 

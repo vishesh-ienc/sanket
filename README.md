@@ -3,7 +3,8 @@
 > **Non-Verbal Distress Detection via Voice Pattern Analysis**  
 > Sanket is a multimodal voice distress-risk detection prototype designed to identify potential distress through subtle changes in voice and conversational patterns without requiring physical interaction or explicit panic calls.
 
-[![Phase: Phase 0 Completed](https://img.shields.io/badge/Phase-Phase%200%20(Initialization)-blue)](docs/PROGRESS.md)
+[![Status: Prototype Complete](https://img.shields.io/badge/Status-Prototype%20Complete-blue)](docs/PROGRESS.md)
+[![Tests: 730 passing](https://img.shields.io/badge/Tests-730%20passing-emerald)](#running-tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
 [![Local First](https://img.shields.io/badge/Privacy-100%25%20On--Device-green)](#privacy--security-first)
 
@@ -101,17 +102,20 @@ Detailed technical specs are available in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 
 ---
 
-## Planned Detection Signals
+## Detection Signals
 
 | Signal Channel | Detection Mechanism | Status |
 | :--- | :--- | :--- |
-| **Pitch Deviation ($F_0$)** | Autocorrelation / YIN algorithm detecting vocal cord tension | 📋 Planned (Phase 2) |
-| **RMS Energy Dynamics** | Volume envelope tracking sudden yelling or suppressed whispers | 📋 Planned (Phase 2) |
-| **Zero-Crossing Rate (ZCR)** | High-frequency noise ratio to detect forced, breathy whispers | 📋 Planned (Phase 2) |
-| **Prolonged Silence / Hesitation** | VAD-based timer detecting conversational freezing | 📋 Planned (Phase 2) |
-| **Personal Voice Baseline** | Statistical $Z$-score deviation from user's calibrated norm | 📋 Planned (Phase 7) |
-| **Covert Code-Word Phrases** | Local phrase matching (e.g., *"Remember to feed the cat"*) | 📋 Planned (Phase 5) |
-| **Multi-Signal Correlation** | Temporal co-occurrence filter to eliminate false alarms | 📋 Planned (Phase 8) |
+| **Pitch Deviation ($F_0$)** | Autocorrelation pitch estimate vs reference / personal baseline | ✅ Implemented |
+| **RMS Energy Dynamics** | Loudness spikes and suppressed whispers | ✅ Implemented |
+| **Zero-Crossing Rate (ZCR)** | Breathy / turbulent airflow indicator | ✅ Implemented |
+| **Spectral Centroid** | High-frequency vocal strain | ✅ Implemented |
+| **Prolonged Silence / Voice Activity** | VAD-based freeze and low-voicing detection | ✅ Implemented |
+| **Personal Voice Baseline** | Welford mean/σ calibration → Z-score deviations | ✅ Implemented |
+| **Covert Code-Word Phrases** | Token-aware local phrase matching; live from the mic via **on-device** browser speech recognition (cloud only by explicit opt-in), or from a demo call's transcript track | ✅ Implemented |
+| **Customisable Signals** | Enable/disable each signal, tune weights, alert threshold, pitch sensitivity and code-word weight — single-signal ceiling always enforced | ✅ Implemented |
+| **Temporal Correlation** | Transient-spike suppression, sustained + cross-signal confirmation | ✅ Implemented |
+| **Silent Alert Simulation** | Latched incident, trusted-contact dispatch preview (never sent), forensic audit | ✅ Implemented |
 
 ---
 
@@ -125,23 +129,24 @@ Detailed technical specs are available in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 
 ## Demo Flow Preview (2–3 Minutes)
 
-1. **Scene 1 (Normal Speech):** Calm talking $\rightarrow$ Risk: Low ($<15$) $\rightarrow$ Green HUD $\rightarrow$ No alert.
-2. **Scene 2 (Isolated Pitch/Volume Spike):** Loud cheer/excitement $\rightarrow$ Pitch spikes, but only single signal triggers $\rightarrow$ Risk: Elevated ($35$) $\rightarrow$ No alert.
-3. **Scene 3 (Prolonged Silence):** Abrupt conversational freeze $\rightarrow$ Silence counter increments $\rightarrow$ Risk: Suspected ($55$).
-4. **Scene 4 (Covert Code-Word):** Speaking secret phrase casually: *"Feed the cat"* $\rightarrow$ Contextual signal triggered $\rightarrow$ Risk: High ($75$).
-5. **Scene 5 (Multi-Signal Critical Event):** Strained whisper + code phrase + hesitation $\rightarrow$ Risk: Critical ($>80$) $\rightarrow$ **Silent Alert Simulator Dispatches Notification!**
+1. **Monitor → Play demo call.** A built-in 53 s phone call (two synthetic voices) plays through the exact pipeline a live stream would use.
+2. **Calm opening (0:00–0:17):** risk stays *Normal*; the live signal tiles barely move.
+3. **Voice tightens (0:17–0:25):** pitch, intensity and strain rise; the activity feed logs the escalation.
+4. **Distress + code phrase (0:25–):** acoustics alone push risk to *Suspicious* — then the caller slips in *"Remember to feed the cat"*. That corroboration crosses the threshold and a **silent alert** is raised (visual only, nothing sent).
+5. **View evidence:** contributing signals, temporal confirmation, dispatch preview for trusted contacts, privacy guarantees.
 
-Full script documented in [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
+Or use **Demo → Start tour** for a 6-step guided walkthrough that runs on simulated signals (no mic needed). Full script: [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
 
 ---
 
 ## Technology Stack
 
-- **Frontend Core:** React 19, TypeScript
-- **Tooling & Bundler:** Vite, Oxlint
-- **Audio DSP:** Browser Web Audio API (`AudioContext`, `AnalyserNode`)
-- **Icons & Styling:** Lucide React, Modern Dark Theme Safety HUD (Vanilla CSS / Tailwind)
-- **Backend / DB / Auth:** None in this phase (Zero-friction local execution)
+- **Frontend:** React 19, TypeScript 6, Vite 8
+- **UI:** Tailwind CSS v4 + shadcn/ui (Radix), Lucide icons, Geist / Geist Mono; light, dark and system themes ("Teal Mist" palette from 21st.dev with semantic risk colours)
+- **Audio DSP:** Web Audio API (`AudioContext`, `AnalyserNode`), portable frame builder for non-browser sources
+- **Speech (code word only):** Web Speech API with `processLocally` on-device recognition
+- **Tooling:** Oxlint, Prettier, `tsx`-run deterministic test suites
+- **Backend / DB / Auth:** none — everything runs in the browser
 
 ---
 
@@ -149,45 +154,44 @@ Full script documented in [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
 
 ```
 sanket/
-├── docs/
-│   ├── PROJECT_CONTEXT.md      # Primary source of truth
-│   ├── ARCHITECTURE.md         # Technical design & data contracts
-│   ├── ROADMAP.md              # 11-phase development roadmap
-│   ├── PROGRESS.md             # Real-time implementation status
-│   ├── DECISIONS.md            # Architecture Decision Records (ADRs)
-│   ├── DEMO_FLOW.md            # Judge demonstration script
-│   └── AGENT_HANDOFF.md        # Onboarding manifest for AI agents & engineers
+├── docs/                         # Context, architecture, ADRs, demo script, mobile design, handoff
+├── public/demo/                  # Built-in demo conversation (WAV + JSON transcript manifest)
+├── scripts/
+│   └── generate_demo_conversation.py   # Offline Piper-TTS generator for the demo call
 ├── src/
-│   ├── components/             # React presentation components
-│   ├── audio/                  # Web Audio capture & frame processing
-│   ├── analysis/               # Feature extraction, baseline, and risk scoring
-│   ├── services/               # State coordination & alert simulation
-│   ├── utils/                  # Mathematical and audio utilities
-│   ├── App.tsx                 # Main application shell
-│   ├── main.tsx                # Entry point
-│   └── index.css               # Design system & dark theme variables
-├── public/                     # Static assets
-├── package.json                # Project dependencies
-├── tsconfig.json               # TypeScript configuration
-├── vite.config.ts              # Vite configuration
-└── README.md                   # This document
+│   ├── audio/                    # Mic + file adapters, frame builder, demo conversation loader
+│   ├── analysis/                 # Features, baseline, temporal filter, risk engine, code word,
+│   │                             #   live speech adapter, customisable signal settings
+│   ├── services/                 # Incident latch, alert history, trusted contacts, dispatch payload
+│   ├── demo/                     # Guided tour state machine
+│   ├── app/                      # usePipeline orchestration hook + context, activity feed model
+│   ├── views/                    # Monitor · Signals · Incidents · Demo · Settings
+│   ├── components/
+│   │   ├── sanket/               # Gauge, sparkline, waveform, feed, sheets, source card…
+│   │   ├── shell/                # Sidebar, mobile tab bar, top bar, theme toggle
+│   │   ├── theme/                # Theme provider (light/dark/system)
+│   │   └── ui/                   # shadcn/ui primitives (generated)
+│   ├── globals.css               # Tailwind + design tokens
+│   └── main.tsx / App.tsx
+└── package.json
 ```
 
 ---
 
 ## Development Roadmap Status
 
-- [x] **Phase 0: Project Initialization & Documentation Infrastructure** ✅ `Implemented`
-- [ ] **Phase 1: Browser Microphone & Live Audio Analysis** 🚧 `In Development`
-- [ ] **Phase 2: Pitch, Energy, Speech Activity & Silence Detection** 📋 `Planned`
-- [ ] **Phase 3: Distress Risk Scoring Engine** 📋 `Planned`
-- [ ] **Phase 4: Live Sanket Safety Dashboard** 📋 `Planned`
-- [ ] **Phase 5: Configurable Code-Word Detection** 📋 `Planned`
-- [ ] **Phase 6: Silent Alert Simulation** 📋 `Planned`
-- [ ] **Phase 7: Personal Voice Baseline & Calibration** 📋 `Planned`
-- [ ] **Phase 8: Multi-Signal Temporal Correlation & False Alarm Reduction** 📋 `Planned`
-- [ ] **Phase 9: Polish & Judge Demonstration Flow** 📋 `Planned`
-- [ ] **Phase 10: Mobile Deployment Architecture Documentation** 📋 `Planned`
+- [x] **Phase 0–1:** Project setup, browser microphone & live audio pipeline
+- [x] **Phase 2:** Pitch, energy, speech activity & silence features
+- [x] **Phase 3:** Multi-signal distress risk engine
+- [x] **Phase 4:** Live safety dashboard
+- [x] **Phase 5:** Configurable code-word detection
+- [x] **Phase 6:** Personal voice baseline & calibration
+- [x] **Phase 7:** Silent alert dispatch & forensic event system
+- [x] **Phase 8:** Temporal correlation & false-alarm reduction
+- [x] **Phase 9:** Guided judge demonstration flow
+- [x] **Final console:** Source-agnostic audio (microphone or file), trusted contacts
+- [x] **UI overhaul:** Tailwind + shadcn app shell, themes, customisable signals, built-in TTS demo call, live on-device code word
+- [x] **Phase 10:** Mobile deployment architecture — design doc only, see [docs/MOBILE_INTEGRATION.md](docs/MOBILE_INTEGRATION.md)
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for full phase details.
 
@@ -198,6 +202,10 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for full phase details.
 - **Ambient Noise Sensitivity:** Sudden background noises (appliances, street traffic) can skew acoustic metrics; requires dynamic noise floors.
 - **Microphone Hardware Diversity:** Laptop built-in microphones exhibit different frequency responses and gain levels compared to smartphone or headset microphones.
 - **Browser Lifecycle:** Web Audio streams pause if mobile browser tabs are backgrounded without specific media sessions.
+- **Speech recognition availability:** private on-device recognition needs a recent Chrome with the language pack installed; Firefox has no speech API. Other browsers fall back to typed tests or an explicit cloud opt-in.
+- **Synthetic demo voices:** the built-in call is TTS with signal-processed "distress", not a real person; real acted or consented recordings would be more convincing.
+- **Acoustic Ceiling by Design:** Acoustic channels alone top out just below `HIGH_RISK`; a corroborating signal (code word, prolonged silence, low voice activity) is required for an alert.
+- **Simulated Alerts:** No SMS, email, or emergency service is ever contacted; the dispatch payload is a local preview.
 
 ---
 
@@ -213,24 +221,43 @@ The architecture is specifically structured so the core detection logic in `/src
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v20+ recommended)
-- npm or pnpm
+- Node.js 20+ and npm
+- A Chromium-based browser or Firefox (microphone access requires `localhost` or HTTPS)
 
-### Installation & Run
+### Install & Run
 
 ```bash
-# Clone the repository
 git clone https://github.com/vishesh-ienc/sanket.git
 cd sanket
-
-# Install dependencies
 npm install
-
-# Start Vite development server
-npm run dev
+npm run dev          # http://localhost:5173
 ```
 
-Visit `http://localhost:5173` in your browser.
+### Ways to Demo
+
+1. **Built-in call (recommended):** **Monitor → Play demo call.** Captions show what's being said; the silent alert appears
+   shortly after the caller says the code phrase (~0:39).
+2. **Guided tour:** **Demo → Start tour** — six steps on simulated signals, works without a microphone.
+3. **Live microphone:** **Monitor → Mic → Start microphone** and talk. In Chrome, **Settings → Live code-word listening →
+   Install** downloads the on-device speech pack once; after that, saying your code phrase is detected privately.
+4. **Your own recording:** **Monitor → Upload** any WAV/MP3/OGG (phone recording, VoIP export…).
+5. **Scenario simulator:** **Demo → Scenario simulator** — synthetic patterns (cough burst, whisper, multi-signal…).
+
+Tune what counts under **Signals**, and set the code word, baseline and trusted contacts under **Settings**.
+
+### Replacing the Demo Conversation
+
+Drop a consented recording into `public/demo/` with a manifest following `src/audio/demoConversations.ts`
+(`cues` with `atSec`/`finalSec`/`speaker`/`text`, a `timeline`, `codePhrase`), and list it in
+`DEMO_CONVERSATION_MANIFESTS`. To regenerate the synthetic call, see `scripts/generate_demo_conversation.py`.
+
+### Running Tests
+
+```bash
+npm test            # 13 deterministic suites, 730 tests — no browser or mic required
+npm run lint        # oxlint
+npm run build       # type-check + production bundle
+```
 
 ---
 

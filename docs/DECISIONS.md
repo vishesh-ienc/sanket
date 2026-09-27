@@ -195,6 +195,99 @@
 
 ---
 
+### DECISION 017: Built-in Synthesized Sample Call with Scripted Transcript Track
+- **Date:** 2026-09-28
+- **Status:** Superseded in the UI by DECISION 023 (the synthesized tone call remains as an engine regression test)
+- **Context:** The primary demo flow (`DEMO_FLOW.md` §2) requires a prepared recording, but none shipped with the repository. Committing a real person's voice raises consent issues, and binary fixtures bloat the repo. Separately, the risk engine's acoustic channels saturate at ~70 combined, so a purely acoustic recording sits at the HIGH_RISK boundary by design (single-signal ceiling, DECISION 011).
+- **Decision:**
+  1. Synthesize a deterministic 36 s voice-like call in the browser (`src/audio/sampleRecording.ts`), encoded to WAV and fed through the unchanged `AudioFileInputService`.
+  2. Ship a scripted transcript track whose covert-phrase cue uses the user's configured code word, fed to the real `CodeWordDetector` as the playhead passes. Label it `SIMULATED TRANSCRIPT` in the UI.
+  3. Verify it end-to-end in Node with an AnalyserNode-equivalent FFT harness: acoustic-only must escalate but never reach HIGH_RISK; with the phrase, exactly one latched alert.
+- **Consequences:** Judges can run the file-based demo with one click and no assets; the demo tells the honest multi-signal story (acoustics raise risk, corroboration triggers the alert). The synthetic voice is not a realistic human recording and must not be presented as one.
+
+---
+
+### DECISION 018: Trusted Contacts & Simulated Dispatch Payload (Never Transmitted)
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Documentation promised a simulated dispatch to trusted contacts with location, timestamp and rationale; `SilentAlertPayload` existed but was unused.
+- **Decision:** Store up to 5 contacts in localStorage only; build a pure, deterministic payload (`services/dispatchPayload.ts`) with masked addresses, ordered rationale, a non-diagnostic message and fixed placeholder coordinates. Never request geolocation. Payload is always `transmitted: false` / `SIMULATED_LOCAL` and is shown only in the forensic modal.
+- **Consequences:** Completes the alert story without any network or location access. Production transport options are documented in `MOBILE_INTEGRATION.md` §7.
+
+---
+
+### DECISION 019: Keep the Vanilla-CSS Design System (No Tailwind / shadcn Migration)
+- **Date:** 2026-09-28
+- **Status:** Superseded by DECISION 021
+- **Context:** The console already has a cohesive dark safety-HUD design system (~4.5k lines in `src/index.css`, shared tokens on `:root`). A shadcn/ui component library would require adding Tailwind and would mix two component styles across ~25 components.
+- **Decision:** Extend the existing design language for all new UI (sample-call storyline, trusted contacts, dispatch preview, awaiting-confirmation cue) using the existing tokens and class conventions.
+- **Consequences:** Visual consistency and no new build tooling. A future migration to a component library should be a deliberate, whole-app decision.
+
+---
+
+### DECISION 020: No Browser Web Speech API for Live Code-Word Detection
+- **Date:** 2026-09-28
+- **Status:** Superseded by DECISION 022
+- **Context:** Wiring `SpeechRecognition` would make the code word work live from the mic, but Chromium's implementation may send audio to a cloud recognizer, contradicting the zero-cloud-audio positioning.
+- **Decision:** Keep transcript input simulated (manual test input, demo presets, sample-call track) in the prototype; specify on-device recognizers for production.
+- **Consequences:** Live-mic code-word detection is not available in the browser demo. Revisit if an explicitly on-device browser recognizer is adopted, with an opt-in disclosure.
+
+---
+
+### DECISION 021: Tailwind v4 + shadcn/ui App Shell with Navigation
+- **Date:** 2026-09-28
+- **Status:** Accepted (supersedes DECISION 019)
+- **Context:** The product owner asked for a far less cluttered, more appealing UI with light/dark themes, working cleanly on phones and desktops, built with the team's shadcn and 21st.dev tooling. The single long page showed every panel at once.
+- **Decision:** Migrate the whole UI (not piecemeal) to Tailwind v4 + shadcn/ui (Radix, `radix-nova` style). Split it into five views behind a collapsible sidebar (bottom tab bar on phones): Monitor, Signals, Incidents, Demo, Settings. Details open in sheets (activity event → detail; incident → evidence with Evidence / Dispatch / Privacy tabs). Theme tokens are based on the 21st.dev "Teal Mist" palette, plus semantic `--risk-*` colours. A small in-house ThemeProvider plus a no-flash script replaces `next-themes`, whose injected script triggers a React 19 console error. Secondary views are lazy-loaded.
+- **Consequences:** One consistent component style; the old 4.5k-line `index.css` and 16 legacy components are removed. `src/components/ui/` is generated code (excluded from lint). Pipeline orchestration moved from `App.tsx` into `src/app/usePipeline.ts` behind `PipelineContext`.
+
+---
+
+### DECISION 022: Live Code Word via On-Device Web Speech; Cloud Only by Opt-in
+- **Date:** 2026-09-28
+- **Status:** Accepted (supersedes DECISION 020)
+- **Context:** Live code-word detection is a key demo feature, but default Web Speech recognition in Chromium may send microphone audio to a cloud service. Chrome now supports on-device recognition (`SpeechRecognition.available/install({langs, processLocally: true})`, `recognition.processLocally = true`).
+- **Decision:** `BrowserSpeechTranscriptSource` implements `TranscriptSource`. It runs only while the live microphone is active and uses on-device mode whenever `available()` reports it (Settings offers **Install** when `downloadable`). Cloud mode requires an explicit, persisted opt-in behind a warning. Transcripts go straight to `CodeWordDetector` and are discarded; the UI shows only the most recent utterance in memory.
+- **Consequences:** Private live detection in recent Chrome (verified: `install()` → `downloading` → `available`). Browsers without on-device support (and Firefox, which has no API) fall back to the typed test or an explicit opt-in.
+
+---
+
+### DECISION 023: Bundled TTS Demo Conversation with Transcript Manifest
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** The team wants the site to be a self-contained demo: a pre-downloaded conversation proving the pipeline accepts voice from anywhere.
+- **Decision:** Ship `public/demo/conversation.{wav,json}`, a 53 s two-voice call generated offline with Piper TTS (`scripts/generate_demo_conversation.py`). "Distress" is applied through signal processing (pitch ×1.8 at constant duration, raised effort, breath noise). The manifest carries timeline segments and transcript cues; each cue is fed to the detector at `finalSec`, when a recognizer would finalise it. The synthetic origin is disclosed in the UI.
+- **Consequences:** One-click demo with realistic speech dynamics, tested end to end (acoustic-only never alerts; with the phrase, exactly one alert). A real, consented recording can replace it with no code change.
+
+---
+
+### DECISION 024: Contextual External Signals Are Sustained, Not One-Shot
+- **Date:** 2026-09-28
+- **Status:** Accepted (deliberate, minimal change to `RiskEngine`, which the handoff asked agents not to modify)
+- **Context:** A detected code word was added once to the smoothed score and forgotten by the EMA (×0.78 per frame) in under a second. With natural speech it could not corroborate anything.
+- **Decision:** An injected signal contributes to the raw score for `EXTERNAL_HOLD_FRAMES` (150 frames ≈ 15 s): full weight, then a linear fade over the last 5 s. It does not count toward persistence.
+- **Consequences:** The code word behaves as sustained context. On its own it plateaus at its weight (25), well below HIGH_RISK, so the single-signal ceiling holds. All 59 original engine tests still pass; new tests cover the hold and fade.
+
+---
+
+### DECISION 025: Incident Latch Hysteresis
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Real speech makes the score dip between phrases. The latch released on the first dip, and one incident produced 10 alerts on the demo call.
+- **Decision:** `IncidentManager` accepts `releaseFrames`; the app uses 40 (~4 s) below HIGH_RISK before resolving. The default of 0 preserves the original behaviour and its tests.
+- **Consequences:** Exactly one alert per episode on the demo call (tested). The UI also keeps the alert banner until the user dismisses it, even after the incident auto-resolves.
+
+---
+
+### DECISION 026: Customisable Signals with an Enforced Single-Signal Ceiling
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** The team wanted a dashboard with customisable signals. Unbounded weights would break DECISION 011's guarantee that no single signal can alert.
+- **Decision:** `signalSettings.ts` lets users enable or disable each signal and set weights (0–35), the alert threshold (60–90), pitch sensitivity and code-word weight (0–35). Values are sanitised and persisted, then applied through `RiskEngine.updateConfig`. Clamping guarantees max single weight + persistence (15) ≤ 50 < the minimum threshold of 60.
+- **Consequences:** Judges can tune the engine live without being able to configure it into a single-signal alarm (tested at extreme values). Spectral/ZCR thresholds remain hard-coded in the engine. Temporal-context channel detection does not yet follow the enable toggles.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

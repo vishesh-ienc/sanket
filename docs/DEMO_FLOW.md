@@ -42,74 +42,59 @@ Live Microphone  Simulated Call Audio  Future Authorized Stream
 
 ---
 
-## 2. Core Demonstration Flow: Prepared Audio File Input
+## 2. Core Demonstration Flow: Built-in Conversation (~2 min)
 
-The primary demonstration allows evaluators to feed a prepared audio recording into the identical live analysis pipeline:
+The site ships with a pre-recorded 53-second phone call (`public/demo/conversation.wav`, two synthetic
+voices generated offline with Piper TTS). It is decoded in the browser into the same `AudioFrame`s a live
+microphone produces. Tip: open the site once beforehand so the audio is cached.
 
-1. **Orientation (5 seconds):**
-   - Presenter: *"This is the Sanket detection console. Notice the audio source selector at the top."*
-   - Judge sees the clean top-level Audio Source panel with tabs: `Live Microphone` and `Simulated Call Audio`.
+1. **Orientation (10 s) — Monitor view.**
+   *"This is Sanket's console. The source card at the top says it all: phone, VoIP, mic or a recording —
+   any voice stream goes through the same pipeline."* Point at the **Detection pipeline** strip at the bottom.
 
-2. **Select Audio Source (10 seconds):**
-   - Click the **"Simulated Call Audio"** tab.
-   - Click **"Choose Audio File"** and load a prepared evaluation recording (`.wav`, `.mp3`, or `.ogg`).
-   - The file is decoded in-browser using Web Audio API into the identical `AudioFrame` format consumed by the feature extractor.
+2. **Play the call (0:00–0:17, calm).** Click **Play demo call**. Captions show both speakers. The risk
+   gauge stays green (*Normal*); the **Live signals** tiles barely move.
 
-3. **Begin Playback & Observe Normal Conversation (20 seconds):**
-   - Click **"PLAY"**.
-   - Normal conversation plays through the pipeline.
-   - The **PCM Oscilloscope** shows live waveform dynamics.
-   - The **Central Risk Score Gauge** remains in the green zone (`0–25 NORMAL`).
-   - The **Multi-Signal Breakdown** shows nominal pitch and energy within standard bounds.
-   - The **Temporal Context** card indicates `TEMPORALLY STABLE`.
+3. **Voice tightens (0:17–0:25).** Asha notices she's being followed. Pitch, intensity and strain tiles light
+   up; the **Live activity** feed logs *Risk rose to Elevated*. *"No single signal can raise an alert."*
 
-4. **Distress Acoustic Deviations Begin (20 seconds):**
-   - As distress-related acoustic deviations emerge in the audio (acute pitch elevation, vocal strain, irregular pausing):
-   - The **Signal Breakdown** bars dynamically rise:
-     - Pitch Deviation climbs ($>2.0\sigma$ from baseline).
-     - Vocal Intensity exhibits sustained compression or strain.
-     - Conversational turn pacing exhibits irregular pause patterns.
-   - The **Temporal Context** evaluates cross-signal correlation across a rolling 30-frame window.
+4. **Distress (0:25–0:33).** Acoustics alone take the score into *Suspicious* (~60–65) — but not past the
+   alert line on the sparkline. *"This is the multi-signal ceiling doing its job."*
 
-5. **Risk Classification & Escalation (15 seconds):**
-   - When multiple independent acoustic channels deviate simultaneously and persist beyond transient thresholds:
-   - Temporal status switches to `SUSTAINED & MULTI-SIGNAL`.
-   - Risk score climbs through `ELEVATED` (35+) and `SUSPICIOUS` (50+) into `HIGH_RISK` (70+).
-   - The central HUD pulses with confirmation badges.
+5. **The code phrase (0:33–0:36).** Asha says *"Everything is fine. Remember to feed the cat, okay?"* The
+   code-word row flips to **+25 context** and the feed logs *Code word detected*. That corroboration pushes
+   the score over 70 and the **Silent alert** banner appears (~0:39) — visual only, no sound.
 
-6. **Silent Distress Alert Triggered (10 seconds):**
-   - Upon confirmed HIGH_RISK, the **Incident Banner** appears at the top:
-     - Status: `CONFIRMED HIGH-RISK EVENT`.
-     - Subtext: *"Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission."*
-     - No audible siren sounds (simulated silent dispatch to prevent endangering a victim).
+6. **Evidence (30 s).** Click **View evidence** (or the alert in the feed). Walk the three tabs:
+   - **Evidence:** contributing signals ranked, σ-deviation from the personal baseline, temporal confirmation.
+   - **Dispatch:** what *would* be sent to trusted contacts — masked numbers, discreet message, placeholder
+     location — marked *Not sent · simulated*. (Add a contact under **Settings** beforehand for a fuller demo.)
+   - **Privacy:** no audio stored, no transcripts, nobody contacted, estimate not diagnosis.
 
-7. **Forensic Evidence Inspection (30 seconds):**
-   - Click **"VIEW EVIDENCE"** on the banner.
-   - The **Forensic Event Modal** displays:
-     - Exact timestamp and event ID.
-     - Contributing signals with point-by-point breakdown.
-     - Baseline deviation $Z$-scores.
-     - Short-term temporal correlation and pause regularity metrics.
-     - Privacy Guarantee: Zero raw audio streaming, zero raw audio storage, local DSP only.
+7. **Customisable signals (20 s).** Open **Signals**. Toggle a signal off or drag a weight; point at the
+   *Single-signal ceiling* card: *"However you tune it, one signal can never alert on its own."*
 
-8. **Source Independence Proof (10 seconds):**
-   - Switch the source tab to **"Live Microphone"**.
-   - Show that the exact same feature extraction, baseline comparison, and risk engine execute against real-time microphone input with no code or architectural changes.
+8. **Source independence (10 s).** Back on Monitor, switch to **Mic** (or **Upload**) — same engine, no changes.
+   In Chrome, with the on-device speech pack installed (**Settings → Live code-word listening**), say the code
+   phrase out loud; it's recognised on the device.
 
 ---
 
-## 3. Alternative: Interactive 6-Step Guided Demonstration
+## 3. Alternative: 6-Step Guided Tour (no microphone needed)
 
-For rapid evaluations without external files, the top **Judge Demonstration Panel** provides an automated 6-scene walkthrough:
+**Demo → Start tour.** Each step drives the engine with a simulated scenario, and the tour card shows a live
+readout (score, level, temporal filter state, latest event).
 
-| Step | Scene Name | Demonstrates | System Response |
+| Step | Scene | Demonstrates | Expected |
 | :---: | :--- | :--- | :--- |
-| **1** | Personal Baseline Calibration | Relative $Z$-score tracking vs static thresholds | Activates preset vocal profile ($165\text{ Hz } \mu, \pm 14.5\text{ Hz } \sigma$) |
-| **2** | Normal Conversational Speech | Calm baseline reference state | Score `8–15` (NORMAL), stable temporal context |
-| **3** | Transient Vocal Spike | False-positive reduction via temporal filter | Cough/laugh burst flagged as `TRANSIENT_SPIKE`, alert suppressed |
-| **4** | Sustained Multi-Signal Distress | Cross-channel co-occurrence & persistence | Pitch + Energy + Spectral deviations sustain; score $>70$ |
-| **5** | Silent Alert Dispatch | Silent local dispatch without audible danger | Prominent `SILENT DISTRESS ALERT` banner latches locally |
-| **6** | Forensic Incident Audit | Explainable evidence with zero raw audio | Forensic modal reveals contributing signals & $Z$-scores |
+| 1 | Personal baseline | Relative Z-scores vs static thresholds | Demo profile applied (165 Hz ± 14.5) |
+| 2 | Normal conversation | Calm reference | *Normal*, stable |
+| 3 | Transient spike (cough/laugh) | False-positive filter | Feed: *Short spike filtered*, no alert |
+| 4 | Sustained multi-signal distress | Cross-channel persistence | Score climbs past 70 |
+| 5 | Silent alert | Visual-only local alert | Banner latches once |
+| 6 | Forensic review | Explainable evidence | Evidence sheet opens automatically |
+
+The **Scenario simulator** on the same page has 11 individual patterns for Q&A ("what if they just cough?").
 
 ---
 
@@ -117,6 +102,8 @@ For rapid evaluations without external files, the top **Judge Demonstration Pane
 
 | Expected Judge Question | Recommended Response |
 | :--- | :--- |
+| **"Is that a real person in the demo call?"** | *"No — it's synthetic speech generated offline, with the strain applied by signal processing. We deliberately didn't use a real person's voice. Teams can drop in a consented recording without code changes."* |
+| **"Does speech recognition send my voice to Google?"** | *"Not by default. Sanket asks Chrome for on-device recognition (`processLocally`). Cloud recognition is off unless the user explicitly opts in, with a warning."* |
 | **"Is Sanket a mobile phone app?"** | *"Sanket is designed as an audio-source-agnostic detection engine. While mobile or VoIP devices represent possible future sources, the engine itself operates on normalized audio frames and can be fed by live microphones, pre-recorded audio files, or any authorized communication stream."* |
 | **"Could someone cough, yell, or laugh and trigger an alert?"** | *"No. The Phase 8 Temporal Context Analyzer filters isolated 1–2 frame spikes as TRANSIENT_SPIKE. Alert dispatch strictly requires multi-frame sustained persistence and multi-signal corroboration."* |
 | **"Are you recording or uploading my voice to an external cloud/AI server?"** | *"No. Sanket processes all audio frames locally in memory using the Web Audio API. Audio buffers are discarded immediately after analytical feature extraction. Zero audio or transcripts leave the client."* |

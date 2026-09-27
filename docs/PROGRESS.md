@@ -8,10 +8,94 @@
 
 ## Current Status
 
-- **Current Phase:** **Final Demo Console — Source-Agnostic Audio & UI Simplification**
-- **Status:** `COMPLETED`
-- **Last Updated:** 2026-09-27
-- **Next Phase:** None (Hackathon Prototype Finalized)
+- **Current Phase:** **UI Overhaul, Live Code Word, Customisable Signals & Built-in Conversation**
+- **Status:** `COMPLETED` on branch `feat/ui-overhaul` (stacked on `feat/complete-handoff`), pending review and merge
+- **Last Updated:** 2026-09-28
+- **Tests:** **730 / 730** across 13 suites · `npm run lint` clean · `npm run build` clean
+
+---
+
+## Completed in UI Overhaul (2026-09-28)
+
+### Requests from the product owner & team → outcome
+| Request | Outcome |
+| :--- | :--- |
+| Much better, less cluttered UI; sections/sidebars; details on click | ✅ App shell with sidebar (desktop) / bottom tabs (phone); 5 views; activity feed where events appear as they trigger; click → detail sheets (event / incident evidence) |
+| Light & dark themes | ✅ Light / Dark / System (top-bar toggle + Settings), no flash on load |
+| Works cleanly on PC and mobile | ✅ Verified at 1440 px and 375–390 px (no horizontal scroll, bottom sheets, risk gauge first on phones) |
+| Use the plugins | ✅ shadcn/ui via the shadcn MCP/CLI, 21st.dev theme ("Teal Mist") and layout references via the 21st MCP, context7 for shadcn/Tailwind v4 setup, Playwright MCP for all browser verification |
+| Live code-word detection ("great feature to see") | ✅ On-device Web Speech (`processLocally`), cloud only by explicit opt-in; verified install → downloading → available in Chrome |
+| Scenario simulator shouldn't need a live source | ✅ Scenarios drive the engine without any audio |
+| Keep real-time alert delivery on hold | ⏸ Unchanged — alerts remain simulated (dispatch preview only) |
+| Teammate: site is a demo of a source-agnostic pipeline, **customisable signals dashboard**, **pre-downloaded conversation built in** | ✅ Signals view (toggle/weight/threshold/sensitivity/code-word weight); bundled 53 s two-voice call with transcript captions; "any source" framing across Monitor + pipeline strip |
+
+### Engine / behaviour fixes found while testing with real speech
+- Code word was forgotten by the EMA in < 1 s → now sustained ~15 s context (ADR 024).
+- One incident produced 10 alerts with natural speech dips → latch hysteresis (ADR 025).
+- Activity feed flooded by Elevated ↔ Suspicious flips → level changes post only after ~1.2 s settle.
+- Alert banner vanished when the incident auto-resolved → persists until dismissed.
+
+### New modules & tests
+- `src/app/*` (pipeline hook/context, activity model, scenario catalogue, signal metadata), `src/views/*`, `src/components/{sanket,shell,theme,ui}/*`
+- `src/analysis/signalSettings.ts` (+26 tests), `speechTranscriptSource.ts` (+30 tests), `useLiveSpeech.ts`
+- `src/audio/frameBuilder.ts`, `demoConversations.ts`, `public/demo/conversation.{wav,json}`, `scripts/generate_demo_conversation.py`
+- `src/audio/__tests__/demoConversation.test.ts` (+28 tests)
+
+## Open Items / Needs Input
+
+- **Real, consented demo recording (team):** the built-in call is synthetic TTS. An acted recording by a teammate would be more convincing; drop it in `public/demo/` with a manifest (see README).
+- **Live speech on non-Chrome browsers:** Firefox has no Web Speech API; Safari/Edge on-device support varies. Those users get the typed test or the cloud opt-in.
+- **Live-mic code word needs a human test:** on-device recognition was verified to install and report `available`, but transcription of a real spoken phrase can't be automated here. Please try: Monitor → Mic → say *"remember to feed the cat"*.
+- **Real alert delivery:** on hold by request (options in `MOBILE_INTEGRATION.md` §7).
+- **Temporal filter vs signal toggles:** disabling a signal removes it from scoring, but the temporal-context analyser still counts that channel when judging "multi-signal". Minor; noted in ADR 026.
+- **Legacy synthetic tone call:** `src/audio/sampleRecording.ts` is no longer in the UI but kept as an engine regression test.
+
+---
+
+## Pending Questions for the Team
+
+Decisions nobody has made yet. Each one has a current default, so nothing is blocked, but please confirm or change it.
+Reply here or in the PR, then record the answer as an ADR in `docs/DECISIONS.md`.
+
+| # | Question | Current default | Where it matters |
+| :-: | :--- | :--- | :--- |
+| 1 | **Demo recording:** will someone record an acted, consented call to replace the synthetic TTS one? Which language(s)? | Synthetic 53 s English call (Piper TTS, disclosed in the UI) | `public/demo/`, README "Replacing the Demo Conversation" |
+| 2 | **Speech language:** should live code-word recognition use `en-IN`, `hi-IN` or a user-selectable language instead of `en-US`? | `en-US`, hard-coded | `src/analysis/useLiveSpeech.ts` (`lang` default) |
+| 3 | **Cloud speech opt-in:** keep the opt-in for browsers without on-device support, or remove it so audio can never leave the device? | Opt-in available, off by default, with a warning | Settings → Live code-word listening; ADR 022 |
+| 4 | **Alert delivery (on hold):** when resumed, is a backend relay acceptable? That would change the pitch from "zero cloud" to "zero cloud *audio*". | Simulated only; nothing sent | `docs/MOBILE_INTEGRATION.md` §7, §11 |
+| 5 | **Target market / emergency integration:** which country's numbers, SMS provider and consent rules? | None | `docs/MOBILE_INTEGRATION.md` §9, §11 |
+| 6 | **Default tuning:** are an alert threshold of 70 and weights of 20/15/15/15/10/10 right for judges, or should the demo be more sensitive? | Original engine values | Signals view; `src/analysis/signalSettings.ts` |
+| 7 | **Signal toggles vs false-positive filter:** should switching a signal off also exclude it from the temporal filter's "multi-signal" check? | Scoring only (filter still sees it) | `src/analysis/temporalContext.ts`; ADR 026 |
+| 8 | **Legacy synthetic tone call:** keep `src/audio/sampleRecording.ts` as an engine regression test, or delete it? | Kept (tests only, not in the UI) | `src/audio/sampleRecording.ts` + its test |
+| 9 | **Hosting the demo:** where will it be deployed (Vercel, Netlify, GitHub Pages)? GitHub Pages needs a Vite `base` path. Mic and speech require HTTPS. | Not deployed | `vite.config.ts` |
+| 10 | **Branding:** is the teal waves logo/favicon final, or is there an official mark? | Placeholder waves icon | `public/favicon.svg`, sidebar header |
+| 11 | **Wearable "are you safe?" confirmation** before an alert: in scope for v1? | Not planned | `docs/MOBILE_INTEGRATION.md` §7, §11 |
+| 12 | **Real-voice verification:** someone should say the code phrase into a real mic in Chrome with the on-device pack installed and confirm detection. Automated tests can't cover this. | Verified up to "On-device available" | Monitor → Mic |
+
+---
+
+## Completed in Handoff Completion (2026-09-28)
+
+- [x] **Bug fixes (verified in a real Chromium session):**
+  - Demo simulator interval was re-created on every live-mic frame, starving synthetic frames; the Multi-Signal scenario plateaued at ~66–68 and the guided tour often never raised an alert. Now a steady 10 Hz clock per scenario.
+  - Incidents were stamped with `performance.now()` and displayed as 1970 in the forensic modal/history; converted to epoch ms in `useIncidentManager`.
+  - Guided tour step 6 now opens the evidence modal once the incident latches; steps 5–6 show an "awaiting confirmation" cue.
+  - File playback progress bar and playhead froze during playback (status only refreshed on state transitions).
+  - File waveform received a new shim object every render; now uses the file service directly.
+  - Top-nav pipeline trace caused horizontal page scroll on phones (489 px content at 390 px).
+  - Guided tour silently did nothing if microphone access was denied or unavailable; it now runs on its synthetic scenario data regardless.
+- [x] **Built-in sample call** — `src/audio/sampleRecording.ts`, "USE SAMPLE CALL" in the Audio Source panel, storyline strip (segments, playhead, simulated transcript captions).
+  - `src/audio/__tests__/sampleRecording.test.ts` — **20 tests**, full pipeline in Node via AnalyserNode-equivalent FFT.
+- [x] **Trusted contacts & dispatch preview** — `services/trustedContacts.ts`, `services/dispatchPayload.ts`, `services/useTrustedContacts.ts`, `components/TrustedContactsPanel.tsx`, forensic modal §5, banner recipient count.
+  - `src/services/__tests__/trustedContacts.test.ts` — **48 tests** incl. privacy invariants.
+- [x] **Phase 10** — `docs/MOBILE_INTEGRATION.md` (design only).
+- [x] **Totals:** **646 / 646 tests** across 10 suites; `npm run build` and `npm run lint` clean.
+
+## Known Gaps (Not Implemented)
+
+- No speech-to-text: code-word input is manual, preset, or the sample call's scripted transcript (DECISION 020).
+- The standalone Scenario Simulator cards still require a live audio source (the guided tour does not).
+- No native mobile app, real alert transport, or geolocation.
 
 ---
 

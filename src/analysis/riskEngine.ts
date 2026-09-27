@@ -156,6 +156,11 @@ function scoreToLevel(score: number, config: RiskEngineConfig): RiskLevel {
 // RiskEngine Class
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Frames (~10 Hz) a contextual external signal stays active: ~15 s */
+export const EXTERNAL_HOLD_FRAMES = 150;
+/** Final frames over which it fades out linearly: ~5 s */
+const EXTERNAL_FADE_FRAMES = 50;
+
 export class RiskEngine {
   private config: RiskEngineConfig;
   private state: RiskTemporalState;
@@ -356,11 +361,20 @@ export class RiskEngine {
     }
 
     // ── External signal contributions (Phase 5 Code-Word / Contextual) ────────
+    // A contextual signal such as a covert code phrase is sticky evidence: it
+    // keeps contributing to the raw score for EXTERNAL_HOLD_FRAMES (full weight,
+    // then a linear fade) so it can corroborate acoustic anomalies that occur
+    // around it. It does not count toward persistence, so on its own it stays
+    // far below HIGH_RISK (single-signal ceiling preserved).
+    let externalScore = 0;
     for (const ext of state.activeExternalSignals) {
       if (ext.remainingFrames > 0) {
+        const fade = Math.min(1, ext.remainingFrames / EXTERNAL_FADE_FRAMES);
+        const contribution = Math.round(ext.boost * fade * 10) / 10;
+        externalScore += contribution;
         contributions.push({
           signal: ext.signal,
-          contribution: Math.round(ext.boost * (ext.remainingFrames / 10) * 10) / 10,
+          contribution,
           reason: ext.reason,
         });
         ext.remainingFrames -= 1;
@@ -379,7 +393,7 @@ export class RiskEngine {
     // The asymmetry (decay applied to previous, not new value) means scores
     // rise faster than they fall — appropriate for safety systems.
     // ──────────────────────────────────────────────────────────────────────────
-    const totalRawScore = rawSignalScore + persistenceScore;
+    const totalRawScore = Math.min(100, rawSignalScore + persistenceScore + externalScore);
     const newSmoothedScore = clamp(
       config.decayFactor * state.smoothedScore + (1 - config.decayFactor) * totalRawScore,
       0,
@@ -430,7 +444,7 @@ export class RiskEngine {
       signal: metadata?.signal ?? 'codeWord',
       boost: clamped,
       reason: metadata?.reason ?? 'Configured distress phrase detected',
-      remainingFrames: 10,
+      remainingFrames: EXTERNAL_HOLD_FRAMES,
     });
   }
 
