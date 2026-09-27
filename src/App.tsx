@@ -28,7 +28,7 @@
  * Does NOT claim to certify emergency or danger.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Shield,
   ChevronDown,
@@ -62,6 +62,12 @@ import { AlertHistory } from './components/AlertHistory';
 import { DemoScenarios } from './components/DemoScenarios';
 import { AudioSourcePanel } from './components/AudioSourcePanel';
 import type { AudioSourceMode } from './components/AudioSourcePanel';
+import {
+  createSampleCallFile,
+  renderTranscriptCue,
+  SAMPLE_CALL_FILE_NAME,
+  SAMPLE_CALL_TRANSCRIPT,
+} from './audio/sampleRecording';
 import {
   type DemoScenarioKey,
   getDemoScenarioFeatures,
@@ -244,6 +250,54 @@ export function App() {
     isActive: isLive,
   });
 
+  // ── Built-in sample call: simulated transcript track ─────────────────
+  const isSampleLoaded = fileStatus.fileName === SAMPLE_CALL_FILE_NAME;
+  const samplePlayheadSec = fileStatus.currentTimeSec;
+  const lastCueCheckSecRef = useRef(0);
+
+  const latestSampleCue = isSampleLoaded
+    ? [...SAMPLE_CALL_TRANSCRIPT].reverse().find((c) => c.atSec <= samplePlayheadSec) ?? null
+    : null;
+  const sampleCaption = latestSampleCue
+    ? renderTranscriptCue(latestSampleCue, codeWordConfig.phrase)
+    : null;
+
+  // Feed each transcript cue to the code-word detector once, as the playhead crosses it
+  useEffect(() => {
+    if (!isSampleLoaded || audioSourceMode !== 'FILE') return;
+    const prev = lastCueCheckSecRef.current;
+    if (samplePlayheadSec < prev) {
+      // Restarted / rewound — allow cues to fire again
+      lastCueCheckSecRef.current = samplePlayheadSec;
+      return;
+    }
+    if (!isFilePlaying) return;
+    for (const cue of SAMPLE_CALL_TRANSCRIPT) {
+      if (cue.atSec > prev && cue.atSec <= samplePlayheadSec) {
+        runCodeWordTranscript(
+          renderTranscriptCue(cue, codeWordConfig.phrase),
+          Date.now(),
+          'sample-call-transcript'
+        );
+      }
+    }
+    lastCueCheckSecRef.current = samplePlayheadSec;
+  }, [
+    isSampleLoaded,
+    audioSourceMode,
+    isFilePlaying,
+    samplePlayheadSec,
+    codeWordConfig.phrase,
+    runCodeWordTranscript,
+  ]);
+
+  const handleLoadSample = useCallback(async () => {
+    lastCueCheckSecRef.current = 0;
+    // Simulator presets override source features — analyze the real file instead
+    setActiveScenario('LIVE_MIC');
+    await loadFile(createSampleCallFile());
+  }, [loadFile]);
+
   // ── Scenario selector handler ─────────────────────────────────────────
   const handleSelectScenario = useCallback(
     (scenario: DemoScenarioKey) => {
@@ -351,9 +405,6 @@ export function App() {
   const persistenceFrames = latestEvaluation?.persistenceFrames ?? 0;
   const confirmedSignals = latestEvaluation?.confirmedSignals ?? 0;
 
-  // Display analyser node from active source for oscilloscope
-  const waveformAnalyserNode = activeAnalyserNode;
-
   return (
     <div className="app-container" id="sanket-console-app">
       {/* ── Top Navigation Bar ─────────────────────────────────────────── */}
@@ -460,6 +511,9 @@ export function App() {
             onPlayFile={playFile}
             onPauseFile={pauseFile}
             onRestartFile={restartFile}
+            onLoadSample={handleLoadSample}
+            isSampleLoaded={isSampleLoaded}
+            sampleCaption={sampleCaption}
           />
         </section>
 
@@ -498,11 +552,7 @@ export function App() {
             </p>
 
             <LiveWaveform
-              audioService={
-                audioSourceMode === 'MICROPHONE'
-                  ? micService
-                  : { getAnalyserNode: () => waveformAnalyserNode, getIsRunning: () => isFilePlaying } as unknown as typeof micService
-              }
+              audioService={activeAudioService}
               isActive={isLive}
               height={140}
             />

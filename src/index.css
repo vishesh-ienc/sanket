@@ -4066,6 +4066,17 @@ body {
   transform: translateY(-1px);
 }
 
+.asp-btn-sample {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.asp-btn-sample:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
+}
+
 .asp-btn-play {
   background: linear-gradient(135deg, #10b981, #059669);
   color: #fff;
@@ -4247,6 +4258,131 @@ body {
   padding: 0.4rem 0;
   line-height: 1.45;
   margin-top: 0.1rem;
+}
+
+/* ── Sample call storyline ─────────────────────────────────────────────── */
+.asp-sample-story {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: rgba(10, 15, 25, 0.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+}
+
+.asp-sample-track {
+  position: relative;
+  display: flex;
+  gap: 3px;
+  height: 8px;
+}
+
+.asp-sample-seg {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.asp-sample-seg-calm { background: rgba(16, 185, 129, 0.45); }
+.asp-sample-seg-transition { background: rgba(245, 158, 11, 0.5); }
+.asp-sample-seg-distress { background: rgba(244, 63, 94, 0.5); }
+
+.asp-sample-playhead {
+  position: absolute;
+  top: -4px;
+  width: 3px;
+  height: 16px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--text-main);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  transition: left 0.1s linear;
+}
+
+.asp-sample-legend {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.asp-sample-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  border-left-width: 3px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.asp-sample-legend-calm { border-left-color: var(--status-ready); }
+.asp-sample-legend-transition { border-left-color: var(--status-warning); }
+.asp-sample-legend-distress { border-left-color: var(--status-alert); }
+
+.asp-sample-legend-item.is-current {
+  background: rgba(255, 255, 255, 0.06);
+  border-top-color: var(--border-subtle);
+  border-right-color: var(--border-subtle);
+  border-bottom-color: var(--border-subtle);
+}
+
+.asp-sample-legend-time {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-dim);
+}
+
+.asp-sample-legend-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.asp-sample-legend-expect {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.asp-sample-caption {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.asp-sample-caption-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.3rem;
+  color: #c4b5fd;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.asp-sample-caption-text {
+  color: var(--text-main);
+  font-style: italic;
+}
+
+.asp-sample-note {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+@media (max-width: 640px) {
+  .asp-sample-legend {
+    grid-template-columns: 1fr;
+  }
 }
 
 .nav-source-badge {

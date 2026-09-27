@@ -23,9 +23,15 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  Sparkles,
+  MessageSquareQuote,
 } from 'lucide-react';
 import type { MonitoringState } from '../audio/types';
 import type { FilePlaybackStatus } from '../audio/audioFileInput';
+import {
+  SAMPLE_CALL_SEGMENTS,
+  SAMPLE_CALL_DURATION_SEC,
+} from '../audio/sampleRecording';
 
 export type AudioSourceMode = 'MICROPHONE' | 'FILE';
 
@@ -45,6 +51,12 @@ interface AudioSourcePanelProps {
   onPlayFile: () => void;
   onPauseFile: () => void;
   onRestartFile: () => void;
+
+  // Built-in sample call
+  onLoadSample: () => void;
+  isSampleLoaded: boolean;
+  /** Most recent simulated transcript line reached by the playhead */
+  sampleCaption: string | null;
 }
 
 export const AudioSourcePanel: React.FC<AudioSourcePanelProps> = ({
@@ -59,6 +71,9 @@ export const AudioSourcePanel: React.FC<AudioSourcePanelProps> = ({
   onPlayFile,
   onPauseFile,
   onRestartFile,
+  onLoadSample,
+  isSampleLoaded,
+  sampleCaption,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -216,12 +231,25 @@ export const AudioSourcePanel: React.FC<AudioSourcePanelProps> = ({
               />
               <button
                 type="button"
+                id="load-sample-call-btn"
+                className="asp-btn asp-btn-sample"
+                onClick={() => {
+                  onLoadSample();
+                  onSelectSource('FILE');
+                }}
+                disabled={fileStatus.state === 'LOADING'}
+              >
+                <Sparkles size={13} />
+                <span>USE SAMPLE CALL</span>
+              </button>
+              <button
+                type="button"
                 id="load-audio-file-btn"
                 className="asp-btn asp-btn-load"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload size={13} />
-                <span>LOAD AUDIO FILE</span>
+                <span>LOAD YOUR OWN FILE</span>
               </button>
 
               {fileStatus.fileName && (
@@ -302,6 +330,59 @@ export const AudioSourcePanel: React.FC<AudioSourcePanelProps> = ({
               </div>
             )}
 
+            {/* Sample call storyline: segment markers + playhead + simulated transcript */}
+            {isSampleLoaded && fileStatus.state !== 'LOADING' && fileStatus.state !== 'ERROR' && (
+              <div className="asp-sample-story" id="sample-call-storyline">
+                <div className="asp-sample-track" aria-hidden="true">
+                  {SAMPLE_CALL_SEGMENTS.map((seg) => (
+                    <div
+                      key={seg.label}
+                      className={`asp-sample-seg asp-sample-seg-${seg.tone}`}
+                      style={{
+                        width: `${((seg.endSec - seg.startSec) / SAMPLE_CALL_DURATION_SEC) * 100}%`,
+                      }}
+                    />
+                  ))}
+                  <div
+                    className="asp-sample-playhead"
+                    style={{ left: `${Math.min(100, fileProgress)}%` }}
+                  />
+                </div>
+                <ol className="asp-sample-legend">
+                  {SAMPLE_CALL_SEGMENTS.map((seg) => {
+                    const isCurrent =
+                      fileStatus.currentTimeSec >= seg.startSec &&
+                      fileStatus.currentTimeSec < seg.endSec &&
+                      fileStatus.state === 'PLAYING';
+                    return (
+                      <li
+                        key={seg.label}
+                        className={`asp-sample-legend-item asp-sample-legend-${seg.tone} ${isCurrent ? 'is-current' : ''}`}
+                      >
+                        <span className="asp-sample-legend-time">
+                          {formatTime(seg.startSec)}–{formatTime(seg.endSec)}
+                        </span>
+                        <span className="asp-sample-legend-label">{seg.label}</span>
+                        <span className="asp-sample-legend-expect">{seg.expectation}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="asp-sample-caption" aria-live="polite">
+                  <MessageSquareQuote size={13} />
+                  <span className="asp-sample-caption-tag">SIMULATED TRANSCRIPT</span>
+                  <span className="asp-sample-caption-text">
+                    {sampleCaption ? `“${sampleCaption}”` : 'Captions appear as the call plays.'}
+                  </span>
+                </div>
+                <p className="asp-sample-note">
+                  Voice-like audio is synthesized in your browser — no real voice, nothing downloaded.
+                  The prototype has no speech-to-text, so the call ships with a scripted transcript
+                  that is fed to the code-word detector as the playhead passes each line.
+                </p>
+              </div>
+            )}
+
             {fileStatus.state === 'LOADING' && (
               <div className="asp-loading-row">
                 <Loader2 size={14} className="spin-animation" />
@@ -321,8 +402,9 @@ export const AudioSourcePanel: React.FC<AudioSourcePanelProps> = ({
               <div className="asp-file-hint">
                 <CheckCircle2 size={13} />
                 <span>
-                  No file loaded. Click <strong>LOAD AUDIO FILE</strong> to select a WAV, MP3, or OGG file.
-                  Any audio file will be processed by the same distress-risk detection pipeline.
+                  No file loaded. Click <strong>USE SAMPLE CALL</strong> for a ready-made 36-second call
+                  that escalates from calm to distress, or <strong>LOAD YOUR OWN FILE</strong> (WAV, MP3, OGG).
+                  Every source runs through the same distress-risk detection pipeline.
                 </span>
               </div>
             )}
