@@ -90,6 +90,16 @@ export function useLiveSpeech({ lang = 'en-US', active, onTranscript }: UseLiveS
     };
   }, [lang]);
 
+  // While the on-device language pack downloads, re-check until it is ready
+  const downloading = support?.onDevice === 'downloading';
+  useEffect(() => {
+    if (!downloading) return;
+    const t = setInterval(() => {
+      void checkSpeechSupport(lang).then(setSupport);
+    }, 3000);
+    return () => clearInterval(t);
+  }, [downloading, lang]);
+
   const mode: SpeechPrivacyMode | null = !support?.apiAvailable
     ? null
     : support.onDevice === 'available'
@@ -139,6 +149,8 @@ export function useLiveSpeech({ lang = 'en-US', active, onTranscript }: UseLiveS
 
   const installOnDevice = useCallback(async () => {
     setInstalling(true);
+    // Reflect the download immediately; the poll above picks up completion
+    setSupport((s) => (s ? { ...s, onDevice: 'downloading' } : s));
     const ok = await installOnDeviceSpeech(lang);
     setInstalling(false);
     setSupport(await checkSpeechSupport(lang));

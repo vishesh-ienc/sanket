@@ -6,7 +6,8 @@
  * main views stay uncluttered. All pipeline state lives in PipelineContext.
  */
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/shell/AppSidebar';
 import { MobileNav } from '@/components/shell/MobileNav';
@@ -18,10 +19,22 @@ import { IncidentSheet } from '@/components/sanket/IncidentSheet';
 import { usePipelineContext } from '@/app/PipelineContext';
 import type { ActivityEvent } from '@/app/activity';
 import { MonitorView } from '@/views/MonitorView';
-import { SignalsView } from '@/views/SignalsView';
-import { IncidentsView } from '@/views/IncidentsView';
-import { DemoView } from '@/views/DemoView';
-import { SettingsView } from '@/views/SettingsView';
+
+// Secondary views load on demand to keep the first paint light
+const SignalsView = lazy(() => import('@/views/SignalsView').then((m) => ({ default: m.SignalsView })));
+const IncidentsView = lazy(() => import('@/views/IncidentsView').then((m) => ({ default: m.IncidentsView })));
+const DemoView = lazy(() => import('@/views/DemoView').then((m) => ({ default: m.DemoView })));
+const SettingsView = lazy(() => import('@/views/SettingsView').then((m) => ({ default: m.SettingsView })));
+
+function ViewSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <Skeleton className="h-48 rounded-xl" />
+      <Skeleton className="h-48 rounded-xl" />
+      <Skeleton className="h-64 rounded-xl md:col-span-2" />
+    </div>
+  );
+}
 
 export function App() {
   const p = usePipelineContext();
@@ -29,7 +42,6 @@ export function App() {
   const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(null);
   const item = NAV_ITEMS.find((n) => n.id === view)!;
 
-  const activeIncidents = p.incidents.alertHistory.filter((i) => i.status === 'ACTIVE').length;
   const current = p.incidents.currentIncident;
 
   // Keep the most recent alert on screen until the user dismisses it, even if
@@ -38,6 +50,7 @@ export function App() {
   const [sessionStart] = useState(() => Date.now());
   const latest = current ?? p.incidents.alertHistory[0] ?? null;
   const bannerIncident = latest && latest.id !== dismissedId && latest.timestamp >= sessionStart ? latest : null;
+  const activeIncidents = p.incidents.alertHistory.filter((i) => i.status === 'ACTIVE' && i.timestamp >= sessionStart).length;
 
   const navigate = (v: ViewId) => {
     setView(v);
@@ -66,11 +79,13 @@ export function App() {
           }}
         />
         <main className="mx-auto w-full max-w-7xl flex-1 p-4 pb-24 md:p-6 md:pb-8">
-          {view === 'monitor' && <MonitorView onSelectEvent={setSelectedEvent} onNavigate={navigate} />}
-          {view === 'signals' && <SignalsView />}
-          {view === 'incidents' && <IncidentsView onNavigate={navigate} />}
-          {view === 'demo' && <DemoView onNavigate={navigate} />}
-          {view === 'settings' && <SettingsView />}
+          <Suspense fallback={<ViewSkeleton />}>
+            {view === 'monitor' && <MonitorView onSelectEvent={setSelectedEvent} onNavigate={navigate} />}
+            {view === 'signals' && <SignalsView />}
+            {view === 'incidents' && <IncidentsView onNavigate={navigate} />}
+            {view === 'demo' && <DemoView onNavigate={navigate} />}
+            {view === 'settings' && <SettingsView />}
+          </Suspense>
         </main>
       </SidebarInset>
       <MobileNav view={view} onNavigate={navigate} activeIncidents={activeIncidents} />
