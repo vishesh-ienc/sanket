@@ -47,6 +47,8 @@ import { useCodeWordDetector } from './analysis/useCodeWordDetector';
 import { useCalibration } from './analysis/useCalibration';
 import { useTemporalContext } from './analysis/useTemporalContext';
 import { useIncidentManager } from './services/useIncidentManager';
+import { useTrustedContacts } from './services/useTrustedContacts';
+import { TrustedContactsPanel } from './components/TrustedContactsPanel';
 import { calculateBaselineDeviation } from './analysis/baselineDeviation';
 import { LiveWaveform } from './components/LiveWaveform';
 import { RiskScoreGauge } from './components/RiskScoreGauge';
@@ -298,6 +300,9 @@ export function App() {
     await loadFile(createSampleCallFile());
   }, [loadFile]);
 
+  // ── Trusted contacts (simulated dispatch recipients) ─────────────────
+  const { contacts: trustedContacts, addContact, removeContact } = useTrustedContacts();
+
   // ── Scenario selector handler ─────────────────────────────────────────
   const handleSelectScenario = useCallback(
     (scenario: DemoScenarioKey) => {
@@ -472,6 +477,7 @@ export function App() {
         incident={currentIncident}
         onViewEvent={() => openModal(currentIncident)}
         onAcknowledge={() => acknowledgeIncident(currentIncident?.id)}
+        recipientCount={trustedContacts.length}
       />
 
       {/* ── Main Console Grid ─────────────────────────────────────────── */}
@@ -681,6 +687,14 @@ export function App() {
                 </span>
               </div>
               <div className="config-overview-item">
+                <span className="config-overview-label">Trusted Contacts:</span>
+                <span className={`config-overview-badge ${trustedContacts.length > 0 ? 'cfg-active' : 'cfg-idle'}`}>
+                  {trustedContacts.length > 0
+                    ? `● ${trustedContacts.length} RECIPIENT${trustedContacts.length === 1 ? '' : 'S'} (SIMULATED)`
+                    : '○ NONE CONFIGURED'}
+                </span>
+              </div>
+              <div className="config-overview-item">
                 <span className="config-overview-label">Analysis Mode:</span>
                 <span className="config-overview-badge cfg-active">
                   ● MULTI-SIGNAL CORRELATION
@@ -706,6 +720,15 @@ export function App() {
               />
             </section>
 
+            {/* Trusted Contacts */}
+            <section className="console-row">
+              <TrustedContactsPanel
+                contacts={trustedContacts}
+                onAdd={addContact}
+                onRemove={removeContact}
+              />
+            </section>
+
             {/* Personal Voice Baseline Calibration */}
             <section className="console-row">
               <CalibrationPanel
@@ -728,6 +751,7 @@ export function App() {
         onClose={closeModal}
         onAcknowledge={acknowledgeIncident}
         onResolve={resolveIncident}
+        trustedContacts={trustedContacts}
       />
 
       {/* Footer */}

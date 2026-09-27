@@ -16,12 +16,15 @@ interface IncidentBannerProps {
   incident: DistressIncident | null;
   onViewEvent: () => void;
   onAcknowledge: () => void;
+  /** Number of trusted contacts the (simulated) alert is addressed to */
+  recipientCount?: number;
 }
 
 export const IncidentBanner: React.FC<IncidentBannerProps> = ({
   incident,
   onViewEvent,
   onAcknowledge,
+  recipientCount = 0,
 }) => {
   if (!incident) return null;
 
@@ -69,7 +72,11 @@ export const IncidentBanner: React.FC<IncidentBannerProps> = ({
               </span>
             </div>
             <p className="banner-subtext">
-              Alert generated after sustained multi-signal confirmation • Simulated local alert • Zero external transmission • {timeFormatted}
+              Alert generated after sustained multi-signal confirmation • Simulated local alert
+              {recipientCount > 0
+                ? ` prepared for ${recipientCount} trusted contact${recipientCount === 1 ? '' : 's'} (not sent)`
+                : ''}{' '}
+              • Zero external transmission • {timeFormatted}
             </p>
           </div>
         </div>

@@ -9,7 +9,7 @@
  * contacts and zero raw audio storage.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldAlert,
   X,
@@ -21,8 +21,14 @@ import {
   Clock,
   KeyRound,
   Layers,
+  Send,
+  MessageSquare,
+  Mail,
+  MapPin,
 } from 'lucide-react';
 import type { DistressIncident } from '../analysis/types';
+import type { TrustedContact } from '../services/trustedContacts';
+import { buildSilentAlertPayload } from '../services/dispatchPayload';
 
 interface ForensicEventModalProps {
   isOpen: boolean;
@@ -30,6 +36,8 @@ interface ForensicEventModalProps {
   onClose: () => void;
   onAcknowledge?: (id: string) => void;
   onResolve?: (id: string) => void;
+  /** Current trusted-contact roster, used for the simulated dispatch preview */
+  trustedContacts?: TrustedContact[];
 }
 
 export const ForensicEventModal: React.FC<ForensicEventModalProps> = ({
@@ -38,7 +46,10 @@ export const ForensicEventModal: React.FC<ForensicEventModalProps> = ({
   onClose,
   onAcknowledge,
   onResolve,
+  trustedContacts = [],
 }) => {
+  const [showRawPayload, setShowRawPayload] = useState(false);
+
   // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
@@ -52,6 +63,7 @@ export const ForensicEventModal: React.FC<ForensicEventModalProps> = ({
   if (!isOpen || !incident) return null;
 
   const isSimulated = incident.source === 'SIMULATION';
+  const payload = buildSilentAlertPayload(incident, trustedContacts);
   const isoTime = new Date(incident.timestamp).toISOString();
   const localTime = new Date(incident.timestamp).toLocaleString();
 
@@ -318,7 +330,58 @@ export const ForensicEventModal: React.FC<ForensicEventModalProps> = ({
             </section>
           )}
 
-          {/* Section 5: Alert Status & Privacy Guarantees */}
+          {/* Section 5: Simulated Silent Alert Dispatch */}
+          <section className="forensic-section" id="dispatch-preview-section">
+            <h3 className="section-label">5. Silent Alert Dispatch Preview</h3>
+            <p className="section-hint">
+              What a production build would send. Built locally for this audit —{' '}
+              <strong>not transmitted</strong>.
+            </p>
+            <div className="dispatch-preview">
+              <div className="dispatch-recipients">
+                <Send size={14} className="card-icon" />
+                {payload.recipients.length === 0 ? (
+                  <span className="dispatch-recipient-addr">
+                    No trusted contacts configured — add them under Configure Parameters.
+                  </span>
+                ) : (
+                  payload.recipients.map((r) => (
+                    <span key={r.contactId} className="dispatch-recipient">
+                      {r.channel === 'SMS' ? <MessageSquare size={11} /> : <Mail size={11} />}
+                      {r.name}
+                      <span className="dispatch-recipient-addr">{r.maskedAddress}</span>
+                    </span>
+                  ))
+                )}
+                <span className="dispatch-status-pill">NOT SENT • SIMULATED</span>
+              </div>
+
+              <div className="dispatch-message">{payload.message}</div>
+
+              <div className="dispatch-recipients">
+                <MapPin size={13} className="card-icon" />
+                <span className="dispatch-recipient-addr">
+                  Placeholder location {payload.simulatedCoordinates.latitude.toFixed(4)},{' '}
+                  {payload.simulatedCoordinates.longitude.toFixed(4)} (±
+                  {payload.simulatedCoordinates.accuracyMeters} m) — device location is never accessed
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="dispatch-json-toggle"
+                onClick={() => setShowRawPayload((v) => !v)}
+                aria-expanded={showRawPayload}
+              >
+                {showRawPayload ? '− Hide raw payload' : '+ Show raw payload (JSON)'}
+              </button>
+              {showRawPayload && (
+                <pre className="dispatch-json">{JSON.stringify(payload, null, 2)}</pre>
+              )}
+            </div>
+          </section>
+
+          {/* Section 6: Alert Status & Privacy Guarantees */}
           <section className="forensic-section modal-safety-box">
             <div className="safety-row">
               <div className="safety-bullet">
@@ -326,8 +389,8 @@ export const ForensicEventModal: React.FC<ForensicEventModalProps> = ({
                 <div>
                   <strong>Silent Alert: SIMULATED LOCAL DISPATCH</strong>
                   <p>
-                    Prototype demonstration workflow only. No telephone, SMS, police, or emergency
-                    personnel were contacted.
+                    Prototype demonstration workflow only. No telephone, SMS, email, police, or
+                    emergency personnel were contacted — trusted contacts are never messaged.
                   </p>
                 </div>
               </div>

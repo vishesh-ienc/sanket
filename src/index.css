@@ -4502,3 +4502,297 @@ body {
   color: var(--text-dim);
 }
 
+
+/* ── Trusted Contacts ──────────────────────────────────────────────────── */
+.contacts-card .card-header {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.contacts-sim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #c4b5fd;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 9999px;
+  padding: 0.2rem 0.6rem;
+}
+
+.contacts-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.contacts-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.contacts-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.contacts-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.contacts-field-grow {
+  flex: 1 1 200px;
+}
+
+.contacts-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.contacts-input {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.contacts-input:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.contacts-input:disabled {
+  opacity: 0.5;
+}
+
+.contacts-channel-toggle {
+  display: inline-flex;
+  height: 2.25rem;
+  padding: 3px;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
+
+.contacts-channel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.65rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.contacts-channel-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent-blue);
+}
+
+.contacts-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2.25rem;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.contacts-add-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.contacts-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.contacts-error {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: #fda4af;
+}
+
+.contacts-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 0.65rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.contacts-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.contacts-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(10, 15, 25, 0.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.6rem;
+}
+
+.contacts-item-icon {
+  display: flex;
+  color: var(--accent-blue);
+}
+
+.contacts-item-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contacts-item-address {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.contacts-remove-btn {
+  display: flex;
+  padding: 0.35rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.contacts-remove-btn:hover {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--status-alert);
+}
+
+/* ── Forensic modal: simulated dispatch payload ────────────────────────── */
+.dispatch-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dispatch-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dispatch-recipient {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 0.74rem;
+  color: var(--text-main);
+}
+
+.dispatch-recipient-addr {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.dispatch-status-pill {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #c4b5fd;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 9999px;
+  padding: 0.15rem 0.5rem;
+}
+
+.dispatch-message {
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: rgba(56, 189, 248, 0.05);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.dispatch-json {
+  max-height: 180px;
+  overflow: auto;
+  padding: 0.75rem 0.9rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre;
+}
+
+.dispatch-json-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-blue);
+  cursor: pointer;
+}
+
+.dispatch-json-toggle:hover {
+  text-decoration: underline;
+}
