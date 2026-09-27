@@ -123,6 +123,23 @@
 
 ---
 
+### DECISION 013: Welford's Online Algorithm and Statistical Z-Score Calibration with Zero Raw Audio Retention
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Every user has unique vocal physiology—natural fundamental frequency ($F_0$), dynamic vocal energy, speaking tempo, and vocal tract resonance. Hardcoded static acoustic thresholds cause false positives for naturally high-pitched or quiet speakers and false negatives for deep-voiced speakers in distress. However:
+  1. Storing raw audio waveforms or spectral frames violates Sanket's core privacy guarantees.
+  2. Multi-pass variance calculation on long recordings consumes unbounded memory.
+  3. Calibration must adapt seamlessly without breaking the 100-point risk score scale or the single-signal ceiling invariant.
+- **Decision:**
+  1. Use Welford's online one-pass algorithm to compute running means and sample standard deviations for pitch, RMS energy, spectral centroid, and zero-crossing rate from feature frames during a 5–30 second calibration phase.
+  2. Reject silent/unvoiced frames (RMS < 0.015 or isSpeech = false) from vocal statistics to prevent silence from skewing baseline pitch and resonance.
+  3. Zero raw audio retention: audio frames are processed ephemerally and discarded; only statistical scalars (`pitchMean`, `pitchStdDev`, `rmsMean`, `rmsStdDev`, `zcrMean`, `spectralMean`, etc.) and metadata are stored.
+  4. Standardize deviation measurement using statistical Z-scores ($Z = (x - \mu) / \sigma$), clamped to $[0, 1]$.
+  5. Translate calibrated baseline profiles into personalized `RiskEngineConfig` parameters via `baselineToRiskEngineConfig()`, keeping the existing 0–100 risk score and multi-signal thresholds fully intact.
+- **Consequences:** Provides true personalized sensitivity with mathematical stability; ensures zero raw audio is ever stored or transmitted; preserves backward compatibility and allows graceful fallback to default population baselines.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]
@@ -132,4 +149,5 @@
 - **Decision:** [What was decided?]
 - **Consequences:** [What are the positive and negative implications?]
 ```
+
 

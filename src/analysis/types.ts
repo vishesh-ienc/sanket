@@ -83,13 +83,40 @@ export interface FeatureSet {
 }
 
 export interface BaselineProfile {
+  /** Opaque user identifier (never contains audio or biometric data) */
   userId: string;
+  /** Unix epoch ms when calibration was completed */
   calibratedAt: number;
+
+  // ── Pitch (F0) statistics ──────────────────────────────────────────────────
+  /** Mean fundamental frequency (Hz) during calibration voiced frames */
   pitchMean: number;
+  /** Sample standard deviation of pitch (Hz). 0 if < 2 voiced pitch samples. */
   pitchStdDev: number;
+
+  // ── Vocal Intensity statistics ─────────────────────────────────────────────
+  /** Mean RMS amplitude during calibration voiced frames */
   energyMean: number;
+  /** Sample standard deviation of RMS energy. 0 if < 2 voiced energy samples. */
   energyStdDev: number;
+
+  // ── Silence statistics ────────────────────────────────────────────────────
+  /** Mean silence duration (seconds) during calibration. Used as personal silence onset. */
   normalSilenceThresholdSec: number;
+
+  // ── ZCR statistics ────────────────────────────────────────────────────────
+  /** Mean zero-crossing rate during calibration voiced frames */
+  zcrMean: number;
+  /** Sample standard deviation of ZCR. 0 if < 2 voiced ZCR samples. */
+  zcrStdDev: number;
+
+  // ── Spectral Centroid statistics ──────────────────────────────────────────
+  /** Mean spectral centroid (Hz) during calibration voiced frames */
+  spectralMean: number;
+  /** Sample standard deviation of spectral centroid (Hz). 0 if < 2 samples. */
+  spectralStdDev: number;
+
+  /** Number of voiced frames used to build this profile */
   frameCount: number;
 }
 

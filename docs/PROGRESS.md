@@ -8,12 +8,65 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 5 — Configurable Code-Word Detection**
+- **Current Phase:** **Phase 6 — Personal Voice Baseline & Calibration**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 6 — Personal Voice Baseline / Calibration**
+- **Next Phase:** **Phase 7 — Silent Alert Dispatch & Forensic Modal**
 
 ---
+
+## Completed in Phase 6
+
+- [x] `src/analysis/baselineBuilder.ts` — `BaselineBuilder` class using Welford's Online Algorithm
+  - Single-pass O(1) per sample — never stores raw audio frames or PCM data
+  - Accumulates Welford state for: pitch (F0), RMS energy, ZCR, spectral centroid, silence duration
+  - Pitch range filtering (configurable, default 50–600 Hz) discards out-of-band outliers
+  - `isReady()`, `getProgress()`, `getRunningStats()` for live UI feedback
+  - `finalize(userId)` produces a `BaselineProfile` with mean + sample stdDev per channel
+  - `reset()` clears all accumulated state cleanly
+- [x] `src/analysis/baselineDeviation.ts` — `calculateBaselineDeviation()` pure function
+  - Computes |Z-score| per channel vs `BaselineProfile` statistics
+  - Channels: pitchZScore, energyZScore, silenceExcessRatio, zcrZScore, spectralZScore
+  - StdDev floor per-channel prevents division-by-zero for highly consistent speakers
+  - Z-score capped at 4.0 to prevent extreme outlier saturation
+  - Returns `NoBaselineResult` when no profile available — engine falls back to prototype heuristics
+  - `baselineToRiskEngineConfig()` maps BaselineProfile → `RiskEngineConfig` overrides
+- [x] `src/analysis/useCalibration.ts` — React calibration lifecycle hook
+  - States: IDLE → CALIBRATING → COMPLETE | ERROR
+  - 30-second auto-finalize timer + early manual finalize once ready
+  - Persists `BaselineProfile` to `localStorage` (survives page refresh)
+  - Calls `riskEngine.updateConfig()` on finalize to instantly personalize engine references
+  - Restores persisted profile on mount and re-applies to engine
+  - `clearBaseline()` resets engine back to prototype defaults
+- [x] `src/components/CalibrationPanel.tsx` — 4-state UI panel
+  - IDLE: UserCheck icon + Start button (disabled unless monitoring active)
+  - CALIBRATING: SVG progress ring (animated), voiced frame count, elapsed timer, early-finalize & cancel buttons
+  - COMPLETE: 4-stat profile summary grid (pitch mean/stdDev, intensity, silence onset, calibrated date)
+  - ERROR: Error explanation + Retry button
+- [x] `src/App.tsx` — Phase 6 wired into dashboard
+  - `useCalibration` hook consumes `effectiveFeatures` and `riskEngineInstance`
+  - `CalibrationPanel` rendered in new console row
+  - Pipeline trace: "Baseline" step shows dimmed vs active depending on calibration status
+  - Footer updated: "Phase 6 Personal Baseline ✓" when calibrated
+- [x] `src/analysis/__tests__/baseline.test.ts` — **92 deterministic unit tests**
+  - Welford algorithm correctness (mean, M2, stdDev, numerical stability with large values)
+  - BaselineBuilder lifecycle (pre-start guard, progress, finalize, throws when insufficient)
+  - Silence frame handling (only voiced frames counted, capped silence included in silence stats)
+  - Pitch range filtering (out-of-band samples discarded)
+  - Reset and re-calibration cycle
+  - Running stats mid-calibration
+  - Z-score accuracy (at mean, ±1σ, ±2σ, absolute value for negative deviation)
+  - Z-score cap enforcement (extreme outliers → Z_SCORE_CAP)
+  - StdDev floor (prevents infinity for perfectly consistent speakers)
+  - Silence frames (null Z-scores for voice channels, silenceExcessRatio computed)
+  - Null pitch handling
+  - baselineToRiskEngineConfig mapping (floor enforcement, 1.5× silence multiplier)
+  - End-to-end integration test
+  - Privacy invariants (no raw samples in profile object)
+  - Determinism (two builders on same input → identical output)
+
+---
+
 
 ## Completed in Phase 0
 

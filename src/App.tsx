@@ -41,12 +41,14 @@ import { useAudioMonitor } from './audio/useAudioMonitor';
 import { useFeatureExtractor } from './analysis/useFeatureExtractor';
 import { useRiskEngine } from './analysis/useRiskEngine';
 import { useCodeWordDetector } from './analysis/useCodeWordDetector';
+import { useCalibration } from './analysis/useCalibration';
 import { LiveWaveform } from './components/LiveWaveform';
 import { RiskScoreGauge } from './components/RiskScoreGauge';
 import { SignalBreakdown } from './components/SignalBreakdown';
 import { DetectionTimeline } from './components/DetectionTimeline';
 import { MonitoringStatus } from './components/MonitoringStatus';
 import { CodeWordConfig } from './components/CodeWordConfig';
+import { CalibrationPanel } from './components/CalibrationPanel';
 import { DemoScenarios } from './components/DemoScenarios';
 import {
   type DemoScenarioKey,
@@ -107,7 +109,7 @@ export function App() {
     activeScenario === 'LIVE_MIC' ? liveFeatures : simulatedFeatures;
 
   // ── Step 3: Multi-Signal Risk Engine (Phase 3) ────────────────────────────
-  const { latestEvaluation, injectExternalSignal } = useRiskEngine(effectiveFeatures, isLive);
+  const { latestEvaluation, injectExternalSignal, engine: riskEngineInstance } = useRiskEngine(effectiveFeatures, isLive);
 
   // ── Step 4: Covert Code-Word Detector (Phase 5) ───────────────────────────
   const {
@@ -125,6 +127,15 @@ export function App() {
       });
     },
   });
+
+  // ── Step 5: Personal Voice Baseline & Calibration (Phase 6) ─────────────
+  const {
+    calibrationState,
+    startCalibration,
+    cancelCalibration,
+    finalizeCalibration,
+    clearBaseline,
+  } = useCalibration(effectiveFeatures, isLive, { riskEngine: riskEngineInstance });
 
   const handleSelectScenario = (scenario: DemoScenarioKey) => {
     setActiveScenario(scenario);
@@ -170,6 +181,7 @@ export function App() {
           <span className="pipe-step active">Code Word</span>
           <span className="pipe-arrow">→</span>
           <span className="pipe-step active">Feature Extractor</span>
+          <span className={`pipe-step ${calibrationState.status === 'COMPLETE' ? 'active baseline-active' : 'pipe-step-dim'}`}>Baseline</span>
           <span className="pipe-arrow">→</span>
           <span className="pipe-step active">Risk Engine</span>
           <span className="pipe-arrow">→</span>
@@ -328,6 +340,18 @@ export function App() {
           />
         </section>
 
+        {/* ROW 5: Personal Voice Baseline & Calibration (Phase 6) */}
+        <section className="console-row">
+          <CalibrationPanel
+            calibrationState={calibrationState}
+            isMonitoring={isLive}
+            onStart={startCalibration}
+            onCancel={cancelCalibration}
+            onFinalize={finalizeCalibration}
+            onClear={clearBaseline}
+          />
+        </section>
+
         {/* ROW 5: Interactive Preset Scenarios (Hackathon Evaluator) */}
         <section className="console-row">
           <DemoScenarios
@@ -352,7 +376,7 @@ export function App() {
           <span>React 19 + TypeScript + Web Audio API</span>
           <span className="footer-sep">•</span>
           <Layers size={12} />
-          <span>Phase 5 Code Word Active</span>
+          <span>Phase 6 Personal Baseline{calibrationState.status === 'COMPLETE' ? ' ✓' : ''}</span>
         </div>
       </footer>
     </div>

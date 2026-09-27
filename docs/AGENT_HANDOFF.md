@@ -11,21 +11,22 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Phase 5 — Configurable Code-Word Detection** (`COMPLETED`)
-- **Git State:** Clean, all tests passing, ready for Phase 6.
+- **Phase:** **Phase 6 — Personal Voice Baseline & Calibration** (`COMPLETED`)
+- **Git State:** Clean, all tests passing, ready for Phase 7.
 - **Build Status:** `npm run build` passes with 0 TypeScript errors. `npm run lint` passes with 0 warnings/errors.
 - **Tests:**
   - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
   - `npx tsx src/analysis/__tests__/riskEngine.test.ts` → **59/59 passed**
   - `npx tsx src/analysis/__tests__/codeWordDetector.test.ts` → **56/56 passed**
-  - Total: **161 passed, 0 failed**
+  - `npx tsx src/analysis/__tests__/baseline.test.ts` → **92/92 passed**
+  - Total: **253 passed, 0 failed**
 - **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
 
 ---
 
 ## 3. Current Phase
-- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection).
-- **Next Phase:** **Phase 6 — Personal Voice Baseline & Calibration.**
+- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection), Phase 6 (Personal Voice Baseline & Calibration).
+- **Next Phase:** **Phase 7 — Silent Alert Escalation & Forensic Log.**
 
 ---
 
@@ -67,7 +68,7 @@
 - **`src/components/DemoScenarios.tsx` & `src/utils/demoScenariosData.ts`**: Interactive test scenario simulator for judge evaluation.
 - **`src/App.tsx` & `src/index.css`**: Complete dashboard assembly and sleek dark safety HUD design system.
 
-### Phase 5 (NEW)
+### Phase 5
 - **`src/analysis/codeWordDetector.ts`**: Pure TypeScript token-aware covert phrase spotter.
   - Deterministic text normalization (lowercasing, harmless punctuation removal, whitespace collapsing).
   - Sliding-window token comparison with word boundary enforcement.
@@ -81,10 +82,22 @@
 - **`src/components/CodeWordConfig.tsx`**: Configuration HUD with phrase input, armed toggle, live detection alert, and interactive manual test simulator.
 - **`src/analysis/__tests__/codeWordDetector.test.ts`**: 56 deterministic unit tests covering normalization, boundaries, cooldown, fuzzy matching, and risk engine integration.
 
+### Phase 6 (NEW)
+- **`src/analysis/baselineBuilder.ts`**: `BaselineBuilder` implementing Welford's online one-pass algorithm.
+  - Computes running sample mean, variance, and standard deviation in $O(1)$ memory.
+  - Voiced frame filtering (discards silence/unvoiced frames where RMS < 0.015 or isSpeech = false).
+  - Progress tracking (`voicedFramesCollected`, `elapsedSec`, `progressFraction`).
+  - Zero raw audio retention: stores only statistical scalars in `BaselineProfile`.
+- **`src/analysis/baselineDeviation.ts`**: Statistical Z-score deviation calculation and config adapter.
+  - Computes channel deviations normalized to $[0, 1]$ using standard deviations.
+  - `baselineToRiskEngineConfig()` bridges calibrated profiles into personalized dynamic `RiskEngineConfig` thresholds.
+- **`src/analysis/useCalibration.ts`**: React hook managing calibration lifecycle (`IDLE`, `CALIBRATING`, `COMPLETE`, `ERROR`) with `localStorage` persistence and fallback handling.
+- **`src/components/CalibrationPanel.tsx`**: 4-state calibration HUD panel with circular SVG countdown timer, live baseline summary statistics, and active profile status.
+- **`src/analysis/__tests__/baseline.test.ts`**: 92 comprehensive deterministic unit tests.
+
 ---
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Personal baseline calibration (`BaselineProfile`) → Phase 6
 - [ ] Silent alert dispatch simulation & forensic modal → Phase 7
 - [ ] Multi-signal false-positive reduction filters → Phase 8
 - [ ] Mobile/VoIP native integration → Phase 10
