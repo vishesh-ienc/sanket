@@ -132,7 +132,6 @@ export function App() {
   // ── Demo Simulator State ──────────────────────────────────────────────
   const [activeScenario, setActiveScenario] = useState<DemoScenarioKey>('LIVE_MIC');
   const [simulatedFeatures, setSimulatedFeatures] = useState<FeatureSet | null>(null);
-  const [simTick, setSimTick] = useState<number>(0);
 
   useEffect(() => {
     if (!isLive || activeScenario === 'LIVE_MIC') {
@@ -140,14 +139,17 @@ export function App() {
       return () => clearTimeout(timer);
     }
 
+    // A single steady 10Hz clock per scenario. Must not depend on live
+    // features — re-creating the interval on every mic frame starves the
+    // synthetic stream and stalls persistence below the HIGH_RISK gate.
+    let tick = 0;
     const interval = setInterval(() => {
-      setSimTick((t) => t + 1);
-      const synth = getDemoScenarioFeatures(activeScenario, simTick, liveFeatures);
-      setSimulatedFeatures(synth);
+      tick += 1;
+      setSimulatedFeatures(getDemoScenarioFeatures(activeScenario, tick, null));
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isLive, activeScenario, simTick, liveFeatures]);
+  }, [isLive, activeScenario]);
 
   const effectiveFeatures: FeatureSet | null =
     activeScenario === 'LIVE_MIC' ? liveFeatures : simulatedFeatures;
@@ -270,6 +272,17 @@ export function App() {
     resetDemo,
   } = useDemoController();
 
+  const [pendingEvidenceOpen, setPendingEvidenceOpen] = useState(false);
+
+  useEffect(() => {
+    if (!pendingEvidenceOpen || !currentIncident) return;
+    const timer = setTimeout(() => {
+      setPendingEvidenceOpen(false);
+      openModal(currentIncident);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [pendingEvidenceOpen, currentIncident, openModal]);
+
   const applyDemoStep = useCallback(
     (targetStep: DemoStepDefinition) => {
       if (!isMicLive) startMonitoring();
@@ -282,9 +295,13 @@ export function App() {
       if (targetStep.autoOpenModal) {
         if (currentIncident) {
           openModal(currentIncident);
-        } else if (alertHistory.length > 0) {
-          openModal(alertHistory[0]);
+        } else {
+          // Presenter advanced before HIGH_RISK confirmation latched —
+          // open the evidence as soon as the incident is created.
+          setPendingEvidenceOpen(true);
         }
+      } else {
+        setPendingEvidenceOpen(false);
       }
     },
     [
@@ -295,7 +312,6 @@ export function App() {
       handleSelectScenario,
       currentIncident,
       openModal,
-      alertHistory,
     ]
   );
 
@@ -321,6 +337,7 @@ export function App() {
 
   const handleResetDemoTour = () => {
     resetDemo();
+    setPendingEvidenceOpen(false);
     handleSelectScenario('LIVE_MIC');
   };
 
@@ -421,6 +438,11 @@ export function App() {
             onResetDemo={handleResetDemoTour}
             isMonitoring={isLive}
             onStartMonitoring={startMonitoring}
+            awaitingConfirmation={
+              demoState.isActive &&
+              (demoState.step?.id === 'SILENT_ALERT' || demoState.step?.id === 'FORENSIC_REVIEW') &&
+              !currentIncident
+            }
           />
         </section>
 

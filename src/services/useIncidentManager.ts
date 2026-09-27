@@ -20,6 +20,15 @@ import {
   clearHistory as clearHistoryStorage,
 } from './alertHistory';
 
+/**
+ * The analysis pipeline stamps frames with the monotonic `performance.now()`
+ * clock (ideal for temporal math). Incidents are persisted and shown to humans,
+ * so we convert to Unix epoch ms at this boundary.
+ */
+function toWallClock(timestamp: number): number {
+  return timestamp < 1e12 ? Math.round(performance.timeOrigin + timestamp) : timestamp;
+}
+
 export interface UseIncidentManagerOptions {
   context?: IncidentContext;
   isActive?: boolean;
@@ -67,7 +76,10 @@ export function useIncidentManager(
       return;
     }
 
-    const result = manager.processEvaluation(evaluation, context);
+    const result = manager.processEvaluation(
+      evaluation && { ...evaluation, timestamp: toWallClock(evaluation.timestamp) },
+      context
+    );
 
     if (result.isNewIncident && result.incident) {
       const inc = result.incident;

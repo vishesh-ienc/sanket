@@ -36,6 +36,8 @@ interface JudgeDemoPanelProps {
   onResetDemo: () => void;
   isMonitoring: boolean;
   onStartMonitoring: () => void;
+  /** True while the current step expects an incident that has not latched yet */
+  awaitingConfirmation?: boolean;
 }
 
 export const JudgeDemoPanel: React.FC<JudgeDemoPanelProps> = ({
@@ -48,6 +50,7 @@ export const JudgeDemoPanel: React.FC<JudgeDemoPanelProps> = ({
   onResetDemo,
   isMonitoring,
   onStartMonitoring,
+  awaitingConfirmation = false,
 }) => {
   const { isActive, stepIndex, step, isFirst, isLast } = controllerState;
 
@@ -172,6 +175,16 @@ export const JudgeDemoPanel: React.FC<JudgeDemoPanelProps> = ({
             <span className="outcome-label">Observed System Outcome:</span>
             <span className="outcome-value">{step.expectedOutcome}</span>
           </div>
+
+          {awaitingConfirmation && (
+            <div className="demo-awaiting-bar" role="status">
+              <span className="demo-awaiting-pulse" />
+              <span>
+                Awaiting sustained multi-signal confirmation — risk must hold above 70
+                before the silent alert latches. This step completes automatically.
+              </span>
+            </div>
+          )}
 
           {/* Stepper Navigation Actions */}
           <div className="demo-footer-controls">
