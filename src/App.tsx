@@ -114,6 +114,11 @@ export function App() {
   const activity =
     audioSourceMode === 'MICROPHONE' ? micActivity : fileActivity;
 
+  // The guided tour drives the engine with synthetic scenario features, so it
+  // can run even when microphone access is denied or unavailable.
+  const [tourSimulation, setTourSimulation] = useState(false);
+  const isPipelineActive = isLive || tourSimulation;
+
   // The active audio service fed into feature extractor
   // AudioFileInputService has the same getCurrentFrame / getAnalyserNode interface
   // We pass the correct service to useFeatureExtractor via a unified ref
@@ -142,7 +147,7 @@ export function App() {
   const [simulatedFeatures, setSimulatedFeatures] = useState<FeatureSet | null>(null);
 
   useEffect(() => {
-    if (!isLive || activeScenario === 'LIVE_MIC') {
+    if (!isPipelineActive || activeScenario === 'LIVE_MIC') {
       const timer = setTimeout(() => setSimulatedFeatures(null), 0);
       return () => clearTimeout(timer);
     }
@@ -157,14 +162,14 @@ export function App() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isLive, activeScenario]);
+  }, [isPipelineActive, activeScenario]);
 
   const effectiveFeatures: FeatureSet | null =
     activeScenario === 'LIVE_MIC' ? liveFeatures : simulatedFeatures;
 
   // ── Step 3: Multi-Signal Risk Engine (Phase 3) ────────────────────────
   const { latestEvaluation, injectExternalSignal, engine: riskEngineInstance } =
-    useRiskEngine(effectiveFeatures, isLive);
+    useRiskEngine(effectiveFeatures, isPipelineActive);
 
   // ── Step 4: Covert Code-Word Detector (Phase 5) ───────────────────────
   const {
@@ -190,7 +195,7 @@ export function App() {
     finalizeCalibration,
     clearBaseline,
     loadPresetProfile,
-  } = useCalibration(effectiveFeatures, isLive, { riskEngine: riskEngineInstance });
+  } = useCalibration(effectiveFeatures, isPipelineActive, { riskEngine: riskEngineInstance });
 
   // ── Step 6: Baseline Deviations ───────────────────────────────────────
   const baselineDevResult =
@@ -210,7 +215,7 @@ export function App() {
       : undefined;
 
   // ── Step 7: Temporal Context & False-Positive Filter (Phase 8) ────────
-  const { temporalContext } = useTemporalContext(effectiveFeatures, baselineDevResult, isLive);
+  const { temporalContext } = useTemporalContext(effectiveFeatures, baselineDevResult, isPipelineActive);
 
   // ── Step 8: Incident Context (Phase 7) ────────────────────────────────
   const incidentContext: IncidentContext = {
@@ -249,7 +254,7 @@ export function App() {
     closeModal,
   } = useIncidentManager(latestEvaluation, {
     context: incidentContext,
-    isActive: isLive,
+    isActive: isPipelineActive,
   });
 
   // ── Built-in sample call: simulated transcript track ─────────────────
@@ -375,6 +380,7 @@ export function App() {
   );
 
   const handleStartDemo = () => {
+    setTourSimulation(true);
     const nextState = startDemo();
     if (nextState.step) applyDemoStep(nextState.step);
   };
@@ -396,6 +402,7 @@ export function App() {
 
   const handleResetDemoTour = () => {
     resetDemo();
+    setTourSimulation(false);
     setPendingEvidenceOpen(false);
     handleSelectScenario('LIVE_MIC');
   };
@@ -447,11 +454,13 @@ export function App() {
         </div>
 
         <div className="nav-controls">
-          <span className={`nav-source-badge ${isLive ? 'nav-source-live' : ''}`}>
+          <span className={`nav-source-badge ${isPipelineActive ? 'nav-source-live' : ''}`}>
             {isLive
               ? audioSourceMode === 'FILE'
                 ? '● FILE ANALYZING'
                 : '● MIC LIVE'
+              : tourSimulation
+              ? '● TOUR SIMULATION'
               : '○ STANDBY'}
           </span>
         </div>
@@ -468,7 +477,10 @@ export function App() {
                 : 'Audio Hardware Notice'}
             </span>
           </div>
-          <p className="error-banner-body">{micError.userMessage}</p>
+          <p className="error-banner-body">
+            {micError.userMessage}
+            {tourSimulation && ' The guided tour continues with simulated scenario data.'}
+          </p>
         </div>
       )}
 
@@ -493,7 +505,7 @@ export function App() {
             onPrevStep={handlePrevDemoStep}
             onGoToStep={handleGoToDemoStep}
             onResetDemo={handleResetDemoTour}
-            isMonitoring={isLive}
+            isMonitoring={isPipelineActive}
             onStartMonitoring={startMonitoring}
             awaitingConfirmation={
               demoState.isActive &&
@@ -533,7 +545,7 @@ export function App() {
               isConfirmed={isConfirmed}
               persistenceFrames={persistenceFrames}
               confirmedSignals={confirmedSignals}
-              isMonitoring={isLive}
+              isMonitoring={isPipelineActive}
             />
           </div>
 
@@ -591,7 +603,7 @@ export function App() {
           <SignalBreakdown
             features={effectiveFeatures}
             evaluation={latestEvaluation}
-            isMonitoring={isLive}
+            isMonitoring={isPipelineActive}
           />
         </section>
 
@@ -599,7 +611,7 @@ export function App() {
         <section className="console-row">
           <TemporalContextCard
             temporalContext={temporalContext}
-            isMonitoring={isLive}
+            isMonitoring={isPipelineActive}
           />
         </section>
 
@@ -608,13 +620,13 @@ export function App() {
           <div className="console-col">
             <DetectionTimeline
               currentEvaluation={latestEvaluation}
-              isMonitoring={isLive}
+              isMonitoring={isPipelineActive}
               codeWordDetection={codeWordDetection}
             />
           </div>
           <div className="console-col">
             <MonitoringStatus
-              isMonitoring={isLive}
+              isMonitoring={isPipelineActive}
               activity={activity}
               features={effectiveFeatures}
               sampleRate={sampleRate}
@@ -636,7 +648,7 @@ export function App() {
           <DemoScenarios
             activeScenario={activeScenario}
             onSelectScenario={handleSelectScenario}
-            isMonitoring={isLive}
+            isMonitoring={isPipelineActive}
           />
         </section>
 
