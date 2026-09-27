@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-28
 **Branch:** `feat/ui-overhaul` (stacked on `feat/complete-handoff`)
-**Status:** COMPLETE ✅ (pending review & merge)
+**Status:** COMPLETE ✅ — merged to `main` and pushed
 
 ## Requests handled
 1. **"Improve the UI by a ton"** → Tailwind v4 + shadcn/ui app shell: sidebar (desktop) / bottom tabs (phone), five views
@@ -26,4 +26,4 @@ Playwright MCP (all browser verification) · web docs (MDN / WebAudio explainer 
 - Browser (Playwright MCP): demo call → alert, guided tour → evidence sheet, signals, settings, mobile 375 px, dark + light.
 
 ## Open items
-See `docs/PROGRESS.md` → *Open Items / Needs Input*.
+See `docs/PROGRESS.md` → *Open Items / Needs Input* and *Pending Questions for the Team* (12 questions).

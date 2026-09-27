@@ -17,7 +17,7 @@
   - featureExtraction 46 · riskEngine 59 · codeWordDetector 56 · baseline 92 · incidentSystem 95 · temporalContext 89
   - demoController 87 · audioFileInput 54 · sampleRecording 20 · trustedContacts 48 · **demoConversation 28** · **speechTranscriptSource 30** · **signalSettings 26**
 - **Where things live now:** orchestration is in `src/app/usePipeline.ts` (context: `usePipelineContext()`); views are in `src/views/`; UI primitives are generated shadcn components in `src/components/ui/` (don't hand-edit; lint ignores them). Design tokens are in `src/globals.css`.
-- **Open items:** see `docs/PROGRESS.md` → *Open Items / Needs Input*.
+- **Open items & team questions:** see `docs/PROGRESS.md` → *Open Items / Needs Input* and *Pending Questions for the Team*.
 
 ---
 

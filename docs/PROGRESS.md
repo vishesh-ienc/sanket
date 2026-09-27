@@ -52,6 +52,28 @@
 
 ---
 
+## Pending Questions for the Team
+
+Decisions nobody has made yet. Each one has a current default, so nothing is blocked, but please confirm or change it.
+Reply here or in the PR, then record the answer as an ADR in `docs/DECISIONS.md`.
+
+| # | Question | Current default | Where it matters |
+| :-: | :--- | :--- | :--- |
+| 1 | **Demo recording:** will someone record an acted, consented call to replace the synthetic TTS one? Which language(s)? | Synthetic 53 s English call (Piper TTS, disclosed in the UI) | `public/demo/`, README "Replacing the Demo Conversation" |
+| 2 | **Speech language:** should live code-word recognition use `en-IN`, `hi-IN` or a user-selectable language instead of `en-US`? | `en-US`, hard-coded | `src/analysis/useLiveSpeech.ts` (`lang` default) |
+| 3 | **Cloud speech opt-in:** keep the opt-in for browsers without on-device support, or remove it so audio can never leave the device? | Opt-in available, off by default, with a warning | Settings → Live code-word listening; ADR 022 |
+| 4 | **Alert delivery (on hold):** when resumed, is a backend relay acceptable? That would change the pitch from "zero cloud" to "zero cloud *audio*". | Simulated only; nothing sent | `docs/MOBILE_INTEGRATION.md` §7, §11 |
+| 5 | **Target market / emergency integration:** which country's numbers, SMS provider and consent rules? | None | `docs/MOBILE_INTEGRATION.md` §9, §11 |
+| 6 | **Default tuning:** are an alert threshold of 70 and weights of 20/15/15/15/10/10 right for judges, or should the demo be more sensitive? | Original engine values | Signals view; `src/analysis/signalSettings.ts` |
+| 7 | **Signal toggles vs false-positive filter:** should switching a signal off also exclude it from the temporal filter's "multi-signal" check? | Scoring only (filter still sees it) | `src/analysis/temporalContext.ts`; ADR 026 |
+| 8 | **Legacy synthetic tone call:** keep `src/audio/sampleRecording.ts` as an engine regression test, or delete it? | Kept (tests only, not in the UI) | `src/audio/sampleRecording.ts` + its test |
+| 9 | **Hosting the demo:** where will it be deployed (Vercel, Netlify, GitHub Pages)? GitHub Pages needs a Vite `base` path. Mic and speech require HTTPS. | Not deployed | `vite.config.ts` |
+| 10 | **Branding:** is the teal waves logo/favicon final, or is there an official mark? | Placeholder waves icon | `public/favicon.svg`, sidebar header |
+| 11 | **Wearable "are you safe?" confirmation** before an alert: in scope for v1? | Not planned | `docs/MOBILE_INTEGRATION.md` §7, §11 |
+| 12 | **Real-voice verification:** someone should say the code phrase into a real mic in Chrome with the on-device pack installed and confirm detection. Automated tests can't cover this. | Verified up to "On-device available" | Monitor → Mic |
+
+---
+
 ## Completed in Handoff Completion (2026-09-28)
 
 - [x] **Bug fixes (verified in a real Chromium session):**
