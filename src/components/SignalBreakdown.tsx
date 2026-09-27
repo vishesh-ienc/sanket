@@ -14,6 +14,7 @@ import {
   Info,
   CheckCircle2,
   AlertTriangle,
+  KeyRound,
 } from 'lucide-react';
 import type { FeatureSet, RiskEvaluation } from '../analysis/types';
 
@@ -138,6 +139,22 @@ export function SignalBreakdown({
       accentColor: '#2dd4bf',
     },
   ];
+
+  // Dynamically include contextual code-word signal if active
+  if (contribMap.has('codeWord')) {
+    channels.push({
+      key: 'codeWord',
+      label: 'Covert Code Word',
+      icon: KeyRound,
+      maxWeight: 25,
+      currentValue: 'Trigger Matched',
+      reference: 'Contextual Trigger',
+      active: true,
+      contribution: contribMap.get('codeWord')?.contribution ?? 25,
+      reason: contribMap.get('codeWord')?.reason ?? 'Configured distress phrase detected',
+      accentColor: '#f43f5e',
+    });
+  }
 
   return (
     <div className="signal-breakdown-card" id="signal-breakdown">

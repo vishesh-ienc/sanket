@@ -103,6 +103,26 @@
 
 ---
 
+### DECISION 012: Decoupled Token-Aware Code-Word Spotter with Bounded Contextual Boost and Suppression Cooldown
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Victims of coercion or domestic distress often slip covert trigger phrases into natural conversations (e.g. *"Remember to feed the cat"*). However:
+  1. Full continuous cloud speech transcription compromises privacy and regulatory compliance.
+  2. Browser `SpeechRecognition` is non-standard, platform-dependent, and unavailable in headless/node environments.
+  3. Naive substring matching creates catastrophic false positives (e.g. "cat" matching inside "catastrophe" or single common words like "the" triggering alerts).
+  4. Speech recognizers repeatedly re-emit partial transcripts during an utterance, risking repeated alert stacking.
+  5. A code word must provide high-confidence contextual evidence without bypassing the multi-signal risk engine or independently triggering false emergency dispatches.
+- **Decision:**
+  1. The `CodeWordDetector` operates on generic `TranscriptEvent` inputs completely decoupled from React, the DOM, and browser speech APIs.
+  2. Implement token-aware normalization and bounded sliding-window phrase matching with strict word boundary enforcement.
+  3. Support configurable morphological fuzzy tolerance for minor speech-recognition variations (plurals/verb suffixes) without permitting loose partial matches.
+  4. Enforce a 5000ms cooldown debounce window to suppress duplicate recognizer emissions.
+  5. Enforce zero transcript retention: raw transcripts are processed ephemerally and immediately discarded; no conversation log is kept.
+  6. Code-word detections inject a strictly bounded external boost (+25 pts) into the `RiskEngine` via `injectExternalSignal()`. An isolated code word elevates score to 25 (`ELEVATED`), remaining well below `HIGH_RISK` (70). Reaching `HIGH_RISK` strictly requires multi-signal corroboration (acoustic strain, RMS drop, prolonged silence, or sustained persistence).
+- **Consequences:** The code-word detector is 100% locally testable, private, immune to partial-word false triggers, and mathematically bounded within Sanket's multi-signal safety architecture.
+
+---
+
 ### Template for Future Decisions
 ```markdown
 ### DECISION XXX: [Title]

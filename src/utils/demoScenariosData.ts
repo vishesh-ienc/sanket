@@ -11,7 +11,9 @@ export type DemoScenarioKey =
   | 'PITCH_STRAIN_ONLY'
   | 'EXTENDED_SILENCE'
   | 'WHISPER_STRAIN'
+  | 'CODE_WORD_ONLY'
   | 'MULTI_SIGNAL_DISTRESS'
+  | 'MULTI_SIGNAL_WITH_CODE_WORD'
   | 'RECOVERY_NORMALIZING';
 
 /** Helper generator returning synthetic FeatureSet for demo scenarios */
@@ -78,6 +80,20 @@ export function getDemoScenarioFeatures(
         speechSegmentCount: 1,
       };
 
+    case 'CODE_WORD_ONLY':
+      // Normal calm speech baseline acoustic signals (code-word trigger handles contextual boost)
+      return {
+        timestamp,
+        rmsEnergy: 0.056 + Math.sin(tick * 0.1) * 0.01,
+        zeroCrossingRate: 0.08,
+        spectralCentroid: 1450,
+        pitchHz: 165 + Math.sin(tick * 0.1) * 8,
+        isSpeech: true,
+        silenceDurationSec: 0,
+        speechActivityDurationSec: 5.2,
+        speechSegmentCount: 2,
+      };
+
     case 'MULTI_SIGNAL_DISTRESS':
       // Full multi-signal co-occurrence: Pitch + RMS + Spectral + ZCR + Persistence
       return {
@@ -89,6 +105,20 @@ export function getDemoScenarioFeatures(
         isSpeech: true,
         silenceDurationSec: 4.5,
         speechActivityDurationSec: 0.6,
+        speechSegmentCount: 1,
+      };
+
+    case 'MULTI_SIGNAL_WITH_CODE_WORD':
+      // Combined acoustic distress + contextual covert code word
+      return {
+        timestamp,
+        rmsEnergy: 0.35 + Math.sin(tick * 0.1) * 0.03,
+        zeroCrossingRate: 0.44,
+        spectralCentroid: 4800,
+        pitchHz: 425 + Math.sin(tick * 0.2) * 15,
+        isSpeech: true,
+        silenceDurationSec: 3.8,
+        speechActivityDurationSec: 0.5,
         speechSegmentCount: 1,
       };
 

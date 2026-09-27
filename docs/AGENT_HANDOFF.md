@@ -11,20 +11,21 @@
 ---
 
 ## 2. Current Project Status
-- **Phase:** **Phase 4 — Live Sanket Safety Dashboard Console** (`COMPLETED`)
-- **Git State:** Clean, all tests passing, ready for Phase 5.
+- **Phase:** **Phase 5 — Configurable Code-Word Detection** (`COMPLETED`)
+- **Git State:** Clean, all tests passing, ready for Phase 6.
 - **Build Status:** `npm run build` passes with 0 TypeScript errors. `npm run lint` passes with 0 warnings/errors.
 - **Tests:**
   - `npx tsx src/analysis/__tests__/featureExtraction.test.ts` → **46/46 passed**
   - `npx tsx src/analysis/__tests__/riskEngine.test.ts` → **59/59 passed**
-  - Total: **105 passed, 0 failed**
+  - `npx tsx src/analysis/__tests__/codeWordDetector.test.ts` → **56/56 passed**
+  - Total: **161 passed, 0 failed**
 - **Runtime:** React 19 + TypeScript + Vite dev server (`npm run dev`).
 
 ---
 
 ## 3. Current Phase
-- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard).
-- **Next Phase:** **Phase 5 — Configurable Code-Word Detection.**
+- **Completed:** Phase 1 (Audio Input), Phase 2 (Feature Extraction), Phase 3 (Multi-Signal Risk Engine), Phase 4 (Sanket Console Dashboard), Phase 5 (Configurable Code-Word Detection).
+- **Next Phase:** **Phase 6 — Personal Voice Baseline & Calibration.**
 
 ---
 
@@ -39,12 +40,6 @@
 ### Phase 1
 - **`src/audio/types.ts`**: `AudioFrame`, `MonitoringState`, `AudioInputError`, `AudioActivityState`, `AudioInputConfig`.
 - **`src/audio/audioInput.ts`**: `AudioInputService` class.
-  - `start()`: `getUserMedia` → `AudioContext` → `AnalyserNode` → connect source.
-  - `stop()`: disconnects nodes, stops media tracks, closes AudioContext.
-  - `getCurrentFrame()`: returns `AudioFrame` snapshot with real PCM data.
-  - `calculateRms()`: RMS energy from Float32Array samples.
-  - `isAudioActive()`: threshold comparison (ACTIVE vs QUIET).
-  - `getAnalyserNode()`: exposes AnalyserNode for canvas rendering.
 - **`src/audio/useAudioMonitor.ts`**: React hook bridging `AudioInputService` to UI (20Hz).
 - **`src/components/LiveWaveform.tsx`**: Canvas-based real PCM oscilloscope.
 - **`src/components/AudioActivityMeter.tsx`**: RMS meter and ACTIVE/QUIET indicator.
@@ -53,55 +48,44 @@
 
 ### Phase 2
 - **`src/analysis/types.ts`**: `FeatureSet` (9 fields), `FeatureExtractorConfig`.
-- **`src/analysis/featureFunctions.ts`**: Pure stateless DSP functions:
-  - `calculateRms(samples)` — RMS from PCM Float32Array
-  - `calculateZeroCrossingRate(samples)` — normalized sign-change fraction
-  - `calculateSpectralCentroid(frequencyData, sampleRate, minMagnitude)` — weighted Hz centroid; **null** on silence
-  - `estimatePitch(samples, sampleRate, minHz, maxHz, confidenceThreshold)` — autocorrelation F0; **null** on unvoiced/low-energy
-  - `detectVoiceActivity(rms, threshold)` — energy gate VAD
-- **`src/analysis/featureExtractor.ts`**: Stateful `FeatureExtractor` class:
-  - `processFrame(frame: AudioFrame): FeatureSet` — complete per-frame analysis (~10Hz)
-  - Internal `TemporalState`: `silenceDurationSec`, `speechActivityDurationSec`, `speechSegmentCount`, `wasVoicedPrevFrame`, `lastFrameTimestamp`
-  - `reset()`, `getTemporalState()`, `updateConfig()` methods
-- **`src/analysis/useFeatureExtractor.ts`**: React hook:
-  - Runs at configurable analysis interval (default 100ms / 10Hz)
-  - `FeatureExtractor` stored in `useState` (not `useRef`) — satisfies oxlint react/refs rule
-  - Resets extractor on monitoring stop
+- **`src/analysis/featureFunctions.ts`**: Pure stateless DSP functions (`calculateRms`, `calculateZeroCrossingRate`, `calculateSpectralCentroid`, `estimatePitch`, `detectVoiceActivity`).
+- **`src/analysis/featureExtractor.ts`**: Stateful `FeatureExtractor` class (~10Hz analysis cadence).
+- **`src/analysis/useFeatureExtractor.ts`**: React hook.
 - **`src/analysis/__tests__/featureExtraction.test.ts`**: 46 deterministic unit tests.
 
-### Phase 3 (NEW)
-- **`src/analysis/types.ts`**:
-  - `RiskLevel`: `'NORMAL' | 'ELEVATED' | 'SUSPICIOUS' | 'HIGH_RISK'`
-  - `RiskEvaluation`: Smoothed composite score (0–100), level, explainable signal breakdown, confirmed signal count, persistence frames, isConfirmed flag.
-  - `SignalContribution`: Per-channel detail `{ signal, contribution, reason }`.
-  - `RiskEngineConfig`: Thresholds, baseline references, EMA smoothing factor, confirmation count, per-signal weights.
-- **`src/analysis/riskEngine.ts`**: Pure TypeScript heuristic risk decision engine:
-  - 6 independent signal channels (pitch, RMS, silence, voice activity, spectral centroid, ZCR) + persistence bonus.
-  - Bounded linear scoring functions per channel.
-  - Single-signal ceiling: Max single weight is 20, max single + persistence is 35 < 70 (`HIGH_RISK`). **Single signals provably cannot trigger `HIGH_RISK`.**
-  - Exponential moving average smoothing (`decayFactor: 0.78`): gradual recovery when speech normalizes; transient spikes do not latch into alerts.
-  - `injectExternalSignal()`: bounded additive channel for future Phase 5 (code-word) and Phase 8 (breathing) integration.
-  - `reset()`, `getState()`, `getConfig()`, `updateConfig()`, and `evaluationToRiskEvent()` methods.
-- **`src/analysis/useRiskEngine.ts`**: React hook:
-  - Bridges `useFeatureExtractor` output into `RiskEngine` (~10Hz).
-  - Clean lifecycle reset on monitoring stop.
-  - Deferrals with `setTimeout(0)` to prevent React effect state-update warnings.
-- **`src/analysis/__tests__/riskEngine.test.ts`**: 59 deterministic unit tests covering mathematical proofs, signal bounds, recovery decay, and determinism.
+### Phase 3
+- **`src/analysis/types.ts`**: `RiskLevel`, `RiskEvaluation`, `SignalContribution`, `RiskEngineConfig`.
+- **`src/analysis/riskEngine.ts`**: Pure TypeScript heuristic risk decision engine with EMA decay, single-signal ceiling, and external signal injection.
+- **`src/analysis/useRiskEngine.ts`**: React hook bridging features into risk evaluations.
+- **`src/analysis/__tests__/riskEngine.test.ts`**: 59 deterministic unit tests.
 
-### Phase 4 (NEW)
-- **`src/components/RiskScoreGauge.tsx`**: HUD circular SVG gauge with 260° arc, live score (0–100), risk status badge (`NORMAL`, `ELEVATED`, `SUSPICIOUS`, `HIGH_RISK`), tick marks, dynamic glow filters, and persistence indicators.
-- **`src/components/SignalBreakdown.tsx`**: 6-channel acoustic breakdown (Pitch, RMS, Silence, Voice Activity, Spectral Centroid, ZCR) with dynamic proportional progress bars, baseline references, live readouts, and human-readable anomaly explanations.
+### Phase 4
+- **`src/components/RiskScoreGauge.tsx`**: Circular SVG HUD gauge with 260° arc, live score (0–100), risk status badge (`NORMAL`, `ELEVATED`, `SUSPICIOUS`, `HIGH_RISK`), tick marks, dynamic glow filters, and persistence indicators.
+- **`src/components/SignalBreakdown.tsx`**: 6-channel acoustic breakdown with dynamic proportional progress bars, baseline references, live readouts, and human-readable anomaly explanations.
 - **`src/components/DetectionTimeline.tsx`**: 30-sample rolling sparkline chart and transition event logger capturing risk level changes and multi-signal co-occurrences.
 - **`src/components/MonitoringStatus.tsx`**: Web Audio hardware state, VAD classification pill (`VOICED SPEECH` vs `AMBIENT / QUIET`), 10Hz DSP cadence indicator, and local-first privacy security declaration.
-- **`src/components/DemoScenarios.tsx` & `src/utils/demoScenariosData.ts`**: Interactive test scenario simulator (Calm, Pitch Spike, Silence, Whisper, Multi-Signal Distress, Recovery) for judge evaluation.
+- **`src/components/DemoScenarios.tsx` & `src/utils/demoScenariosData.ts`**: Interactive test scenario simulator for judge evaluation.
 - **`src/App.tsx` & `src/index.css`**: Complete dashboard assembly and sleek dark safety HUD design system.
+
+### Phase 5 (NEW)
+- **`src/analysis/codeWordDetector.ts`**: Pure TypeScript token-aware covert phrase spotter.
+  - Deterministic text normalization (lowercasing, harmless punctuation removal, whitespace collapsing).
+  - Sliding-window token comparison with word boundary enforcement.
+  - Morphological fuzzy tolerance for speech-recognition inflections (plurals/verb suffixes).
+  - 5000ms cooldown debounce window suppressing duplicate recognizer emissions.
+  - Zero transcript retention: processed ephemerally, never stores conversation transcripts or logs.
+- **`src/analysis/transcriptTypes.ts`**: Input-agnostic transcript abstraction (`TranscriptEvent`, `TranscriptSource`).
+- **`src/analysis/manualTranscriptSource.ts`**: Deterministic in-memory test adapter for transcript emission.
+- **`src/analysis/useCodeWordDetector.ts`**: React hook managing phrase configuration, armed status, and detection events.
+- **`src/analysis/riskEngine.ts`**: Contextual signal integration via `injectExternalSignal(25, 25, { signal: 'codeWord', ... })` with explainable attribution in `contributingSignals`. Single-signal ceiling holds (25 < 70).
+- **`src/components/CodeWordConfig.tsx`**: Configuration HUD with phrase input, armed toggle, live detection alert, and interactive manual test simulator.
+- **`src/analysis/__tests__/codeWordDetector.test.ts`**: 56 deterministic unit tests covering normalization, boundaries, cooldown, fuzzy matching, and risk engine integration.
 
 ---
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Covert code-word spotter → Phase 5
-- [ ] Silent alert dispatch simulation & forensic modal → Phase 6
-- [ ] Personal baseline calibration (`BaselineProfile`) → Phase 7
+- [ ] Personal baseline calibration (`BaselineProfile`) → Phase 6
+- [ ] Silent alert dispatch simulation & forensic modal → Phase 7
 - [ ] Multi-signal false-positive reduction filters → Phase 8
 - [ ] Mobile/VoIP native integration → Phase 10
 

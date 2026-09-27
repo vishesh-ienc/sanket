@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { History, ArrowUpRight, ArrowDownRight, ShieldAlert, Sparkles, CheckCircle2 } from 'lucide-react';
-import type { RiskEvaluation, RiskLevel } from '../analysis/types';
+import { History, ArrowUpRight, ArrowDownRight, ShieldAlert, Sparkles, CheckCircle2, KeyRound } from 'lucide-react';
+import type { RiskEvaluation, RiskLevel, CodeWordDetection } from '../analysis/types';
 
 interface TimelineEvent {
   id: string;
@@ -14,7 +14,7 @@ interface TimelineEvent {
   timestamp: number;
   score: number;
   level: RiskLevel;
-  type: 'LEVEL_UP' | 'LEVEL_DOWN' | 'MULTI_SIGNAL' | 'RECOVERY' | 'SESSION_START';
+  type: 'LEVEL_UP' | 'LEVEL_DOWN' | 'MULTI_SIGNAL' | 'CODE_WORD' | 'RECOVERY' | 'SESSION_START';
   summary: string;
   signals: string[];
 }
@@ -22,14 +22,20 @@ interface TimelineEvent {
 interface DetectionTimelineProps {
   currentEvaluation: RiskEvaluation | null;
   isMonitoring: boolean;
+  codeWordDetection?: CodeWordDetection | null;
 }
 
-export function DetectionTimeline({ currentEvaluation, isMonitoring }: DetectionTimelineProps) {
+export function DetectionTimeline({
+  currentEvaluation,
+  isMonitoring,
+  codeWordDetection,
+}: DetectionTimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
   const prevLevelRef = useRef<RiskLevel>('NORMAL');
   const prevScoreRef = useRef<number>(0);
   const eventCounterRef = useRef<number>(0);
+  const prevCodeWordTsRef = useRef<number | null>(null);
 
   // Maintain rolling score history for mini-sparkline (last 30 samples)
   useEffect(() => {
@@ -108,6 +114,42 @@ export function DetectionTimeline({ currentEvaluation, isMonitoring }: Detection
     }
     return undefined;
   }, [currentEvaluation, isMonitoring]);
+
+  // Record code word detections in the event log (does not leak full phrase)
+  useEffect(() => {
+    if (!isMonitoring || !codeWordDetection || !codeWordDetection.detected) return;
+
+    if (codeWordDetection.timestamp !== prevCodeWordTsRef.current) {
+      prevCodeWordTsRef.current = codeWordDetection.timestamp;
+      eventCounterRef.current += 1;
+
+      const now = new Date(codeWordDetection.timestamp);
+      const timeStr = now.toLocaleTimeString([], {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+
+      const newEvent: TimelineEvent = {
+        id: `ev-cw-${eventCounterRef.current}-${Date.now()}`,
+        timeStr,
+        timestamp: codeWordDetection.timestamp,
+        score: Math.round(currentEvaluation?.riskScore ?? 25),
+        level: currentEvaluation?.riskLevel ?? 'ELEVATED',
+        type: 'CODE_WORD',
+        summary: 'Configured code word detected',
+        signals: ['codeWord'],
+      };
+
+      const timer = setTimeout(() => {
+        setEvents((prev) => [newEvent, ...prev.slice(0, 19)]);
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [codeWordDetection, isMonitoring, currentEvaluation]);
 
   const getLevelColor = (level: RiskLevel) => {
     switch (level) {
@@ -209,7 +251,9 @@ export function DetectionTimeline({ currentEvaluation, isMonitoring }: Detection
                           backgroundColor: `${color}15`,
                         }}
                       >
-                        {ev.type === 'LEVEL_UP' ? (
+                        {ev.type === 'CODE_WORD' ? (
+                          <KeyRound size={10} />
+                        ) : ev.type === 'LEVEL_UP' ? (
                           <ArrowUpRight size={10} />
                         ) : ev.type === 'LEVEL_DOWN' ? (
                           <ArrowDownRight size={10} />

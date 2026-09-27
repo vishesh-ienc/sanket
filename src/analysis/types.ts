@@ -111,6 +111,42 @@ export interface RiskEvent {
 }
 
 /**
+ * Configuration for the CodeWordDetector.
+ */
+export interface CodeWordDetectorConfig {
+  /** The target phrase to detect (e.g. "Remember to feed the cat") */
+  phrase: string;
+  /** Whether code-word monitoring is active */
+  enabled: boolean;
+  /** Cooldown window in ms to suppress duplicate detections from speech recognition bursts (default: 5000ms) */
+  cooldownMs: number;
+  /** Whether to permit minor inflections (e.g. plurals 'cat' vs 'cats') */
+  fuzzyTolerance: boolean;
+  /** Minimum similarity threshold for fuzzy matching (0.0 to 1.0, default: 0.85) */
+  fuzzyThreshold: number;
+}
+
+/**
+ * Result emitted by CodeWordDetector.processTranscript().
+ */
+export interface CodeWordDetection {
+  /** Whether a configured code word was detected */
+  detected: boolean;
+  /** The matched phrase snippet, or null if not detected */
+  matchedPhrase: string | null;
+  /** Normalized representation of the configured target phrase */
+  normalizedPhrase: string | null;
+  /** Match confidence / similarity (0.0 to 1.0) */
+  confidence: number;
+  /** Millisecond timestamp when the evaluation took place */
+  timestamp: number;
+  /** Explanatory reason or suppression status */
+  reason?: string;
+  /** Optional source identifier (e.g. 'manual', 'browser-speech', 'mock-source') */
+  sourceId?: string;
+}
+
+/**
  * Configuration for FeatureExtractor.
  * All thresholds are deliberately configurable rather than hard-coded
  * to support future personal baseline calibration.

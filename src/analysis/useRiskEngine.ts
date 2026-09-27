@@ -68,8 +68,16 @@ export function useRiskEngine(
     return () => clearTimeout(timerId);
   }, [latestFeatures, isMonitoring, evaluateFeatures]);
 
+  const injectExternalSignal = useCallback(
+    (boostAmount: number, maxBoost = 25, metadata?: { signal?: string; reason?: string }) => {
+      engine.injectExternalSignal(boostAmount, maxBoost, metadata);
+    },
+    [engine]
+  );
+
   return {
     latestEvaluation,
     engine,
+    injectExternalSignal,
   };
 }

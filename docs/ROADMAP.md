@@ -109,30 +109,38 @@
 ---
 
 ### Phase 5: Configurable Code-Word Detection
-- **Status:** `NOT STARTED`
+- **Status:** `COMPLETED`
 - **Goal:** Allow users to set a covert distress phrase (e.g., *"Remember to feed the cat"*) that elevates contextual risk upon detection.
-- **Expected Functionality:** Configuration modal/input to set trigger phrase; local speech recognition (Web Speech API / pattern matching); triggers a high-confidence contextual signal without alerting bystanders.
-- **Inputs:** Audio stream, user-configured trigger string.
-- **Outputs:** Contextual signal flag and boost to `RiskEngine`.
+- **Implemented:**
+  - `CodeWordDetector`: Pure TypeScript token-aware phrase spotter with deterministic text normalization, sliding-window token matching, morphological fuzzy tolerance, and 5000ms duplicate suppression cooldown. Zero transcript retention.
+  - `TranscriptSource` abstraction & `ManualTranscriptSource`: Decoupled transcript ingestion interface ready for browser/mobile/VoIP adapters.
+  - Contextual Risk Engine integration: `injectExternalSignal()` injects bounded boost (+25 pts) with explainable `contributingSignals` attribution without breaching the single-signal ceiling (25 < 70).
+  - `CodeWordConfig`: Dashboard configuration HUD with custom phrase input, arm/disarm toggle, live match badge, and manual test input.
+  - Timeline and SignalBreakdown support for code-word telemetry without leaking configured phrase into history.
+  - 56 deterministic unit tests (161 total suite tests passing).
+- **Inputs:** Transcript stream / simulated utterance, user-configured trigger string.
+- **Outputs:** Contextual signal flag and bounded +25 boost to `RiskEngine`.
 - **Dependencies:** Phase 4.
 
 ---
 
-### Phase 6: Silent Alert Simulation
+### Phase 6: Personal Voice Baseline & Calibration
+- **Status:** `NOT STARTED`
+- **Goal:** Implement a personal voice calibration mode and rolling baseline to measure relative deviations instead of universal constants.
+- **Expected Functionality:** 15–20 second calibration phase where the user speaks naturally; records baseline pitch mean, variance, volume floor; calculates real-time statistical $Z$-scores for subsequent evaluation.
+- **Inputs:** User speech frames during calibration mode.
+- **Outputs:** `BaselineProfile` applied dynamically to `FeatureExtractor` and `RiskEngine`.
+- **Dependencies:** Phase 5.
+
+---
+
+### Phase 7: Silent Alert Simulation
 - **Status:** `NOT STARTED`
 - **Goal:** Simulate the silent dispatch of an emergency alert when the Distress Risk Score enters the Critical zone ($80+$).
 - **Expected Functionality:** Confirmation hold-down (avoids instant false triggers), mock GPS coordinate generator, visual alert modal showing mock SMS dispatch to trusted contacts, audio alert freeze, detailed forensic trigger reasons.
 - **Inputs:** `RiskEvent` with level `HIGH_DISTRESS_RISK` from Phase 3.
 - **Outputs:** Simulated dispatch UI notification, audit event logged with timestamp and trigger telemetry.
-- **Dependencies:** Phase 4.
-
----
-
-### Phase 7: Personal Voice Baseline & Calibration
-- **Status:** `NOT STARTED`
-- **Goal:** Implement a personal voice calibration mode and rolling baseline to measure relative deviations instead of universal constants.
-- **Expected Functionality:** 15–20 second calibration phase where the user speaks naturally; records baseline pitch mean, variance, volume floor; calculates real-time statistical $Z$-scores for subsequent evaluation.
-- **Inputs:** User speech frames during calibration mode.
+- **Dependencies:** Phase 6.
 - **Outputs:** `Baseline` profile object storing statistical distribution parameters ($\mu, \sigma$).
 - **Dependencies:** Phase 2, Phase 3.
 

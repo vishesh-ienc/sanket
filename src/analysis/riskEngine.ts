@@ -89,6 +89,13 @@ const DEFAULT_CONFIG: RiskEngineConfig = {
 // Internal Temporal State
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface ActiveExternalSignal {
+  signal: string;
+  boost: number;
+  reason: string;
+  remainingFrames: number;
+}
+
 interface RiskTemporalState {
   /** Exponentially smoothed composite risk score [0, 100] */
   smoothedScore: number;
@@ -102,6 +109,8 @@ interface RiskTemporalState {
   lastPitchHz: number | null;
   /** Session-level RMS moving average for relative deviation */
   rmsSmoothRef: number | null;
+  /** Active external contextual signals (e.g. code-word detections) */
+  activeExternalSignals: ActiveExternalSignal[];
 }
 
 function createInitialState(): RiskTemporalState {
@@ -112,6 +121,7 @@ function createInitialState(): RiskTemporalState {
     lastTimestamp: null,
     lastPitchHz: null,
     rmsSmoothRef: null,
+    activeExternalSignals: [],
   };
 }
 
@@ -345,6 +355,19 @@ export class RiskEngine {
       });
     }
 
+    // ── External signal contributions (Phase 5 Code-Word / Contextual) ────────
+    for (const ext of state.activeExternalSignals) {
+      if (ext.remainingFrames > 0) {
+        contributions.push({
+          signal: ext.signal,
+          contribution: Math.round(ext.boost * (ext.remainingFrames / 10) * 10) / 10,
+          reason: ext.reason,
+        });
+        ext.remainingFrames -= 1;
+      }
+    }
+    state.activeExternalSignals = state.activeExternalSignals.filter((ext) => ext.remainingFrames > 0);
+
     // ──────────────────────────────────────────────────────────────────────────
     // H. SCORE SMOOTHING  (exponential moving average with decay)
     //
@@ -394,10 +417,21 @@ export class RiskEngine {
    *
    * @param boostAmount  Score points to inject (clamped to prevent single-source CRITICAL)
    * @param maxBoost     Maximum boost ceiling (default: 25, keeps it below single-signal CRITICAL threshold)
+   * @param metadata     Optional signal identifier and explainability reason
    */
-  public injectExternalSignal(boostAmount: number, maxBoost = 25): void {
+  public injectExternalSignal(
+    boostAmount: number,
+    maxBoost = 25,
+    metadata?: { signal?: string; reason?: string }
+  ): void {
     const clamped = clamp(boostAmount, 0, maxBoost);
     this.state.smoothedScore = clamp(this.state.smoothedScore + clamped, 0, 100);
+    this.state.activeExternalSignals.push({
+      signal: metadata?.signal ?? 'codeWord',
+      boost: clamped,
+      reason: metadata?.reason ?? 'Configured distress phrase detected',
+      remainingFrames: 10,
+    });
   }
 
   /** Resets all temporal state (e.g. when monitoring restarts) */

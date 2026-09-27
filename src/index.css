@@ -1757,7 +1757,351 @@ body {
   gap: 0.45rem;
 }
 
-.footer-sep {
-  opacity: 0.4;
+/* ── Covert Code-Word Configuration HUD Card ─────────────────────────── */
+.codeword-config-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.15rem;
+  padding: 1.5rem;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
 }
+
+.codeword-config-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.5), transparent);
+}
+
+.codeword-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.codeword-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.codeword-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.codeword-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.codeword-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.codeword-arm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.codeword-arm-btn.armed {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.codeword-arm-btn.armed:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.codeword-arm-btn.disarmed {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+}
+
+.codeword-arm-btn.disarmed:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.codeword-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 860px) {
+  .codeword-body-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.codeword-label {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.codeword-form,
+.test-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.codeword-input,
+.test-input {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.codeword-input:focus,
+.test-input:focus {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.15);
+}
+
+.codeword-save-btn,
+.test-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.codeword-save-btn:hover:not(:disabled),
+.test-submit-btn:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.3);
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #fff;
+}
+
+.codeword-save-btn:disabled,
+.test-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.codeword-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.725rem;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.codeword-status-banner .status-pill {
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.675rem;
+  font-weight: 700;
+}
+
+.codeword-status-banner .status-pill.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.codeword-status-banner .status-pill.idle {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cooldown-tag {
+  opacity: 0.6;
+}
+
+.codeword-detection-alert {
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  border: 1px solid;
+}
+
+.codeword-detection-alert.alert-detected {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+  animation: pulseDetection 2s ease infinite;
+}
+
+@keyframes pulseDetection {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.45);
+  }
+}
+
+.codeword-detection-alert.alert-suppressed {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+}
+
+.alert-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.alert-time {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.alert-message {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.alert-matched-snippet {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  opacity: 0.8;
+}
+
+.test-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.test-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.test-sub {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.quick-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.presets-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.codeword-privacy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.codeword-privacy-notice .notice-icon {
+  color: var(--text-dim);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.codeword-privacy-notice .notice-text {
+  font-size: 0.675rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin: 0;
+}
+
 

@@ -4,7 +4,7 @@
  * allowing instant demonstration of multi-signal co-occurrence and single-signal ceiling.
  */
 
-import { Play, RotateCcw, Volume2, ShieldAlert, Sparkles, Mic, Pause } from 'lucide-react';
+import { Play, RotateCcw, Volume2, ShieldAlert, Sparkles, Mic, Pause, KeyRound } from 'lucide-react';
 import type { DemoScenarioKey } from '../utils/demoScenariosData';
 
 interface DemoScenariosProps {
@@ -67,12 +67,28 @@ export function DemoScenarios({
       accent: '#c084fc',
     },
     {
+      key: 'CODE_WORD_ONLY',
+      label: 'Covert Code Word Trigger',
+      icon: KeyRound,
+      tag: 'BOOST: +25 PTS (ELEVATED)',
+      description: 'Simulated phrase "Remember to feed the cat"; demonstrates bounded contextual boost (<70)',
+      accent: '#f43f5e',
+    },
+    {
       key: 'MULTI_SIGNAL_DISTRESS',
       label: 'Multi-Signal Distress',
       icon: ShieldAlert,
       tag: 'CRITICAL: 75+ (HIGH RISK)',
       description: 'Pitch strain + volume spike + spectral centroid + high ZCR + persistence',
       accent: '#ef4444',
+    },
+    {
+      key: 'MULTI_SIGNAL_WITH_CODE_WORD',
+      label: 'Multi-Signal + Code Word',
+      icon: ShieldAlert,
+      tag: 'CRITICAL: 85+ (HIGH RISK)',
+      description: 'Acoustic strain + high ZCR + prolonged silence + covert code word',
+      accent: '#e11d48',
     },
     {
       key: 'RECOVERY_NORMALIZING',

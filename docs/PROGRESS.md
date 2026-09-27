@@ -8,10 +8,10 @@
 
 ## Current Status
 
-- **Current Phase:** **Phase 4 — Live Sanket Safety Dashboard Console**
+- **Current Phase:** **Phase 5 — Configurable Code-Word Detection**
 - **Status:** `COMPLETED`
 - **Last Updated:** 2026-09-27
-- **Next Phase:** **Phase 5 — Configurable Code-Word Detection**
+- **Next Phase:** **Phase 6 — Personal Voice Baseline / Calibration**
 
 ---
 
@@ -181,17 +181,56 @@
 
 ---
 
+## Phase 5 — Configurable Code-Word Detection (`COMPLETED`)
+
+- [x] **`src/analysis/types.ts`** — Extended contracts for Phase 5:
+  - `CodeWordDetectorConfig`: `phrase`, `enabled`, `cooldownMs: 5000`, `fuzzyTolerance: true`, `fuzzyThreshold: 0.85`.
+  - `CodeWordDetection`: `detected`, `matchedPhrase`, `normalizedPhrase`, `confidence`, `timestamp`, `reason`, `sourceId`.
+- [x] **`src/analysis/transcriptTypes.ts`** — Input-agnostic transcript abstraction:
+  - `TranscriptEvent` (`text`, `isFinal`, `confidence`, `timestamp`, `sourceId`)
+  - `TranscriptSource` interface (`start`, `stop`, `onTranscript`, `getStatus`)
+  - Pure decoupled interface ready for future Web Speech, mobile OS, or VoIP stream listeners.
+- [x] **`src/analysis/manualTranscriptSource.ts`** — Deterministic test adapter:
+  - In-memory event dispatcher implementing `TranscriptSource` for automated tests and evaluator input simulation.
+- [x] **`src/analysis/codeWordDetector.ts`** — Token-aware covert phrase spotter:
+  - Pure TypeScript, zero React/DOM dependencies.
+  - Deterministic text normalization: lowercases, strips harmless punctuation, collapses whitespace, extracts word tokens.
+  - Sliding-window token comparison with strict word boundary enforcement (prevents single-token or partial-word false triggers like "cat" in "catastrophe").
+  - Morphological fuzzy tolerance: handles common speech recognition inflections (plurals 'cat' vs 'cats', verb suffixes 'feed' vs 'feeding').
+  - 5000ms cooldown debounce window suppressing duplicate speech-recognition re-emissions.
+  - Zero transcript retention: processed ephemerally, never stores conversation transcripts or logs.
+- [x] **`src/analysis/riskEngine.ts`** — Contextual Signal Integration:
+  - `injectExternalSignal(boostAmount, maxBoost = 25, metadata)` injects bounded additive boost (+25 pts).
+  - Actively reported in `contributingSignals` as `{ signal: 'codeWord', contribution: 25, reason: 'Configured distress phrase detected' }`.
+  - Single-signal ceiling holds: 25 < 70 (`HIGH_RISK`). Code word alone cannot trigger emergency status; requires multi-signal corroboration.
+- [x] **`src/components/CodeWordConfig.tsx`** — Interactive Configuration HUD:
+  - Custom trigger phrase input with local state.
+  - Armed / Disarmed status toggle button.
+  - Live detection banner showing match snippet, confidence %, and contextual score boost.
+  - Interactive test transcript input & quick-preset buttons for judge demonstration.
+  - Clear privacy disclaimer communicating local prototype matching.
+- [x] **`src/components/DetectionTimeline.tsx` & `src/components/SignalBreakdown.tsx`**:
+  - Timeline logs code-word events (`Configured code word detected`) without leaking the full secret phrase into history.
+  - SignalBreakdown dynamically renders `Covert Code Word (+25 pts)` when active.
+- [x] **`src/components/DemoScenarios.tsx` & `src/utils/demoScenariosData.ts`**:
+  - Added `Covert Code Word Trigger` (demonstrating bounded boost) and `Multi-Signal + Code Word` (demonstrating 85+ `HIGH_RISK` escalation).
+  - Explicitly labeled as `SIMULATED CODE-WORD INPUT / DEMO TRANSCRIPT`.
+- [x] **`src/analysis/__tests__/codeWordDetector.test.ts`** — Deterministic unit tests:
+  - 56 comprehensive unit tests (**56 passed, 0 failed**).
+  - Total test suite: **161 passed, 0 failed (100%)**.
+
+---
+
 ## NOT Completed Yet (Intentionally Scheduled for Later Phases)
 
-- [ ] Configurable covert code-word detection (Scheduled: Phase 5)
-- [ ] Silent alert dispatch simulation & audit modal (Scheduled: Phase 6)
-- [ ] Personal voice baseline calibration module (Scheduled: Phase 7)
+- [ ] Personal voice baseline calibration module (Scheduled: Phase 6)
+- [ ] Silent alert dispatch simulation & audit modal (Scheduled: Phase 7)
 - [ ] Multi-signal false-positive reduction filters (Scheduled: Phase 8)
 - [ ] Mobile/VoIP native integration (Scheduled: Phase 10)
 
 ---
 
-## Current Working Functionality (Phase 1 + Phase 2 + Phase 3 + Phase 4)
+## Current Working Functionality (Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5)
 
 1. **Browser Microphone Capture:** `getUserMedia` with echo cancellation and noise suppression.
 2. **AudioContext + AnalyserNode DSP Pipeline:** Frame generation at `fftSize=2048`.
@@ -212,6 +251,7 @@
 17. **Exponential Moving Average Score Decay:** Gradual recovery when signals return to normal calm conversational speech.
 18. **Explainable Risk Telemetry:** Every evaluation itemizes active signals with numeric contributions and human-readable reasons.
 19. **Live Sanket Console HUD:** Interactive circular risk gauge, 6-channel acoustic breakdown, real-time sparkline & transition timeline, hardware & VAD status monitors, and interactive demonstration scenario simulator.
+20. **Covert Code-Word Detection:** Configurable trigger phrase spotter with token-aware matching, fuzzy morphological tolerance, duplicate suppression cooldown, bounded contextual risk boost (+25 pts), and timeline audit logging without phrase leakage.
 
 ---
 

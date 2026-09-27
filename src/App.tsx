@@ -40,11 +40,13 @@ import {
 import { useAudioMonitor } from './audio/useAudioMonitor';
 import { useFeatureExtractor } from './analysis/useFeatureExtractor';
 import { useRiskEngine } from './analysis/useRiskEngine';
+import { useCodeWordDetector } from './analysis/useCodeWordDetector';
 import { LiveWaveform } from './components/LiveWaveform';
 import { RiskScoreGauge } from './components/RiskScoreGauge';
 import { SignalBreakdown } from './components/SignalBreakdown';
 import { DetectionTimeline } from './components/DetectionTimeline';
 import { MonitoringStatus } from './components/MonitoringStatus';
+import { CodeWordConfig } from './components/CodeWordConfig';
 import { DemoScenarios } from './components/DemoScenarios';
 import {
   type DemoScenarioKey,
@@ -105,7 +107,37 @@ export function App() {
     activeScenario === 'LIVE_MIC' ? liveFeatures : simulatedFeatures;
 
   // ── Step 3: Multi-Signal Risk Engine (Phase 3) ────────────────────────────
-  const { latestEvaluation } = useRiskEngine(effectiveFeatures, isLive);
+  const { latestEvaluation, injectExternalSignal } = useRiskEngine(effectiveFeatures, isLive);
+
+  // ── Step 4: Covert Code-Word Detector (Phase 5) ───────────────────────────
+  const {
+    config: codeWordConfig,
+    latestDetection: codeWordDetection,
+    updatePhrase: updateCodeWordPhrase,
+    toggleEnabled: toggleCodeWordEnabled,
+    processTranscript: runCodeWordTranscript,
+  } = useCodeWordDetector({
+    onDetection: (detection) => {
+      // Inject bounded contextual signal (+25 pts) into the RiskEngine
+      injectExternalSignal(25, 25, {
+        signal: 'codeWord',
+        reason: detection.reason ?? 'Configured distress phrase detected',
+      });
+    },
+  });
+
+  const handleSelectScenario = (scenario: DemoScenarioKey) => {
+    setActiveScenario(scenario);
+    if (scenario === 'CODE_WORD_ONLY' || scenario === 'MULTI_SIGNAL_WITH_CODE_WORD') {
+      setTimeout(() => {
+        runCodeWordTranscript(
+          `Please ${codeWordConfig.phrase} when you get home tonight.`,
+          Date.now(),
+          'demo-transcript'
+        );
+      }, 150);
+    }
+  };
 
   // Derived evaluation values with safe defaults
   const currentScore = latestEvaluation?.riskScore ?? 0;
@@ -134,6 +166,8 @@ export function App() {
         {/* Pipeline Trace Visualizer */}
         <div className="pipeline-flow-pill">
           <span className="pipe-step active">Microphone</span>
+          <span className="pipe-arrow">+</span>
+          <span className="pipe-step active">Code Word</span>
           <span className="pipe-arrow">→</span>
           <span className="pipe-step active">Feature Extractor</span>
           <span className="pipe-arrow">→</span>
@@ -268,6 +302,7 @@ export function App() {
             <DetectionTimeline
               currentEvaluation={latestEvaluation}
               isMonitoring={isLive}
+              codeWordDetection={codeWordDetection}
             />
           </div>
 
@@ -282,11 +317,22 @@ export function App() {
           </div>
         </section>
 
-        {/* ROW 4: Interactive Preset Scenarios (Hackathon Evaluator) */}
+        {/* ROW 4: Covert Code-Word Configuration (Phase 5) */}
+        <section className="console-row">
+          <CodeWordConfig
+            config={codeWordConfig}
+            latestDetection={codeWordDetection}
+            onUpdatePhrase={updateCodeWordPhrase}
+            onToggleEnabled={toggleCodeWordEnabled}
+            onTestTranscript={(text) => runCodeWordTranscript(text, Date.now(), 'manual-test')}
+          />
+        </section>
+
+        {/* ROW 5: Interactive Preset Scenarios (Hackathon Evaluator) */}
         <section className="console-row">
           <DemoScenarios
             activeScenario={activeScenario}
-            onSelectScenario={(sc) => setActiveScenario(sc)}
+            onSelectScenario={handleSelectScenario}
             isMonitoring={isLive}
           />
         </section>
@@ -306,7 +352,7 @@ export function App() {
           <span>React 19 + TypeScript + Web Audio API</span>
           <span className="footer-sep">•</span>
           <Layers size={12} />
-          <span>Phase 4 Console Active</span>
+          <span>Phase 5 Code Word Active</span>
         </div>
       </footer>
     </div>
