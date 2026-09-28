@@ -1,5 +1,5 @@
 /**
- * Sanket — Simulated Silent Alert Payload Builder
+ * Sanket, Simulated Silent Alert Payload Builder
  *
  * Builds the message a production deployment WOULD send to trusted contacts
  * for a confirmed incident. Pure and deterministic; performs no I/O.
@@ -16,7 +16,7 @@ import type { DistressIncident } from '../analysis/types';
 import type { SilentAlertPayload } from './types';
 import { maskAddress, type TrustedContact } from './trustedContacts';
 
-/** Fixed placeholder — the prototype never requests geolocation */
+/** Fixed placeholder, the prototype never requests geolocation */
 export const SIMULATED_COORDINATES = {
   latitude: 12.9716,
   longitude: 77.5946,

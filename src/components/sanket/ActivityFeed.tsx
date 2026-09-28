@@ -68,6 +68,9 @@ export function ActivityFeed({ events, onSelect, limit, className }: ActivityFee
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="flex items-center gap-1.5 truncate text-sm font-medium">
                     <span className="truncate">{e.title}</span>
+                    {(e.count ?? 1) > 1 && (
+                      <span className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground tabular">×{e.count}</span>
+                    )}
                     {i === 0 && (
                       <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-semibold tracking-wider text-primary uppercase">
                         Latest

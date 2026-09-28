@@ -1,8 +1,8 @@
-# Sanket — Mobile Deployment Architecture & Integration Guide (Phase 10)
+# Sanket, Mobile Deployment Architecture & Integration Guide (Phase 10)
 
 > **Status:** Design document. **Nothing in this file is implemented.** The hackathon prototype runs
 > in a desktop/mobile browser only. This guide describes how the existing, tested detection engine
-> would be carried onto native mobile platforms, and — just as importantly — what the platforms do
+> would be carried onto native mobile platforms, and, just as importantly, what the platforms do
 > **not** allow, so nobody over-promises in a pitch.
 >
 > Platform rules change between OS releases. Every platform constraint below must be re-verified
@@ -82,8 +82,8 @@ calibrate them through the personal baseline.
   voiced frames at 10 Hz) is modest for Hermes.
 - Batch frames across the bridge (e.g. deliver the latest window per tick, not every audio
   callback) to keep bridge traffic flat.
-- If profiling shows JS is too slow on low-end devices, port `featureFunctions.ts` first — it is
-  the only hot path — and keep the rest in TypeScript.
+- If profiling shows JS is too slow on low-end devices, port `featureFunctions.ts` first, it is
+  the only hot path, and keep the rest in TypeScript.
 
 ---
 
@@ -91,7 +91,7 @@ calibrate them through the personal baseline.
 
 | Topic | Constraint / approach |
 | :--- | :--- |
-| Background capture | A **foreground service** with `foregroundServiceType="microphone"` and the matching foreground-service permission is required on recent Android versions, and it must be started while the app is visible. It shows a **persistent notification** — "silent" in Sanket means *no audible alarm*, not *invisible*. |
+| Background capture | A **foreground service** with `foregroundServiceType="microphone"` and the matching foreground-service permission is required on recent Android versions, and it must be started while the app is visible. It shows a **persistent notification**, "silent" in Sanket means *no audible alarm*, not *invisible*. |
 | Mic indicator | Android 12+ shows a privacy indicator while the mic is in use. Design the UX around it; do not try to hide it. |
 | Phone-call audio | Third-party apps **cannot** capture the other party's audio on a cellular call (the `VOICE_CALL` source is restricted to privileged apps). Sanket can analyze the **user's own voice via the device mic** during a call, or audio from its **own** VoIP feature. |
 | Mic sharing | Other apps (dialer, voice assistants) can take priority over the mic; handle silenced/interrupted capture and surface it as "monitoring paused", never as "safe". |
@@ -140,7 +140,7 @@ rationale, a non-diagnostic message, and a location placeholder. Production need
 | Option | Silent? | Notes |
 | :--- | :--- | :--- |
 | Direct SMS from device (Android `SmsManager`) | Yes (Android only) | Needs SMS permission; Play restricts it to default-SMS-handler-type apps. Not available on iOS. |
-| Relay service (app → backend → SMS/push/email provider) | Yes, both platforms | Recommended. Only the **alert payload** leaves the device — never audio. Requires auth, rate limiting, delivery receipts, and an honest privacy policy update ("zero cloud *audio*", not "zero cloud"). |
+| Relay service (app → backend → SMS/push/email provider) | Yes, both platforms | Recommended. Only the **alert payload** leaves the device, never audio. Requires auth, rate limiting, delivery receipts, and an honest privacy policy update ("zero cloud *audio*", not "zero cloud"). |
 | Share-sheet / compose UI | No | Useful as a manual fallback on the incident screen. |
 
 Location: request it **at incident time only**, with explicit prior consent, and fall back to
@@ -178,7 +178,7 @@ haptic prompt on a watch) before relay, since the engine produces risk estimates
 
 1. ~~Extract `frameBuilder.ts`~~ (done). Add parity tests (browser `AnalyserNode` vs `frameBuilder`)
    on recorded fixtures.
-2. React Native shell running the engine against bundled sample audio (no mic) — proves the port.
+2. React Native shell running the engine against bundled sample audio (no mic), proves the port.
 3. Android foreground-service mic adapter + pause/interruption handling.
 4. iOS background audio adapter.
 5. On-device code-word adapter behind `TranscriptSource`.

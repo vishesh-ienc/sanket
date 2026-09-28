@@ -1,5 +1,5 @@
 /**
- * Sanket — Baseline Deviation Calculator (Phase 6)
+ * Sanket, Baseline Deviation Calculator (Phase 6)
  *
  * Transforms a FeatureSet into a set of Z-score-based deviation signals
  * relative to a personal BaselineProfile.
@@ -36,10 +36,10 @@ import type { FeatureSet, BaselineProfile } from './types';
  * Prevents division-by-zero and excessive sensitivity for very consistent
  * speakers. Expressed in each channel's native units.
  */
-const PITCH_STDDEV_FLOOR = 8;      // Hz — minimum expected pitch variability
-const ENERGY_STDDEV_FLOOR = 0.005; // RMS amplitude — minimum expected RMS variability
+const PITCH_STDDEV_FLOOR = 8;      // Hz, minimum expected pitch variability
+const ENERGY_STDDEV_FLOOR = 0.005; // RMS amplitude, minimum expected RMS variability
 const ZCR_STDDEV_FLOOR = 0.02;     // ZCR fraction
-const SPECTRAL_STDDEV_FLOOR = 150; // Hz — minimum expected spectral centroid variability
+const SPECTRAL_STDDEV_FLOOR = 150; // Hz, minimum expected spectral centroid variability
 
 /**
  * Maximum absolute Z-score used for clamping before converting to a risk contribution.
@@ -126,7 +126,7 @@ function zScore(sample: number, mean: number, stdDev: number, floor: number): nu
  *
  * @param features   Current acoustic feature frame from FeatureExtractor.
  * @param baseline   Personal voice baseline from a completed calibration session.
- *                   Pass null/undefined when no baseline exists — returns NoBaselineResult.
+ *                   Pass null/undefined when no baseline exists, returns NoBaselineResult.
  * @returns          Per-channel Z-score deviations, or NoBaselineResult if uncalibrated.
  */
 export function calculateBaselineDeviation(

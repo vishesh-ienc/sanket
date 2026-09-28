@@ -1,5 +1,5 @@
 /**
- * Sanket — Demo Controller (Phase 9)
+ * Sanket, Demo Controller (Phase 9)
  *
  * Deterministic state machine governing the guided hackathon judge demonstration.
  * Operates purely on declarative step definitions and subscriber callbacks;

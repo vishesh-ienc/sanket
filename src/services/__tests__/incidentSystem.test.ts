@@ -1,5 +1,5 @@
 /**
- * Sanket — Phase 7: Silent Alert Dispatch & Forensic Event System Tests
+ * Sanket, Phase 7: Silent Alert Dispatch & Forensic Event System Tests
  *
  * Deterministic unit and integration tests covering:
  *   - Silent Alert Dispatcher (gating, simulation mode, metadata)

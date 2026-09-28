@@ -1,10 +1,10 @@
 /**
- * Sanket — Portable AudioFrame Builder
+ * Sanket, Portable AudioFrame Builder
  *
  * Reproduces what Web Audio's AnalyserNode gives the browser adapters
  * (fftSize 2048, Blackman window, magnitude / N, 0.8 temporal smoothing,
- * dBFS), so any PCM source — tests, Node tooling, or a future native mobile
- * adapter — can feed the unchanged FeatureExtractor. Pure TypeScript.
+ * dBFS), so any PCM source, tests, Node tooling, or a future native mobile
+ * adapter, can feed the unchanged FeatureExtractor. Pure TypeScript.
  */
 
 import type { AudioFrame } from './types';

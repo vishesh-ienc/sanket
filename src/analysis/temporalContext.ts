@@ -1,5 +1,5 @@
 /**
- * Sanket — Temporal Context & False-Positive Reduction Analyzer (Phase 8)
+ * Sanket, Temporal Context & False-Positive Reduction Analyzer (Phase 8)
  *
  * Evaluates short-term temporal stability, transient vocal spikes,
  * cross-signal temporal correlation, and voice-derived pause regularity.
@@ -300,15 +300,15 @@ export class TemporalContextAnalyzer {
     // 6. Non-diagnostic explainability string
     let explanation: string;
     if (eventType === 'MULTI_SIGNAL_CORRELATION') {
-      explanation = `Multiple signals (${uniqueChannelsInWindow.size} channels) sustained across ${sustainedFrames} frames — distress-risk evidence increased.`;
+      explanation = `Multiple signals (${uniqueChannelsInWindow.size} channels) sustained across ${sustainedFrames} frames, distress-risk evidence increased.`;
     } else if (eventType === 'SUSTAINED_ANOMALY') {
-      explanation = `Acoustic anomaly sustained across ${sustainedFrames} frames — temporal persistence active.`;
+      explanation = `Acoustic anomaly sustained across ${sustainedFrames} frames, temporal persistence active.`;
     } else if (eventType === 'TRANSIENT_SPIKE') {
-      explanation = `Transient vocal spike (${transientFrames} frames) — isolated burst, monitoring continues without escalation.`;
+      explanation = `Transient vocal spike (${transientFrames} frames), isolated burst, monitoring continues without escalation.`;
     } else if (eventType === 'BREATHING_PATTERN_ANOMALY') {
-      explanation = 'Voice-derived pause pattern is irregular — conversational turn pacing deviates from normal.';
+      explanation = 'Voice-derived pause pattern is irregular, conversational turn pacing deviates from normal.';
     } else if (uniqueChannelsInWindow.size === 1) {
-      explanation = 'Single-channel deviation — insufficient temporal evidence for distress escalation.';
+      explanation = 'Single-channel deviation, insufficient temporal evidence for distress escalation.';
     } else {
       explanation = 'Acoustic patterns stable within normal baseline range.';
     }

@@ -1,5 +1,5 @@
 /**
- * Sanket — useRiskEngine React Hook (Phase 3)
+ * Sanket, useRiskEngine React Hook (Phase 3)
  *
  * Integrates the RiskEngine into the Sanket monitoring pipeline.
  * Runs at the same cadence as useFeatureExtractor (~10Hz).
@@ -58,7 +58,7 @@ export function useRiskEngine(
     return undefined;
   }, [isMonitoring, engine]);
 
-  // Evaluate whenever a new FeatureSet arrives — call stable callback via timeout
+  // Evaluate whenever a new FeatureSet arrives, call stable callback via timeout
   // to avoid synchronous setState-in-effect lint warning
   useEffect(() => {
     if (!isMonitoring || latestFeatures === null) return;

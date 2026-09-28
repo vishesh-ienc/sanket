@@ -1,8 +1,8 @@
 /**
- * Sanket — useFeatureExtractor React Hook
+ * Sanket, useFeatureExtractor React Hook
  *
  * Integrates the FeatureExtractor into the Sanket monitoring loop.
- * Runs at ~10Hz (every 100ms) — decoupled from the 60fps canvas loop
+ * Runs at ~10Hz (every 100ms), decoupled from the 60fps canvas loop
  * and the 20Hz RMS telemetry loop from Phase 1.
  *
  * Architecture:
@@ -65,7 +65,7 @@ export function useFeatureExtractor(
       return () => clearTimeout(timeoutId);
     }
 
-    // Monitoring is active — reset extractor then start the analysis interval
+    // Monitoring is active, reset extractor then start the analysis interval
     extractor.reset();
 
     intervalRef.current = setInterval(() => {

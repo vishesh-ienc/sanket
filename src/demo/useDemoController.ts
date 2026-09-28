@@ -1,5 +1,5 @@
 /**
- * Sanket — useDemoController React Hook (Phase 9)
+ * Sanket, useDemoController React Hook (Phase 9)
  *
  * Connects the pure TypeScript DemoController to React lifecycle and component state.
  */

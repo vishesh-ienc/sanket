@@ -1,5 +1,5 @@
 /**
- * Sanket — Customisable Signal Settings Tests
+ * Sanket, Customisable Signal Settings Tests
  *
  * Covers sanitisation, engine mapping, the single-signal ceiling invariant
  * under any user configuration, storage resilience, and live effect on the

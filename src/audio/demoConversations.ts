@@ -1,5 +1,5 @@
 /**
- * Sanket — Built-in Demo Conversation Library
+ * Sanket, Built-in Demo Conversation Library
  *
  * Pre-recorded conversations bundled with the site (under /public/demo) that
  * drive the source-agnostic pipeline exactly like a live microphone would.
@@ -13,7 +13,7 @@
 export interface DemoConversationCue {
   /** Utterance start (captions) */
   atSec: number;
-  /** Utterance end — when a recognizer would emit the final text */
+  /** Utterance end, when a recognizer would emit the final text */
   finalSec: number;
   speaker: 'user' | 'friend';
   text: string;

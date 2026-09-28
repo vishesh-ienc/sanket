@@ -60,7 +60,7 @@ export function EventSheet({ event, onOpenChange, onOpenIncident }: EventSheetPr
 
               {event.kind === 'code-word' && (
                 <p className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  Only the fact that your phrase matched is recorded — never the words that were spoken.
+                  Only the fact that your phrase matched is recorded, never the words that were spoken.
                 </p>
               )}
 

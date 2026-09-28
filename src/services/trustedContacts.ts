@@ -1,5 +1,5 @@
 /**
- * Sanket — Trusted Contacts Service
+ * Sanket, Trusted Contacts Service
  *
  * Local roster of people who WOULD receive a silent alert in a production
  * deployment. In this prototype nothing is ever sent: contacts are used only

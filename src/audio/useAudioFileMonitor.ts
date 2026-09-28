@@ -1,5 +1,5 @@
 /**
- * Sanket — useAudioFileMonitor React Hook
+ * Sanket, useAudioFileMonitor React Hook
  *
  * Bridges AudioFileInputService to React state.
  * Exposes the same shape as useAudioMonitor where possible so that

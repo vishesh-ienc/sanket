@@ -1,5 +1,5 @@
 /**
- * Sanket — Acoustic Feature Extraction Functions
+ * Sanket, Acoustic Feature Extraction Functions
  *
  * Pure, stateless DSP utility functions.
  * Each function accepts typed arrays and numeric parameters; none reference
@@ -121,7 +121,7 @@ export function calculateSpectralCentroid(
   }
 
   if (magnitudeSum < minMagnitude) {
-    // Negligible total spectral energy — frame is effectively silent
+    // Negligible total spectral energy, frame is effectively silent
     return null;
   }
 
@@ -178,7 +178,7 @@ export function estimatePitch(
   }
 
   if (r0 < 1e-4) {
-    // Essentially silent frame — no reliable pitch
+    // Essentially silent frame, no reliable pitch
     return null;
   }
 

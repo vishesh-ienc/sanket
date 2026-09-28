@@ -1,4 +1,4 @@
-# Sanket — Architecture Decision Records (ADRs)
+# Sanket, Architecture Decision Records (ADRs)
 
 > **Architectural Decisions Log**  
 > This file tracks foundational technical, product, and architectural decisions for Sanket.  
@@ -20,7 +20,7 @@
 - **Status:** Accepted
 - **Context:** Building native mobile background audio listeners and VoIP interceptors within a 24-hour hackathon introduces massive platform permission complexities (iOS background audio entitlements, Android foreground service constraints).
 - **Decision:** The browser microphone (`navigator.mediaDevices.getUserMedia`) will serve as the physical audio input layer exclusively for the hackathon prototype. The production vision remains mobile-first and background-first.
-- **Consequences:** The UI and documentation must clearly state: *"Prototype mode — browser microphone input"*.
+- **Consequences:** The UI and documentation must clearly state: *"Prototype mode, browser microphone input"*.
 
 ---
 
@@ -37,7 +37,7 @@
 - **Date:** 2026-09-27
 - **Status:** Accepted
 - **Context:** Human voice is naturally variable. A person may scream with joy during a football game, speak in a high register when excited, or remain silent while reading a book. Treating any single metric (e.g., high pitch alone or silence alone) as an emergency would produce overwhelming false alarms.
-- **Decision:** Critical distress risk classification ($80–100$) requires multi-signal temporal correlation—a co-occurrence of multiple distinct anomaly channels (e.g., vocal strain + abnormal cadence + contextual trigger or prolonged hesitation) across an active time window.
+- **Decision:** Critical distress risk classification ($80–100$) requires multi-signal temporal correlation-a co-occurrence of multiple distinct anomaly channels (e.g., vocal strain + abnormal cadence + contextual trigger or prolonged hesitation) across an active time window.
 - **Consequences:** Defense-in-depth architecture, drastically reduced false alarm rate, and realistic product positioning.
 
 ---
@@ -126,7 +126,7 @@
 ### DECISION 013: Welford's Online Algorithm and Statistical Z-Score Calibration with Zero Raw Audio Retention
 - **Date:** 2026-09-27
 - **Status:** Accepted
-- **Context:** Every user has unique vocal physiology—natural fundamental frequency ($F_0$), dynamic vocal energy, speaking tempo, and vocal tract resonance. Hardcoded static acoustic thresholds cause false positives for naturally high-pitched or quiet speakers and false negatives for deep-voiced speakers in distress. However:
+- **Context:** Every user has unique vocal physiology-natural fundamental frequency ($F_0$), dynamic vocal energy, speaking tempo, and vocal tract resonance. Hardcoded static acoustic thresholds cause false positives for naturally high-pitched or quiet speakers and false negatives for deep-voiced speakers in distress. However:
   1. Storing raw audio waveforms or spectral frames violates Sanket's core privacy guarantees.
   2. Multi-pass variance calculation on long recordings consumes unbounded memory.
   3. Calibration must adapt seamlessly without breaking the 100-point risk score scale or the single-signal ceiling invariant.
@@ -161,7 +161,7 @@
 ### DECISION 015: Bounded Temporal Context Ring-Buffer, Transient Spike Suppression Gate, and Voice-Derived Prosodic Regularity Proxy
 - **Date:** 2026-09-27
 - **Status:** Accepted
-- **Context:** Everyday vocal acoustic events—such as coughing, hearty laughing, sudden throat-clearing, or loud bursts of conversational laughter—can produce sharp, isolated spikes in RMS energy and fundamental frequency ($F_0$). If evaluated frame-by-frame in isolation, these transient bursts can produce borderline risk elevations that trigger false emergency incidents. However:
+- **Context:** Everyday vocal acoustic events-such as coughing, hearty laughing, sudden throat-clearing, or loud bursts of conversational laughter-can produce sharp, isolated spikes in RMS energy and fundamental frequency ($F_0$). If evaluated frame-by-frame in isolation, these transient bursts can produce borderline risk elevations that trigger false emergency incidents. However:
   1. We must NOT build a machine-learning model or heavy neural network that breaks real-time browser execution.
   2. We must NOT create a competing second risk score or rewrite the existing authoritative `RiskEngine`.
   3. We must NOT claim medical or respiratory diagnosis from browser microphone streams.

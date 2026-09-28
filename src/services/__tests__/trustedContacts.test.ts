@@ -1,5 +1,5 @@
 /**
- * Sanket — Trusted Contacts & Simulated Dispatch Payload Tests
+ * Sanket, Trusted Contacts & Simulated Dispatch Payload Tests
  *
  * Covers:
  *   1. Contact validation (names, phone, email, duplicates, capacity)

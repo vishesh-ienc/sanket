@@ -8,7 +8,7 @@ export interface SilentAlertRecipient {
   contactId: string;
   name: string;
   channel: ContactChannel;
-  /** Masked address — the full address never appears in a payload */
+  /** Masked address, the full address never appears in a payload */
   maskedAddress: string;
 }
 

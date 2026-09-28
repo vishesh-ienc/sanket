@@ -1,5 +1,5 @@
 /**
- * Sanket — Phase 6: Baseline Builder & Deviation Tests
+ * Sanket, Phase 6: Baseline Builder & Deviation Tests
  *
  * Tests for:
  *   - BaselineBuilder (Welford online statistics)
@@ -97,7 +97,7 @@ function makeProfile(overrides: Partial<BaselineProfile> = {}): BaselineProfile 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// A. Welford Algorithm — Unit Tests
+// A. Welford Algorithm, Unit Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
 console.log('\n════════════════════════════════════════');
@@ -141,7 +141,7 @@ printSection('A. Welford Online Algorithm');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// B. BaselineBuilder — Lifecycle
+// B. BaselineBuilder, Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
 printSection('B. BaselineBuilder Lifecycle');
@@ -149,7 +149,7 @@ printSection('B. BaselineBuilder Lifecycle');
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 5 });
 
-  // Before start — frames are ignored
+  // Before start, frames are ignored
   builder.addFrame(syntheticFrame());
   assert(builder.getVoicedFrameCount() === 0, 'Frames ignored before start()');
   assert(!builder.isActive(), 'Not active before start()');
@@ -159,13 +159,13 @@ printSection('B. BaselineBuilder Lifecycle');
   assert(builder.isActive(), 'Active after start()');
   assert(builder.getVoicedFrameCount() === 0, 'Voiced frames = 0 right after start()');
 
-  // Feed 4 voiced frames — should not be ready
+  // Feed 4 voiced frames, should not be ready
   for (let i = 0; i < 4; i++) builder.addFrame(syntheticFrame({ pitchHz: 170 + i * 5 }));
   assert(builder.getVoicedFrameCount() === 4, 'Voiced frames = 4');
   assert(!builder.isReady(), 'Not ready at 4/5 voiced frames');
   assert(builder.getProgress() < 1.0, 'Progress < 1.0 at 4/5');
 
-  // Feed 1 more — now ready
+  // Feed 1 more, now ready
   builder.addFrame(syntheticFrame({ pitchHz: 190 }));
   assert(builder.getVoicedFrameCount() === 5, 'Voiced frames = 5');
   assert(builder.isReady(), 'Ready at 5/5 voiced frames');
@@ -183,10 +183,10 @@ printSection('B. BaselineBuilder Lifecycle');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// C. BaselineBuilder — Finalize throws if not ready
+// C. BaselineBuilder, Finalize throws if not ready
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('C. BaselineBuilder — Throws when Insufficient Data');
+printSection('C. BaselineBuilder, Throws when Insufficient Data');
 
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 10 });
@@ -202,10 +202,10 @@ printSection('C. BaselineBuilder — Throws when Insufficient Data');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// D. BaselineBuilder — Silence and Unvoiced Frames
+// D. BaselineBuilder, Silence and Unvoiced Frames
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('D. BaselineBuilder — Silence Frame Handling');
+printSection('D. BaselineBuilder, Silence Frame Handling');
 
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 3 });
@@ -230,10 +230,10 @@ printSection('D. BaselineBuilder — Silence Frame Handling');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// E. BaselineBuilder — Pitch Out of Range Discarded
+// E. BaselineBuilder, Pitch Out of Range Discarded
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('E. BaselineBuilder — Pitch Range Filtering');
+printSection('E. BaselineBuilder, Pitch Range Filtering');
 
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 3, pitchRangeHz: [80, 400] });
@@ -254,10 +254,10 @@ printSection('E. BaselineBuilder — Pitch Range Filtering');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// F. BaselineBuilder — Reset Clears State
+// F. BaselineBuilder, Reset Clears State
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('F. BaselineBuilder — Reset');
+printSection('F. BaselineBuilder, Reset');
 
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 2 });
@@ -278,10 +278,10 @@ printSection('F. BaselineBuilder — Reset');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// G. BaselineBuilder — Running Stats During Calibration
+// G. BaselineBuilder, Running Stats During Calibration
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('G. BaselineBuilder — Running Stats');
+printSection('G. BaselineBuilder, Running Stats');
 
 {
   const builder = new BaselineBuilder({ minVoicedFrames: 5 });
@@ -299,10 +299,10 @@ printSection('G. BaselineBuilder — Running Stats');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// H. calculateBaselineDeviation — No Baseline
+// H. calculateBaselineDeviation, No Baseline
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('H. calculateBaselineDeviation — No Baseline');
+printSection('H. calculateBaselineDeviation, No Baseline');
 
 {
   const features = syntheticFrame();
@@ -313,10 +313,10 @@ printSection('H. calculateBaselineDeviation — No Baseline');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// I. calculateBaselineDeviation — Z-Score Computation
+// I. calculateBaselineDeviation, Z-Score Computation
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('I. calculateBaselineDeviation — Z-Score Accuracy');
+printSection('I. calculateBaselineDeviation, Z-Score Accuracy');
 
 {
   const profile = makeProfile({
@@ -364,10 +364,10 @@ printSection('I. calculateBaselineDeviation — Z-Score Accuracy');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// J. calculateBaselineDeviation — Z-Score Cap
+// J. calculateBaselineDeviation, Z-Score Cap
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('J. calculateBaselineDeviation — Z-Score Cap');
+printSection('J. calculateBaselineDeviation, Z-Score Cap');
 
 {
   const profile = makeProfile({ pitchMean: 180, pitchStdDev: 20 });
@@ -381,10 +381,10 @@ printSection('J. calculateBaselineDeviation — Z-Score Cap');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// K. calculateBaselineDeviation — StdDev Floor
+// K. calculateBaselineDeviation, StdDev Floor
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('K. calculateBaselineDeviation — StdDev Floor');
+printSection('K. calculateBaselineDeviation, StdDev Floor');
 
 {
   // StdDev = 0 (perfectly consistent speaker) → floor prevents infinity
@@ -397,10 +397,10 @@ printSection('K. calculateBaselineDeviation — StdDev Floor');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// L. calculateBaselineDeviation — Unvoiced Frames
+// L. calculateBaselineDeviation, Unvoiced Frames
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('L. calculateBaselineDeviation — Unvoiced / Silence Frames');
+printSection('L. calculateBaselineDeviation, Unvoiced / Silence Frames');
 
 {
   const profile = makeProfile({ normalSilenceThresholdSec: 2.0 });
@@ -427,10 +427,10 @@ printSection('L. calculateBaselineDeviation — Unvoiced / Silence Frames');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// M. calculateBaselineDeviation — Null Pitch
+// M. calculateBaselineDeviation, Null Pitch
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('M. calculateBaselineDeviation — Null Pitch Handling');
+printSection('M. calculateBaselineDeviation, Null Pitch Handling');
 
 {
   const profile = makeProfile();
@@ -442,10 +442,10 @@ printSection('M. calculateBaselineDeviation — Null Pitch Handling');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// N. baselineToRiskEngineConfig — Correct Mapping
+// N. baselineToRiskEngineConfig, Correct Mapping
 // ─────────────────────────────────────────────────────────────────────────────
 
-printSection('N. baselineToRiskEngineConfig — Engine Config Mapping');
+printSection('N. baselineToRiskEngineConfig, Engine Config Mapping');
 
 {
   const profile = makeProfile({

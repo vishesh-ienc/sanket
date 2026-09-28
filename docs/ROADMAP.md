@@ -1,4 +1,4 @@
-# Sanket — Phased Development Roadmap
+# Sanket, Phased Development Roadmap
 
 > **Phase Tracking & Execution Blueprint**  
 > This roadmap governs the incremental development of the Sanket prototype for the hackathon.  
@@ -59,13 +59,13 @@
 - **Status:** `COMPLETED`
 - **Goal:** Implement the `FeatureExtractor` module to parse acoustic primitives from `AudioFrame` in real-time.
 - **Implemented:**
-  - `calculateRms()` — RMS energy from PCM samples (re-usable, self-contained)
-  - `calculateZeroCrossingRate()` — Normalized ZCR from PCM buffer
-  - `calculateSpectralCentroid()` — Weighted mean Hz from dBFS frequency data, with null for silence
-  - `estimatePitch()` — Autocorrelation-based monophonic F0 estimation (80–500 Hz), null for unvoiced
-  - `detectVoiceActivity()` — Energy-threshold VAD gate
-  - `FeatureExtractor` class — Stateful wrapper maintaining silence duration, speech segment count, speech activity duration across frames
-  - `useFeatureExtractor` — React hook running analysis at configurable interval (default 10Hz)
+  - `calculateRms()`, RMS energy from PCM samples (re-usable, self-contained)
+  - `calculateZeroCrossingRate()`, Normalized ZCR from PCM buffer
+  - `calculateSpectralCentroid()`, Weighted mean Hz from dBFS frequency data, with null for silence
+  - `estimatePitch()`, Autocorrelation-based monophonic F0 estimation (80–500 Hz), null for unvoiced
+  - `detectVoiceActivity()`, Energy-threshold VAD gate
+  - `FeatureExtractor` class, Stateful wrapper maintaining silence duration, speech segment count, speech activity duration across frames
+  - `useFeatureExtractor`, React hook running analysis at configurable interval (default 10Hz)
   - 46 deterministic unit tests covering all functions and temporal state transitions
 - **Inputs:** `AudioFrame` stream from Phase 1.
 - **Outputs:** Stream of typed `FeatureSet` objects (`rmsEnergy`, `zeroCrossingRate`, `spectralCentroid`, `pitchHz`, `isSpeech`, `silenceDurationSec`, `speechActivityDurationSec`, `speechSegmentCount`).
@@ -77,7 +77,7 @@
 - **Status:** `COMPLETED`
 - **Goal:** Implement the mathematical core that aggregates acoustic deviations into an explainable Distress Risk Score ($0–100$).
 - **Implemented:**
-  - `RiskEngine` class — pure TypeScript stateful heuristic decision engine (zero React/DOM/browser dependencies)
+  - `RiskEngine` class, pure TypeScript stateful heuristic decision engine (zero React/DOM/browser dependencies)
   - Multi-signal weighted scoring across 6 channels (pitch, RMS, silence, voice activity, spectral centroid, ZCR) + persistence bonus
   - Exponential moving average smoothing (`decayFactor: 0.78`) with gradual score decay upon recovery
   - Single-signal ceiling guarantee: max single signal weight is 20, ceiling with persistence is 35 < 70 (`HIGH_RISK`)
@@ -194,7 +194,7 @@
 ---
 
 ### Phase 10: Mobile Deployment Architecture & Future Integration Docs
-- **Status:** `COMPLETED` (documentation only — no native code exists)
+- **Status:** `COMPLETED` (documentation only, no native code exists)
 - **Goal:** Document the concrete technical bridge from the browser prototype to native iOS/Android background service integration.
 - **Implemented:** [`docs/MOBILE_INTEGRATION.md`](MOBILE_INTEGRATION.md) covering the portable engine modules, the `AudioFrame` contract a native adapter must honour, recommended React Native runtime shape, Android foreground-service and iOS background-audio constraints (including the fact that third-party apps cannot capture cellular call audio), on-device code-word recognition, alert transport options, encrypted storage, consent, milestones, and open product questions.
 - **Dependencies:** Phase 9.

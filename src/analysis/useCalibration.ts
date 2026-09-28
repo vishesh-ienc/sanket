@@ -1,5 +1,5 @@
 /**
- * Sanket — useCalibration React Hook (Phase 6)
+ * Sanket, useCalibration React Hook (Phase 6)
  *
  * Manages the lifecycle of a personal voice baseline calibration session:
  *   - START: Begin recording acoustic statistics from live FeatureSet stream.
@@ -95,7 +95,7 @@ function saveStoredProfile(profile: BaselineProfile): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
   } catch {
-    // Storage unavailable (private browsing, etc.) — non-fatal
+    // Storage unavailable (private browsing, etc.), non-fatal
   }
 }
 

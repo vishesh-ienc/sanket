@@ -113,7 +113,7 @@ Detailed technical specs are available in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 | **Prolonged Silence / Voice Activity** | VAD-based freeze and low-voicing detection | ✅ Implemented |
 | **Personal Voice Baseline** | Welford mean/σ calibration → Z-score deviations | ✅ Implemented |
 | **Covert Code-Word Phrases** | Token-aware local phrase matching; live from the mic via **on-device** browser speech recognition (cloud only by explicit opt-in), or from a demo call's transcript track | ✅ Implemented |
-| **Customisable Signals** | Enable/disable each signal, tune weights, alert threshold, pitch sensitivity and code-word weight — single-signal ceiling always enforced | ✅ Implemented |
+| **Customisable Signals** | Enable/disable each signal, tune weights, alert threshold, pitch sensitivity and code-word weight, single-signal ceiling always enforced | ✅ Implemented |
 | **Temporal Correlation** | Transient-spike suppression, sustained + cross-signal confirmation | ✅ Implemented |
 | **Silent Alert Simulation** | Latched incident, trusted-contact dispatch preview (never sent), forensic audit | ✅ Implemented |
 
@@ -132,7 +132,7 @@ Detailed technical specs are available in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 1. **Monitor → Play demo call.** A built-in 53 s phone call (two synthetic voices) plays through the exact pipeline a live stream would use.
 2. **Calm opening (0:00–0:17):** risk stays *Normal*; the live signal tiles barely move.
 3. **Voice tightens (0:17–0:25):** pitch, intensity and strain rise; the activity feed logs the escalation.
-4. **Distress + code phrase (0:25–):** acoustics alone push risk to *Suspicious* — then the caller slips in *"Remember to feed the cat"*. That corroboration crosses the threshold and a **silent alert** is raised (visual only, nothing sent).
+4. **Distress + code phrase (0:25–):** acoustics alone push risk to *Suspicious*, then the caller slips in *"Remember to feed the cat"*. That corroboration crosses the threshold and a **silent alert** is raised (visual only, nothing sent).
 5. **View evidence:** contributing signals, temporal confirmation, dispatch preview for trusted contacts, privacy guarantees.
 
 Or use **Demo → Start tour** for a 6-step guided walkthrough that runs on simulated signals (no mic needed). Full script: [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
@@ -146,7 +146,7 @@ Or use **Demo → Start tour** for a 6-step guided walkthrough that runs on simu
 - **Audio DSP:** Web Audio API (`AudioContext`, `AnalyserNode`), portable frame builder for non-browser sources
 - **Speech (code word only):** Web Speech API with `processLocally` on-device recognition
 - **Tooling:** Oxlint, Prettier, `tsx`-run deterministic test suites
-- **Backend / DB / Auth:** none — everything runs in the browser
+- **Backend / DB / Auth:** none, everything runs in the browser
 
 ---
 
@@ -191,7 +191,7 @@ sanket/
 - [x] **Phase 9:** Guided judge demonstration flow
 - [x] **Final console:** Source-agnostic audio (microphone or file), trusted contacts
 - [x] **UI overhaul:** Tailwind + shadcn app shell, themes, customisable signals, built-in TTS demo call, live on-device code word
-- [x] **Phase 10:** Mobile deployment architecture — design doc only, see [docs/MOBILE_INTEGRATION.md](docs/MOBILE_INTEGRATION.md)
+- [x] **Phase 10:** Mobile deployment architecture, design doc only, see [docs/MOBILE_INTEGRATION.md](docs/MOBILE_INTEGRATION.md)
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for full phase details.
 
@@ -237,11 +237,11 @@ npm run dev          # http://localhost:5173
 
 1. **Built-in call (recommended):** **Monitor → Play demo call.** Captions show what's being said; the silent alert appears
    shortly after the caller says the code phrase (~0:39).
-2. **Guided tour:** **Demo → Start tour** — six steps on simulated signals, works without a microphone.
+2. **Guided tour:** **Demo → Start tour**, six steps on simulated signals, works without a microphone.
 3. **Live microphone:** **Monitor → Mic → Start microphone** and talk. In Chrome, **Settings → Live code-word listening →
    Install** downloads the on-device speech pack once; after that, saying your code phrase is detected privately.
 4. **Your own recording:** **Monitor → Upload** any WAV/MP3/OGG (phone recording, VoIP export…).
-5. **Scenario simulator:** **Demo → Scenario simulator** — synthetic patterns (cough burst, whisper, multi-signal…).
+5. **Scenario simulator:** **Demo → Scenario simulator**, synthetic patterns (cough burst, whisper, multi-signal…).
 
 Tune what counts under **Signals**, and set the code word, baseline and trusted contacts under **Settings**.
 
@@ -254,7 +254,7 @@ Drop a consented recording into `public/demo/` with a manifest following `src/au
 ### Running Tests
 
 ```bash
-npm test            # 13 deterministic suites, 730 tests — no browser or mic required
+npm test            # 13 deterministic suites, 730 tests, no browser or mic required
 npm run lint        # oxlint
 npm run build       # type-check + production bundle
 ```

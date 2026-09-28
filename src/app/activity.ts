@@ -1,5 +1,5 @@
 /**
- * Sanket — Live Activity Feed model
+ * Sanket, Live Activity Feed model
  *
  * Turns pipeline state changes into short, human-readable events for the
  * dashboard feed. Each event snapshots the evidence at that moment so it can
@@ -26,6 +26,8 @@ export interface ActivityEvent {
   signals?: SignalContribution[];
   temporal?: Pick<TemporalContext, 'eventType' | 'sustainedFrames' | 'transientFrames' | 'multiSignalCorrelation' | 'explanation'>;
   incidentId?: string;
+  /** How many similar events were merged into this row */
+  count?: number;
 }
 
 export const MAX_ACTIVITY_EVENTS = 60;
@@ -80,7 +82,7 @@ export function transientFilteredEvent(temporal: TemporalContext, evaluation: Ri
     kind: 'transient-filtered',
     tone: 'info',
     title: 'Short spike filtered',
-    detail: 'Isolated burst (cough, laugh, exclamation) — not treated as distress',
+    detail: 'Isolated burst (cough, laugh, exclamation), not treated as distress',
     score: evaluation?.riskScore,
     level: evaluation?.riskLevel,
     signals: activeSignals(evaluation),
@@ -105,7 +107,29 @@ export const SIGNAL_LABEL: Record<string, string> = {
   codeWord: 'Code word',
 };
 
+/** Window in which repeats and level flip-flops update one row instead of adding new ones */
+export const MERGE_WINDOW_MS = 20_000;
+
+const isLevelChange = (e: ActivityEvent) => e.kind === 'level-up' || e.kind === 'level-down';
+
+/**
+ * Adds an event to the feed, newest first. Rather than stacking near-identical
+ * rows, a repeat of the latest event (same kind and title) or a level change
+ * right after another level change updates the latest row in place and bumps
+ * its count, so the feed reads as a summary rather than a log.
+ */
 export function appendEvent(list: ActivityEvent[], event: ActivityEvent): ActivityEvent[] {
+  const [latest, ...rest] = list;
+  if (latest && event.timestamp - latest.timestamp < MERGE_WINDOW_MS && event.kind !== 'incident') {
+    const count = (latest.count ?? 1) + 1;
+    if (isLevelChange(latest) && isLevelChange(event)) {
+      const detail = event.level ? `Fluctuating, now ${LEVEL_LABEL[event.level]} · ${count} changes. ${event.detail}` : event.detail;
+      return [{ ...event, id: latest.id, detail, count }, ...rest];
+    }
+    if (latest.kind === event.kind && latest.title === event.title) {
+      return [{ ...event, id: latest.id, count }, ...rest];
+    }
+  }
   return [event, ...list].slice(0, MAX_ACTIVITY_EVENTS);
 }
 

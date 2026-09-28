@@ -1,5 +1,5 @@
 /**
- * Sanket — Customisable Signal Settings
+ * Sanket, Customisable Signal Settings
  *
  * User-facing model for tuning which acoustic signals the RiskEngine uses and
  * how much each one matters. Maps onto `RiskEngine.updateConfig()` without

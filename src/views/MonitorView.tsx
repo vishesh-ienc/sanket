@@ -57,11 +57,11 @@ function RiskCard() {
         />
         <div className="grid w-full grid-cols-3 divide-x rounded-lg border bg-muted/20 text-center">
           <div className="p-2">
-            <div className="font-mono text-base font-semibold tabular">{p.isActive ? channels : '—'}</div>
+            <div className="font-mono text-base font-semibold tabular">{p.isActive ? channels : '-'}</div>
             <div className="text-[11px] text-muted-foreground">signals</div>
           </div>
           <div className="p-2">
-            <div className="font-mono text-base font-semibold tabular">{p.isActive ? (ev?.persistenceFrames ?? 0) : '—'}</div>
+            <div className="font-mono text-base font-semibold tabular">{p.isActive ? (ev?.persistenceFrames ?? 0) : '-'}</div>
             <div className="text-[11px] text-muted-foreground">frames held</div>
           </div>
           <div className="p-2">
@@ -126,7 +126,7 @@ function SignalStrip({ onCustomise }: { onCustomise: () => void }) {
                   </span>
                   <span className="font-mono text-[10px] text-muted-foreground tabular shrink-0">{enabled ? `+${contrib.toFixed(0)}` : 'off'}</span>
                 </div>
-                <div className="my-1 font-mono text-sm font-semibold tabular">{p.isActive ? meta.read(p.features) : '—'}</div>
+                <div className="my-1 font-mono text-sm font-semibold tabular">{p.isActive ? meta.read(p.features) : '-'}</div>
                 <div className="h-1 overflow-hidden rounded-full bg-muted">
                   <div
                     className={cn('h-full rounded-full transition-[width] duration-300', hot ? 'bg-risk-suspicious' : 'bg-primary/40')}

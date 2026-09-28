@@ -1,5 +1,5 @@
 /**
- * Sanket — useTemporalContext React Hook (Phase 8)
+ * Sanket, useTemporalContext React Hook (Phase 8)
  *
  * Bridges the TemporalContextAnalyzer with React component lifecycle.
  * Provides live temporal context, transient detection, and pause regularity telemetry.

@@ -29,7 +29,7 @@ const SETUP_STEPS = [
     icon: Download,
     title: 'Download the Engine Package',
     description:
-      'Download the platform-specific package for your phone (Android APK or iOS IPA). The engine is a lightweight background service — under 18 MB.',
+      'Download the platform-specific package for your phone (Android APK or iOS IPA). The engine is a lightweight background service, under 18 MB.',
     detail: 'No cloud account required. The package is self-contained.',
   },
   {
@@ -54,7 +54,7 @@ const SETUP_STEPS = [
     title: 'Pair with This Dashboard',
     description:
       'Open Settings in the Sanket engine app and copy the 6-digit pairing code. Enter it here to link your phone. All data is sent over an encrypted local channel.',
-    detail: 'The pairing works even without internet — over local Wi-Fi or USB tethering.',
+    detail: 'The pairing works even without internet, over local Wi-Fi or USB tethering.',
   },
   {
     step: 5,

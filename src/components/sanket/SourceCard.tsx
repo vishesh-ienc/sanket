@@ -104,7 +104,7 @@ function ConversationPlayer() {
               key={seg.label}
               className={cn('h-full', TONE_BG[seg.tone])}
               style={{ width: `${((seg.endSec - seg.startSec) / conv.durationSec) * 100}%` }}
-              title={`${seg.label} — ${seg.expectation}`}
+              title={`${seg.label}, ${seg.expectation}`}
             />
           ))}
         </div>
@@ -244,7 +244,7 @@ function UploadPanel() {
       )}
       {status.state === 'ERROR' && <p className="text-sm text-destructive">{status.errorMessage}</p>}
       <p className="text-xs text-muted-foreground">
-        WAV, MP3 or OGG — a phone recording, a VoIP export, anything. Decoded in your browser; never uploaded.
+        WAV, MP3 or OGG, a phone recording, a VoIP export, anything. Decoded in your browser; never uploaded.
       </p>
     </div>
   );

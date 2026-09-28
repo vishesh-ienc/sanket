@@ -1,19 +1,19 @@
 /**
- * Sanket — Built-in Sample Call Recording
+ * Sanket, Built-in Sample Call Recording
  *
  * Procedurally synthesizes a short "simulated call" so evaluators can run the
  * primary file-based demo without supplying their own recording.
  *
  * The signal is a voice-like harmonic source (not a real person's voice):
- *   1. Calm segment     — ~165 Hz intonation, conversational syllable rhythm,
+ *   1. Calm segment    , ~165 Hz intonation, conversational syllable rhythm,
  *                          moderate level, natural harmonic roll-off.
- *   2. Distress segment — elevated & trembling pitch, raised vocal effort,
+ *   2. Distress segment, elevated & trembling pitch, raised vocal effort,
  *                          flattened (strained) harmonics, breath turbulence,
  *                          and pressured speech with almost no breath gaps.
  *
  * Nothing is fetched or recorded: the WAV is generated in memory and fed
  * through the exact same AudioFileInputService → FeatureExtractor pipeline as
- * any user-supplied file. Pure TypeScript — no DOM required except `File`.
+ * any user-supplied file. Pure TypeScript, no DOM required except `File`.
  */
 
 export interface SampleCallSegment {

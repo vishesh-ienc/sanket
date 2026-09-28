@@ -1,5 +1,5 @@
 /**
- * Sanket — Pipeline orchestration hook
+ * Sanket, Pipeline orchestration hook
  *
  * Wires every stage of the source-agnostic pipeline together:
  *
@@ -186,7 +186,7 @@ export function usePipeline() {
   const incidents = useIncidentManager(latestEvaluation, { context: incidentContext, isActive });
   const contacts = useTrustedContacts();
 
-  // Feed: level changes — only once a new level has held for LEVEL_SETTLE_FRAMES,
+  // Feed: level changes, only once a new level has held for LEVEL_SETTLE_FRAMES,
   // so natural speech doesn't flood the feed with Elevated ↔ Suspicious flips.
   const committedLevelRef = useRef<RiskLevel | null>(null);
   const pendingLevelRef = useRef<{ level: RiskLevel; frames: number } | null>(null);
@@ -261,7 +261,7 @@ export function usePipeline() {
           kind: 'calibration',
           tone: 'info',
           title: 'Personal baseline ready',
-          detail: p ? `Your normal pitch ≈ ${Math.round(p.pitchMean)} Hz — deviations now measured against you` : 'Baseline applied',
+          detail: p ? `Your normal pitch ≈ ${Math.round(p.pitchMean)} Hz, deviations now measured against you` : 'Baseline applied',
         }),
       );
     }

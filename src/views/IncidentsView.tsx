@@ -34,7 +34,7 @@ export function IncidentsView({ onNavigate }: { onNavigate: (v: ViewId) => void 
     <Card>
       <CardHeader>
         <CardTitle>Silent alerts</CardTitle>
-        <CardDescription>Stored only in this browser (max 50). Metadata only — never audio.</CardDescription>
+        <CardDescription>Stored only in this browser (max 50). Metadata only, never audio.</CardDescription>
         <CardAction>
           {history.length > 0 && (
             <AlertDialog>
@@ -121,7 +121,7 @@ export function IncidentsView({ onNavigate }: { onNavigate: (v: ViewId) => void 
       </CardContent>
       {history.length > 0 && (
         <p className="flex items-center gap-2 px-4 text-xs text-muted-foreground">
-          <BellRing className="size-3.5" /> Alerts are simulated — nobody is contacted.
+          <BellRing className="size-3.5" /> Alerts are simulated, nobody is contacted.
         </p>
       )}
     </Card>

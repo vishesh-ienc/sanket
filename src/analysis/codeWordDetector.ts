@@ -38,7 +38,7 @@ export function normalizeText(text: string): { normalized: string; tokens: strin
   const cleaned = text
     .toLowerCase()
     // Replace harmless punctuation characters with spaces to preserve word boundaries
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'–—\\[\]<>]/g, ' ')
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'\u2013\u2014\\[\]<>]/g, ' ')
     // Collapse multiple whitespace
     .replace(/\s+/g, ' ')
     .trim();

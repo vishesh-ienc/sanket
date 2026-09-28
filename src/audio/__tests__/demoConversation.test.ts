@@ -1,5 +1,5 @@
 /**
- * Sanket — Built-in Demo Conversation & Incident Hysteresis Tests
+ * Sanket, Built-in Demo Conversation & Incident Hysteresis Tests
  *
  * Runs the bundled conversation (public/demo/conversation.wav, real TTS
  * speech) through the unchanged pipeline:

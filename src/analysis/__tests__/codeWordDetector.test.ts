@@ -1,10 +1,10 @@
 /**
- * Sanket — Phase 5 Code-Word Detector Unit Tests
+ * Sanket, Phase 5 Code-Word Detector Unit Tests
  *
  * Deterministic test suite for CodeWordDetector, text normalization,
  * token-aware phrase matching, cooldown debounce, and RiskEngine contextual integration.
  *
- * Zero browser or DOM automation — purely deterministic module tests.
+ * Zero browser or DOM automation, purely deterministic module tests.
  */
 
 import { CodeWordDetector, normalizeText, levenshteinDistance, compareTokens } from '../codeWordDetector';
@@ -27,7 +27,7 @@ function assert(condition: boolean, testName: string, detail?: string): void {
     console.log(`  ✅ PASS: ${testName}`);
   } else {
     failedTests += 1;
-    console.error(`  ❌ FAIL: ${testName}${detail ? ` — ${detail}` : ''}`);
+    console.error(`  ❌ FAIL: ${testName}${detail ? `, ${detail}` : ''}`);
   }
 }
 

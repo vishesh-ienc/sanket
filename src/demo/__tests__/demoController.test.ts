@@ -1,5 +1,5 @@
 /**
- * Sanket — Phase 9: DemoController Unit Tests
+ * Sanket, Phase 9: DemoController Unit Tests
  *
  * Deterministic unit tests covering:
  *   - Initial idle state
@@ -96,7 +96,7 @@ printSection('Section 2: Start Demo & Progression');
   assert(s5.step?.id === 'FORENSIC_REVIEW', 'Test 3: Step 5 is FORENSIC_REVIEW');
   assert(s5.isLast === true, 'Test 3: isLast is true on step 5');
 
-  // Test 4: Overflow guard — nextStep at last step does not exceed bounds
+  // Test 4: Overflow guard, nextStep at last step does not exceed bounds
   const sOverflow = controller.nextStep();
   assert(sOverflow.stepIndex === 5, 'Test 4: nextStep at last step stays at 5');
   assert(sOverflow.isLast === true, 'Test 4: isLast remains true');
@@ -124,7 +124,7 @@ printSection('Section 3: Backward Progression');
   assert(p0.stepIndex === 0, 'Test 5: prevStep retreats to step 0');
   assert(p0.isFirst === true, 'Test 5: isFirst is true on step 0');
 
-  // Test 6: Underflow guard — prevStep at step 0 does not decrease below 0
+  // Test 6: Underflow guard, prevStep at step 0 does not decrease below 0
   const pUnderflow = controller.prevStep();
   assert(pUnderflow.stepIndex === 0, 'Test 6: prevStep at step 0 stays at 0');
   assert(pUnderflow.isFirst === true, 'Test 6: isFirst remains true');

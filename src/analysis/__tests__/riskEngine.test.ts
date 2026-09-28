@@ -1,5 +1,5 @@
 /**
- * Sanket — Risk Engine Deterministic Tests (Phase 3)
+ * Sanket, Risk Engine Deterministic Tests (Phase 3)
  *
  * Tests the RiskEngine using synthetic FeatureSet objects.
  * NO browser, NO DOM, NO microphone, NO browser automation.
@@ -39,7 +39,7 @@ function assert(condition: boolean, label: string, extra = ''): void {
     console.log(`  ✅ PASS: ${label}`);
     passed++;
   } else {
-    console.error(`  ❌ FAIL: ${label}${extra ? ' — ' + extra : ''}`);
+    console.error(`  ❌ FAIL: ${label}${extra ? ', ' + extra : ''}`);
     failed++;
   }
 }
@@ -299,7 +299,7 @@ section('E. Brief abnormal spike → does not immediately reach HIGH_RISK');
 }
 
 {
-  // 2 abnormal frames + then normal — should not be HIGH_RISK
+  // 2 abnormal frames + then normal, should not be HIGH_RISK
   const engine = new RiskEngine();
   const abnormal = highPitchFeatureSet(400);
   engine.evaluate(abnormal);
@@ -473,7 +473,7 @@ section('J. Risk level thresholds are deterministic');
 // ─────────────────────────────────────────────────────────────────────────────
 // K. Same input sequence → same output sequence (determinism)
 // ─────────────────────────────────────────────────────────────────────────────
-section('K. Determinism — same inputs produce same outputs');
+section('K. Determinism, same inputs produce same outputs');
 
 {
   const frames: FeatureSet[] = [

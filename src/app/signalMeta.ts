@@ -18,7 +18,7 @@ export interface SignalMeta {
 }
 
 const fmt = (v: number | null | undefined, digits = 0, unit = '') =>
-  v === null || v === undefined || Number.isNaN(v) ? '—' : `${v.toFixed(digits)}${unit}`;
+  v === null || v === undefined || Number.isNaN(v) ? '-' : `${v.toFixed(digits)}${unit}`;
 
 export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
   pitch: {
@@ -37,7 +37,7 @@ export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
     icon: Mic2,
     description: 'Sudden raised effort or a suppressed whisper compared with normal loudness.',
     reference: '≈6% RMS reference',
-    read: (f) => (f ? `${(f.rmsEnergy * 100).toFixed(1)}%` : '—'),
+    read: (f) => (f ? `${(f.rmsEnergy * 100).toFixed(1)}%` : '-'),
   },
   silence: {
     id: 'silence',
@@ -56,9 +56,9 @@ export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
     description: 'Share of the session actually spent speaking; a collapse can signal being silenced.',
     reference: 'Expected ≥ 25% voiced',
     read: (f) => {
-      if (!f) return '—';
+      if (!f) return '-';
       const total = f.speechActivityDurationSec + f.silenceDurationSec;
-      return total > 0 ? `${Math.round((f.speechActivityDurationSec / total) * 100)}%` : '—';
+      return total > 0 ? `${Math.round((f.speechActivityDurationSec / total) * 100)}%` : '-';
     },
   },
   spectral: {
@@ -66,9 +66,9 @@ export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
     label: 'Spectral strain',
     short: 'Strain',
     icon: Sparkles,
-    description: 'Energy shifting to high frequencies — a sign of a tense, strained voice.',
+    description: 'Energy shifting to high frequencies, a sign of a tense, strained voice.',
     reference: 'Scores above 2.5 kHz',
-    read: (f) => (f?.spectralCentroid ? `${(f.spectralCentroid / 1000).toFixed(1)} kHz` : '—'),
+    read: (f) => (f?.spectralCentroid ? `${(f.spectralCentroid / 1000).toFixed(1)} kHz` : '-'),
   },
   zcr: {
     id: 'zcr',
@@ -77,7 +77,7 @@ export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
     icon: Wind,
     description: 'Zero-crossing rate rises with turbulent, breathy or whispered airflow.',
     reference: 'Scores above 20%',
-    read: (f) => (f ? `${(f.zeroCrossingRate * 100).toFixed(0)}%` : '—'),
+    read: (f) => (f ? `${(f.zeroCrossingRate * 100).toFixed(0)}%` : '-'),
   },
   persistence: {
     id: 'persistence',
@@ -93,7 +93,7 @@ export const SIGNAL_META: Record<SignalMeta['id'], SignalMeta> = {
     label: 'Code word',
     short: 'Code word',
     icon: KeyRound,
-    description: 'Your covert phrase was spoken — sustained context for ~15 s.',
+    description: 'Your covert phrase was spoken, sustained context for ~15 s.',
     reference: 'Configured phrase',
     read: () => '',
   },

@@ -1,5 +1,5 @@
 /**
- * Sanket — Incident Manager & Duplicate Alert Protection (Phase 7)
+ * Sanket, Incident Manager & Duplicate Alert Protection (Phase 7)
  *
  * Implements the incident latch state machine:
  *

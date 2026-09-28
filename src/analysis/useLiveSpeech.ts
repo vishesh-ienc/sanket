@@ -1,5 +1,5 @@
 /**
- * Sanket — useLiveSpeech React Hook
+ * Sanket, useLiveSpeech React Hook
  *
  * Runs BrowserSpeechTranscriptSource while live-mic monitoring is active and
  * feeds every transcript into the code-word detector. Holds only the latest

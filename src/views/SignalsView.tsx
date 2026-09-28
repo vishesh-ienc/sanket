@@ -99,7 +99,7 @@ export function SignalsView() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground sm:col-span-3">
-            However you tune it, one signal on its own can never raise an alert — weights are capped so the strongest single signal plus
+            However you tune it, one signal on its own can never raise an alert, weights are capped so the strongest single signal plus
             persistence stays below the alert threshold.
           </p>
         </CardContent>
@@ -132,7 +132,7 @@ export function SignalsView() {
                 <p className="text-xs text-muted-foreground">{meta.description}</p>
                 <div className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-2 text-xs">
                   <span className="text-muted-foreground">Now</span>
-                  <span className="font-mono tabular">{p.isActive ? meta.read(p.features) : '—'}</span>
+                  <span className="font-mono tabular">{p.isActive ? meta.read(p.features) : '-'}</span>
                   <span className={cn('font-mono tabular', contrib > 0 ? 'text-risk-suspicious' : 'text-muted-foreground')}>
                     {enabled ? `+${contrib.toFixed(1)} / ${cfg.weight}` : 'off'}
                   </span>
@@ -182,7 +182,7 @@ export function SignalsView() {
               min={0}
               max={MAX_CODE_WORD_BOOST}
               unit=" pts"
-              hint="Context added for ~15 s after your covert phrase is heard. It corroborates — it cannot alert alone."
+              hint="Context added for ~15 s after your covert phrase is heard. It corroborates, it cannot alert alone."
               onChange={(v) => update((d) => (d.codeWordBoost = v))}
             />
           </CardContent>
@@ -212,7 +212,7 @@ export function SignalsView() {
                 ['Sustained', `${tc?.sustainedFrames ?? 0} frames`],
                 ['Transient', `${tc?.transientFrames ?? 0} frames`],
                 ['Cross-signal', `${Math.round((tc?.multiSignalCorrelation ?? 0) * 100)}%`],
-                ['Pause regularity', tc?.breathingPattern ? `${Math.round(tc.breathingPattern.regularityScore * 100)}%` : '—'],
+                ['Pause regularity', tc?.breathingPattern ? `${Math.round(tc.breathingPattern.regularityScore * 100)}%` : '-'],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-lg border p-3">
                   <dt className="text-xs text-muted-foreground">{k}</dt>

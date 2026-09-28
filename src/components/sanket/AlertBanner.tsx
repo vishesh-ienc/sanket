@@ -36,8 +36,8 @@ export function AlertBanner({ incident, live, recipients, onView, onAcknowledge 
         <p className="text-sm text-muted-foreground">
           {live ? 'Sustained multi-signal pattern confirmed.' : 'Risk has since eased.'}{' '}
           {recipients > 0
-            ? `Prepared for ${recipients} trusted contact${recipients === 1 ? '' : 's'} — simulated, nothing was sent.`
-            : 'Simulated locally — nothing was sent.'}
+            ? `Prepared for ${recipients} trusted contact${recipients === 1 ? '' : 's'}. Simulated, nothing was sent.`
+            : 'Simulated locally. Nothing was sent.'}
         </p>
       </div>
       <div className="flex gap-2">

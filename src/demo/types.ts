@@ -1,5 +1,5 @@
 /**
- * Sanket — Judge Demonstration Flow Types (Phase 9)
+ * Sanket, Judge Demonstration Flow Types (Phase 9)
  *
  * Defines the contract for the step-by-step hackathon judge demonstration mode.
  */

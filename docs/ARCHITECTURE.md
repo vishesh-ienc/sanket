@@ -1,4 +1,4 @@
-# Sanket — System Technical Architecture
+# Sanket, System Technical Architecture
 
 > **Architectural Specification & Modularity Guidelines**  
 > This document specifies the technical design, data contracts, and pipeline layering for Sanket.

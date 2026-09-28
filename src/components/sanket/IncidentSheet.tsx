@@ -134,7 +134,7 @@ export function IncidentSheet({ incident, open, onClose, onAcknowledge, onResolv
                       <dd>{incident.featureSnapshot.silenceDurationSec.toFixed(1)} s</dd>
                       <dt className="text-muted-foreground">Centroid</dt>
                       <dd>
-                        {incident.featureSnapshot.spectralCentroid ? `${Math.round(incident.featureSnapshot.spectralCentroid)} Hz` : '—'}
+                        {incident.featureSnapshot.spectralCentroid ? `${Math.round(incident.featureSnapshot.spectralCentroid)} Hz` : '-'}
                       </dd>
                       <dt className="text-muted-foreground">ZCR</dt>
                       <dd>{incident.featureSnapshot.zeroCrossingRate.toFixed(3)}</dd>
@@ -145,13 +145,13 @@ export function IncidentSheet({ incident, open, onClose, onAcknowledge, onResolv
 
               <TabsContent value="dispatch" className="mt-4 flex flex-col gap-4">
                 <p className="text-sm text-muted-foreground">
-                  What a production build would send. Built locally for this audit —{' '}
+                  What a production build would send. Built locally for this audit:{' '}
                   <strong className="text-foreground">never transmitted</strong>.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Send className="size-4 text-muted-foreground" />
                   {payload.recipients.length === 0 ? (
-                    <span className="text-sm text-muted-foreground">No trusted contacts yet — add them in Settings.</span>
+                    <span className="text-sm text-muted-foreground">No trusted contacts yet, add them in Settings.</span>
                   ) : (
                     payload.recipients.map((r) => (
                       <span key={r.contactId} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs">
@@ -167,7 +167,7 @@ export function IncidentSheet({ incident, open, onClose, onAcknowledge, onResolv
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
                   <MapPin className="mt-0.5 size-3.5 shrink-0" />
                   Placeholder location {payload.simulatedCoordinates.latitude.toFixed(4)},{' '}
-                  {payload.simulatedCoordinates.longitude.toFixed(4)} — device location is never accessed.
+                  {payload.simulatedCoordinates.longitude.toFixed(4)}, device location is never accessed.
                 </p>
                 <Button variant="ghost" size="sm" className="self-start" onClick={() => setShowJson((v) => !v)}>
                   {showJson ? 'Hide raw payload' : 'Show raw payload (JSON)'}

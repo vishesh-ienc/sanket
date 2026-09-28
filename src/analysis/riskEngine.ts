@@ -1,5 +1,5 @@
 /**
- * Sanket — Risk Engine (Phase 3)
+ * Sanket, Risk Engine (Phase 3)
  *
  * The RiskEngine takes a stream of FeatureSet values from the FeatureExtractor
  * and produces a composite distress risk evaluation.
@@ -47,7 +47,7 @@ import type {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Default Configuration
-// (PROTOTYPE HEURISTICS — not scientifically or medically validated)
+// (PROTOTYPE HEURISTICS, not scientifically or medically validated)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: RiskEngineConfig = {
@@ -101,7 +101,7 @@ interface RiskTemporalState {
   smoothedScore: number;
   /** Number of consecutive frames where at least one signal was active */
   consecutiveAbnormalFrames: number;
-  /** Previous risk level — used to detect transitions for RiskEvent emission */
+  /** Previous risk level, used to detect transitions for RiskEvent emission */
   previousLevel: RiskLevel;
   /** Timestamp of the previous evaluate() call (ms) */
   lastTimestamp: number | null;
@@ -205,7 +205,7 @@ export class RiskEngine {
     // ──────────────────────────────────────────────────────────────────────────
     // A. PITCH SIGNAL  (max: weights.pitch)
     // Measures deviation from prototype/baseline reference pitch.
-    // Null pitch (unvoiced frame) contributes 0 — silence is handled separately.
+    // Null pitch (unvoiced frame) contributes 0, silence is handled separately.
     // ──────────────────────────────────────────────────────────────────────────
     let pitchScore = 0;
     if (features.pitchHz !== null) {
@@ -391,7 +391,7 @@ export class RiskEngine {
     // When rawFrameScore → 0: smoothedScore decays toward 0.
     // When rawFrameScore is high: smoothedScore rises toward saturation.
     // The asymmetry (decay applied to previous, not new value) means scores
-    // rise faster than they fall — appropriate for safety systems.
+    // rise faster than they fall, appropriate for safety systems.
     // ──────────────────────────────────────────────────────────────────────────
     const totalRawScore = Math.min(100, rawSignalScore + persistenceScore + externalScore);
     const newSmoothedScore = clamp(

@@ -1,5 +1,5 @@
 /**
- * Sanket — useCodeWordDetector React Hook (Phase 5)
+ * Sanket, useCodeWordDetector React Hook (Phase 5)
  *
  * Connects the CodeWordDetector engine to React components.
  * Manages configuration state, active monitoring toggle, detection events,

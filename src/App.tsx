@@ -1,5 +1,5 @@
 /**
- * Sanket — application shell
+ * Sanket, application shell
  *
  * Sidebar (desktop) / bottom tab bar (phone) navigation across six views.
  * Detail surfaces (activity events, incident evidence) open in sheets so the

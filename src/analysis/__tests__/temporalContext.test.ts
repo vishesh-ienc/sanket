@@ -1,5 +1,5 @@
 /**
- * Sanket — Phase 8: Temporal Context & False-Positive Reduction Tests
+ * Sanket, Phase 8: Temporal Context & False-Positive Reduction Tests
  *
  * Deterministic unit and integration tests covering:
  *   - Transient spike detection (isolated bursts, recovery transition)
@@ -532,7 +532,7 @@ printSection('Section 7: IncidentManager & False-Positive Suppression Integratio
         regularityScore: 1.0,
         isIrregular: false,
       },
-      explanation: 'Transient vocal spike — monitoring continues.',
+      explanation: 'Transient vocal spike, monitoring continues.',
     },
   };
 

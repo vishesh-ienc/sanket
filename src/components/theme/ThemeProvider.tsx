@@ -4,9 +4,9 @@ import { THEME_STORAGE_KEY, ThemeContext, type Theme } from './theme-context';
 function readStored(): Theme {
   try {
     const v = localStorage.getItem(THEME_STORAGE_KEY);
-    return v === 'light' || v === 'dark' || v === 'system' ? v : 'system';
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }
 

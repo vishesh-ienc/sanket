@@ -1,5 +1,5 @@
 /**
- * Sanket — useIncidentManager React Hook (Phase 7)
+ * Sanket, useIncidentManager React Hook (Phase 7)
  *
  * Connects the IncidentManager state machine with React lifecycle.
  * Manages active incident presentation, local alert history, and modal views.

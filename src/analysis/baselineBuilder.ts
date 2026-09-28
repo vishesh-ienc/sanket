@@ -1,5 +1,5 @@
 /**
- * Sanket — BaselineBuilder (Phase 6)
+ * Sanket, BaselineBuilder (Phase 6)
  *
  * Builds a personal voice BaselineProfile from a stream of FeatureSet
  * values during a calibration session using Welford's Online Algorithm.
@@ -9,7 +9,7 @@
  * ═══════════════════════════════════════════════════════════
  * - Zero raw audio storage. Only running statistics (count, mean, M2)
  *   are ever retained. No audio samples, no transcripts, no PCM buffers.
- * - The baseline is an ACOUSTIC BEHAVIOR baseline — NOT a medical,
+ * - The baseline is an ACOUSTIC BEHAVIOR baseline, NOT a medical,
  *   psychological, or emotional baseline. It describes the user's typical
  *   voice characteristics during normal conversational speech.
  * ═══════════════════════════════════════════════════════════
@@ -162,13 +162,13 @@ export class BaselineBuilder {
 
     this.totalFrames += 1;
 
-    // ── A. Vocal Intensity (RMS) — all frames with VAD=true ─────────────────
+    // ── A. Vocal Intensity (RMS), all frames with VAD=true ─────────────────
     if (features.isSpeech) {
       this.voicedFrames += 1;
       this.energyState = welfordUpdate(this.energyState, features.rmsEnergy);
       this.zcrState = welfordUpdate(this.zcrState, features.zeroCrossingRate);
 
-      // ── B. Pitch — only voiced frames with a valid estimate ───────────────
+      // ── B. Pitch, only voiced frames with a valid estimate ───────────────
       if (
         features.pitchHz !== null &&
         features.pitchHz >= this.config.pitchRangeHz[0] &&
@@ -177,12 +177,12 @@ export class BaselineBuilder {
         this.pitchState = welfordUpdate(this.pitchState, features.pitchHz);
       }
 
-      // ── C. Spectral Centroid — only voiced frames with valid centroid ─────
+      // ── C. Spectral Centroid, only voiced frames with valid centroid ─────
       if (features.spectralCentroid !== null) {
         this.spectralState = welfordUpdate(this.spectralState, features.spectralCentroid);
       }
     } else {
-      // ── D. Silence — only silent frames within cap ────────────────────────
+      // ── D. Silence, only silent frames within cap ────────────────────────
       const cappedSilence = Math.min(features.silenceDurationSec, this.config.maxSilenceCapSec);
       if (cappedSilence > 0) {
         this.silenceState = welfordUpdate(this.silenceState, cappedSilence);

@@ -1,5 +1,5 @@
 /**
- * Sanket — Silent Alert Dispatcher (Phase 7)
+ * Sanket, Silent Alert Dispatcher (Phase 7)
  *
  * Dispatches simulated silent alerts when the RiskEngine reaches a sustained,
  * confirmed HIGH_RISK state.

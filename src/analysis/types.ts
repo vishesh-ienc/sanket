@@ -28,7 +28,7 @@ export interface FeatureSet {
    * Zero-Crossing Rate: fraction of consecutive sample pairs that cross zero per frame.
    * Higher ZCR typically indicates unvoiced fricatives, breath, or noise.
    * Lower ZCR on voiced speech correlates with strong fundamental frequency.
-   * NOT itself a distress indicator — context and deviation from baseline are required.
+   * NOT itself a distress indicator, context and deviation from baseline are required.
    */
   zeroCrossingRate: number;
 
@@ -306,7 +306,7 @@ export interface RiskEngineConfig {
   /**
    * Per-signal maximum contributions (sum of all weights = 100).
    * These define the ceiling contribution from each independent signal.
-   * PROTOTYPE WEIGHTS — not scientifically validated.
+   * PROTOTYPE WEIGHTS, not scientifically validated.
    */
   weights: {
     pitch: number;        // default: 22

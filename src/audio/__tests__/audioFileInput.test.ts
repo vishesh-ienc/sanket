@@ -1,5 +1,5 @@
 /**
- * Sanket — Audio File Input Service Unit Tests
+ * Sanket, Audio File Input Service Unit Tests
  *
  * Deterministic unit tests covering:
  *   1. Initial state verification

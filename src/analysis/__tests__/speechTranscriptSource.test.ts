@@ -1,5 +1,5 @@
 /**
- * Sanket — Browser Speech Transcript Source Tests
+ * Sanket, Browser Speech Transcript Source Tests
  *
  * Uses a mock SpeechRecognition constructor (no browser, mic, or network).
  *

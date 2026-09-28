@@ -1,5 +1,5 @@
 /**
- * Sanket — Alert History Service (Phase 7)
+ * Sanket, Alert History Service (Phase 7)
  *
  * Maintains a local, bounded audit log of distress incidents and simulated alerts.
  *

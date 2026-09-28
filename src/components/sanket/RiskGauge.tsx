@@ -76,7 +76,7 @@ export function RiskGauge({ score, level, active, alertThreshold = 70, size = 22
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={cn('font-mono font-semibold tracking-tight tabular', size < 180 ? 'text-3xl' : 'text-5xl')} style={{ color: active ? color : undefined }}>
-          {active ? Math.round(clamped) : '—'}
+          {active ? Math.round(clamped) : '-'}
         </span>
         <span className={cn('font-medium tracking-wide text-muted-foreground uppercase', size < 180 ? 'mt-0.5 text-[10px]' : 'mt-1 text-xs')}>
           {active ? LEVEL_LABEL[level] : 'Standby'}

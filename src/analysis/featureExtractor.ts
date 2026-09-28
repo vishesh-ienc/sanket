@@ -1,5 +1,5 @@
 /**
- * Sanket — FeatureExtractor
+ * Sanket, FeatureExtractor
  *
  * Stateful analysis component that:
  *   1. Accepts AudioFrame objects from the audio input layer.
@@ -10,7 +10,7 @@
  * Architectural rules:
  *   - No React imports, no DOM references, no browser globals except
  *     performance.now() for timing.
- *   - No distress scoring or risk classification — this layer measures,
+ *   - No distress scoring or risk classification, this layer measures,
  *     it does NOT interpret safety implications.
  *   - The FeatureExtractor is consumed by the Phase 3 risk engine via
  *     its processFrame() method or the higher-level React hook.
@@ -171,11 +171,11 @@ export class FeatureExtractor {
     } else {
       // Voice is absent this frame
       if (this.state.wasVoicedPrevFrame) {
-        // Transition: VOICE → SILENCE — silence just started
+        // Transition: VOICE → SILENCE, silence just started
         // silenceDurationSec starts accumulating from next frame
         this.state.silenceDurationSec = 0;
       } else {
-        // Continuing silence — accumulate duration
+        // Continuing silence, accumulate duration
         this.state.silenceDurationSec += dtSec;
       }
 

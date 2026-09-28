@@ -1,5 +1,5 @@
 /**
- * Sanket — Built-in Sample Call Recording Tests
+ * Sanket, Built-in Sample Call Recording Tests
  *
  * Verifies the synthesized sample call end-to-end through the REAL pipeline:
  *   synthesizeSampleCall → AnalyserNode-equivalent framing (Blackman FFT,

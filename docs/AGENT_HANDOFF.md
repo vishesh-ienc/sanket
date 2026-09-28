@@ -1,4 +1,4 @@
-# Sanket — Agent Handoff Specification
+# Sanket, Agent Handoff Specification
 
 > **Operational Handoff for Incoming Coding Agents**  
 > If you are an AI coding assistant or engineer taking over this repository, this file is your primary onboarding manifest. Read it carefully before writing a single line of code.
@@ -6,7 +6,7 @@
 ---
 
 ## 1. What is Sanket?
-**Sanket** is a multimodal voice distress-risk detection prototype. It monitors permitted audio streams for non-verbal acoustic signals of distress—such as pitch strain, voice tremors, prolonged silences, and user-configured covert code-words—fusing them into an explainable **Distress Risk Score (0–100)** to trigger simulated silent alerts without alerting bystanders.
+**Sanket** is a multimodal voice distress-risk detection prototype. It monitors permitted audio streams for non-verbal acoustic signals of distress-such as pitch strain, voice tremors, prolonged silences, and user-configured covert code-words-fusing them into an explainable **Distress Risk Score (0–100)** to trigger simulated silent alerts without alerting bystanders.
 
 ---
 
@@ -142,7 +142,7 @@
 - **`docs/MOBILE_INTEGRATION.md`**: Phase 10 design.
 
 ## 5. What Has NOT Been Implemented (Do NOT Claim Working)
-- [ ] Native mobile / VoIP integration (design only — `docs/MOBILE_INTEGRATION.md`)
+- [ ] Native mobile / VoIP integration (design only, `docs/MOBILE_INTEGRATION.md`)
 - [ ] Live speech outside Chrome's on-device recognition (Firefox has no API; others need a cloud opt-in)
 - [ ] Real alert delivery (SMS/email/push) or geolocation
 
@@ -260,13 +260,13 @@ All tests use synthetic signals and require **no browser, no DOM, and no microph
 | [docs/ROADMAP.md](file:///c:/Users/VISHESH/Desktop/SANKET/docs/ROADMAP.md) | Multi-phase development roadmap |
 | [src/audio/types.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/types.ts) | Audio layer data contracts |
 | [src/audio/audioInput.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/audioInput.ts) | AudioInputService |
-| [src/audio/useAudioMonitor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/useAudioMonitor.ts) | React hook — audio bridge |
+| [src/audio/useAudioMonitor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/audio/useAudioMonitor.ts) | React hook, audio bridge |
 | [src/analysis/types.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/types.ts) | FeatureSet, RiskEvaluation, RiskEvent contracts |
 | [src/analysis/featureFunctions.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/featureFunctions.ts) | Pure DSP functions |
 | [src/analysis/featureExtractor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/featureExtractor.ts) | Stateful FeatureExtractor class |
-| [src/analysis/useFeatureExtractor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useFeatureExtractor.ts) | React hook — feature bridge |
+| [src/analysis/useFeatureExtractor.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useFeatureExtractor.ts) | React hook, feature bridge |
 | [src/analysis/riskEngine.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/riskEngine.ts) | Heuristic multi-signal decision engine |
-| [src/analysis/useRiskEngine.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useRiskEngine.ts) | React hook — risk evaluation bridge |
+| [src/analysis/useRiskEngine.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/useRiskEngine.ts) | React hook, risk evaluation bridge |
 | [src/analysis/__tests__/featureExtraction.test.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/__tests__/featureExtraction.test.ts) | 46 deterministic DSP tests |
 | [src/analysis/__tests__/riskEngine.test.ts](file:///c:/Users/VISHESH/Desktop/SANKET/src/analysis/__tests__/riskEngine.test.ts) | 59 deterministic risk engine tests |
 | [src/components/LiveWaveform.tsx](file:///c:/Users/VISHESH/Desktop/SANKET/src/components/LiveWaveform.tsx) | Canvas oscilloscope |
@@ -276,7 +276,7 @@ All tests use synthetic signals and require **no browser, no DOM, and no microph
 
 ---
 
-## 11. Next Phase — Phase 4: Live Sanket Safety Dashboard
+## 11. Next Phase, Phase 4: Live Sanket Safety Dashboard
 
 The next agent should build the interactive telemetry UI:
 - Create real-time Distress Risk Score gauge / meter (Green `NORMAL`, Yellow `ELEVATED`, Orange `SUSPICIOUS`, Red `HIGH_RISK`).
@@ -294,7 +294,7 @@ The next agent should build the interactive telemetry UI:
 3. **Read `docs/ARCHITECTURE.md` before modifying architecture.**
 4. **Read `docs/DECISIONS.md` before making major technical decisions.**
 5. **Do not duplicate existing functionality.**
-6. **Avoid modifying `AudioInputService`, `FeatureExtractor`, or `RiskEngine` — consume their outputs.** (Two deliberate, tested exceptions: sustained external signals in `RiskEngine`, ADR 024; latch hysteresis in `IncidentManager`, ADR 025.)
+6. **Avoid modifying `AudioInputService`, `FeatureExtractor`, or `RiskEngine`, consume their outputs.** (Two deliberate, tested exceptions: sustained external signals in `RiskEngine`, ADR 024; latch hysteresis in `IncidentManager`, ADR 025.)
 7. **Update `docs/PROGRESS.md` after completing meaningful work.**
 8. **Update `docs/AGENT_HANDOFF.md` when architecture changes significantly.**
 9. **Update `docs/DECISIONS.md` when making an important architectural decision.**

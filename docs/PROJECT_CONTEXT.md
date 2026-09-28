@@ -1,4 +1,4 @@
-# Sanket — Project Context & Primary Source of Truth
+# Sanket, Project Context & Primary Source of Truth
 
 > **Primary Source of Truth**  
 > This document defines the mission, conceptual boundaries, architecture, limitations, and operational roadmap for Project Sanket. All incoming engineers, coding agents, and collaborators must treat this document as authoritative.
@@ -7,7 +7,7 @@
 
 ## 1. Project Overview & Name
 
-- **Project Name:** **Sanket** (संकेत — Sanskrit/Hindi for *Signal*, *Hint*, or *Gesture*)
+- **Project Name:** **Sanket** (संकेत, Sanskrit/Hindi for *Signal*, *Hint*, or *Gesture*)
 - **Tagline:** Non-Verbal Distress Detection via Voice Pattern Analysis
 - **Domain:** Personal Safety, Assistive Audio Intelligence, Human-Centric Risk Estimation
 
@@ -26,7 +26,7 @@ Traditional emergency response tools suffer from critical failure modes:
 
 ## 3. Why the Problem Matters
 
-Voice is often the only permitted or active transmission channel during an ongoing incident—for example, during a phone call with a family member, a speakerphone conversation, or a voice chat while walking home. When people are under acute psychological stress or coercive restraint:
+Voice is often the only permitted or active transmission channel during an ongoing incident-for example, during a phone call with a family member, a speakerphone conversation, or a voice chat while walking home. When people are under acute psychological stress or coercive restraint:
 - Vocal pitch deviates significantly from baseline due to laryngeal muscle tension.
 - Respiration patterns alter, causing shallow breathing, abrupt vocal drop-offs, or gasps.
 - Speech cadence fractures into unnatural hesitation or abrupt, prolonged silences.

@@ -1,5 +1,5 @@
 /**
- * Sanket — Audio File Input Service
+ * Sanket, Audio File Input Service
  *
  * Decodes a pre-recorded audio file (WAV / MP3 / OGG) into the same
  * AudioFrame format produced by the live microphone pipeline.

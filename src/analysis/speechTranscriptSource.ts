@@ -1,5 +1,5 @@
 /**
- * Sanket — Browser Speech Transcript Source (live code-word input)
+ * Sanket, Browser Speech Transcript Source (live code-word input)
  *
  * TranscriptSource adapter over the Web Speech API `SpeechRecognition`.
  *
@@ -11,7 +11,7 @@
  *    receives the microphone audio. The UI must disclose this before enabling.
  *
  * Transcripts are emitted as ephemeral events and never stored here.
- * Pure TypeScript over an injectable constructor — no React.
+ * Pure TypeScript over an injectable constructor, no React.
  */
 
 import type { TranscriptEvent, TranscriptSource, TranscriptSourceStatus } from './transcriptTypes';

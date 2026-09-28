@@ -1,5 +1,5 @@
 /**
- * Sanket — useTrustedContacts React Hook
+ * Sanket, useTrustedContacts React Hook
  *
  * Manages the local trusted-contact roster with localStorage persistence.
  */

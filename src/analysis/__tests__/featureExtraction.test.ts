@@ -1,5 +1,5 @@
 /**
- * Sanket — Feature Extraction Deterministic Tests
+ * Sanket, Feature Extraction Deterministic Tests
  *
  * Tests pure DSP functions and the FeatureExtractor class using synthetic
  * audio signals. No browser, no DOM, no microphone required.
@@ -38,7 +38,7 @@ function assert(condition: boolean, label: string, extra = ''): void {
     console.log(`  ✅ PASS: ${label}`);
     passed++;
   } else {
-    console.error(`  ❌ FAIL: ${label}${extra ? ' — ' + extra : ''}`);
+    console.error(`  ❌ FAIL: ${label}${extra ? ', ' + extra : ''}`);
     failed++;
   }
 }
@@ -251,7 +251,7 @@ section('D. Pitch Estimation (Autocorrelation)');
 }
 
 {
-  // Very low amplitude (below RMS floor from VAD) — test autocorrelation rejects
+  // Very low amplitude (below RMS floor from VAD), test autocorrelation rejects
   const s = sineWave(2048, 200, 44100, 0.0001);
   const result = estimatePitch(s, 44100);
   assert(result === null, 'Extremely low amplitude tone → pitch = null (below energy floor)');
@@ -297,7 +297,7 @@ section('E. Voice Activity Detection');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// F. FeatureExtractor — Temporal State Tests
+// F. FeatureExtractor, Temporal State Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
 section('F. FeatureExtractor Temporal State');
@@ -312,7 +312,7 @@ const FREQ_BINS = FRAME_SIZE / 2;
   const silentData = silence(FRAME_SIZE);
   const freqData = silenceFreqData(FREQ_BINS);
 
-  // Frame 1 at t=0 (first frame, dtSec=0 — silence just begins, silenceDurationSec=0)
+  // Frame 1 at t=0 (first frame, dtSec=0, silence just begins, silenceDurationSec=0)
   const f1 = extractor.processFrame(makeFrame(silentData, freqData, 0));
   // Frame 2 at t=500ms (dtSec=0.5 → silenceDurationSec = 0.5)
   const f2 = extractor.processFrame(makeFrame(silentData, freqData, 500));
