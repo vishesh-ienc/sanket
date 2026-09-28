@@ -36,6 +36,8 @@ export interface FilePlaybackStatus {
   durationSec: number | null;
   currentTimeSec: number;
   errorMessage: string | null;
+  isMuted?: boolean;
+  volume?: number;
 }
 
 export type FilePlaybackListener = (status: FilePlaybackStatus) => void;
@@ -44,6 +46,7 @@ export class AudioFileInputService {
   private audioContext: AudioContext | null = null;
   private analyserNode: AnalyserNode | null = null;
   private sourceNode: AudioBufferSourceNode | null = null;
+  private gainNode: GainNode | null = null;
   private audioBuffer: AudioBuffer | null = null;
   private customContextFactory?: () => AudioContext;
 
@@ -56,6 +59,8 @@ export class AudioFileInputService {
   private _startedAtContext: number = 0;
   private _pausedAtSec: number = 0;
   private _errorMessage: string | null = null;
+  private _muted: boolean = false;
+  private _volume: number = 1.0;
 
   private listeners: Set<FilePlaybackListener> = new Set();
 
@@ -87,7 +92,41 @@ export class AudioFileInputService {
       durationSec: this.audioBuffer?.duration ?? null,
       currentTimeSec: this.getCurrentTimeSec(),
       errorMessage: this._errorMessage,
+      isMuted: this._muted,
+      volume: this._volume,
     };
+  }
+
+  public setMuted(muted: boolean): void {
+    this._muted = muted;
+    if (this.gainNode && this.audioContext) {
+      try {
+        this.gainNode.gain.setValueAtTime(muted ? 0 : this._volume, this.audioContext.currentTime);
+      } catch {
+        this.gainNode.gain.value = muted ? 0 : this._volume;
+      }
+    }
+    this.notify();
+  }
+
+  public isMuted(): boolean {
+    return this._muted;
+  }
+
+  public setVolume(volume: number): void {
+    this._volume = Math.max(0, Math.min(1, volume));
+    if (this.gainNode && this.audioContext && !this._muted) {
+      try {
+        this.gainNode.gain.setValueAtTime(this._volume, this.audioContext.currentTime);
+      } catch {
+        this.gainNode.gain.value = this._volume;
+      }
+    }
+    this.notify();
+  }
+
+  public getVolume(): number {
+    return this._volume;
   }
 
   private getCurrentTimeSec(): number {
@@ -136,6 +175,18 @@ export class AudioFileInputService {
       this.analyserNode.fftSize = this.FFT_SIZE;
       this.analyserNode.smoothingTimeConstant = 0.8;
 
+      if (typeof this.audioContext.createGain === 'function') {
+        try {
+          this.gainNode = this.audioContext.createGain();
+          this.gainNode.gain.value = this._muted ? 0 : this._volume;
+          if (this.audioContext.destination) {
+            this.gainNode.connect(this.audioContext.destination);
+          }
+        } catch {
+          // Ignored in test/mock environments without destination
+        }
+      }
+
       this.timeDomainBuffer = new Float32Array(new ArrayBuffer(this.FFT_SIZE * 4));
       this.frequencyBuffer = new Float32Array(new ArrayBuffer((this.FFT_SIZE / 2) * 4));
 
@@ -167,8 +218,22 @@ export class AudioFileInputService {
 
     this.sourceNode = this.audioContext.createBufferSource();
     this.sourceNode.buffer = this.audioBuffer;
-    // Connect source → analyser but NOT to destination (avoid playback through speakers)
     this.sourceNode.connect(this.analyserNode);
+
+    // Route audio to laptop speakers via GainNode or direct destination
+    if (this.gainNode) {
+      try {
+        this.sourceNode.connect(this.gainNode);
+      } catch {
+        // Ignored in test/mock environments
+      }
+    } else if (this.audioContext.destination) {
+      try {
+        this.sourceNode.connect(this.audioContext.destination);
+      } catch {
+        // Ignored in test/mock environments
+      }
+    }
 
     this.sourceNode.onended = () => {
       if (this._state === 'PLAYING') {
@@ -267,6 +332,15 @@ export class AudioFileInputService {
         // ok
       }
       this.analyserNode = null;
+    }
+
+    if (this.gainNode) {
+      try {
+        this.gainNode.disconnect();
+      } catch {
+        // ok
+      }
+      this.gainNode = null;
     }
 
     if (this.audioContext && this.audioContext.state !== 'closed') {

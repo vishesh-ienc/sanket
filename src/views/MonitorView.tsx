@@ -1,6 +1,8 @@
+import { useState, useMemo } from 'react';
 import { ArrowRight, Radio, Sparkles, Trash2 } from 'lucide-react';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { usePipelineContext } from '@/app/PipelineContext';
@@ -135,20 +137,71 @@ function SignalStrip({ onCustomise }: { onCustomise: () => void }) {
 
 function FeedCard({ onSelectEvent }: { onSelectEvent: (e: ActivityEvent) => void }) {
   const p = usePipelineContext();
+  const [filter, setFilter] = useState<'all' | 'alerts'>('all');
+
+  const alertEvents = useMemo(
+    () => p.events.filter((e) => ['incident', 'code-word', 'level-up', 'level-down'].includes(e.kind)),
+    [p.events]
+  );
+  const displayedEvents = filter === 'alerts' ? alertEvents : p.events;
+
   return (
-    <Card className="flex min-h-[22rem] flex-col lg:h-full">
-      <CardHeader>
-        <CardTitle>Live activity</CardTitle>
-        <CardDescription>Things appear here as they trigger — tap for details</CardDescription>
-        <CardAction>
+    <Card className="flex h-[420px] max-h-[420px] flex-col overflow-hidden sm:h-[460px] sm:max-h-[460px]">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CardTitle>Live activity</CardTitle>
+            {p.events.length > 0 && (
+              <Badge variant="outline" className="h-5 px-1.5 font-mono text-[10px] tabular">
+                {p.events.length}
+              </Badge>
+            )}
+          </div>
           {p.events.length > 0 && (
-            <Button variant="ghost" size="icon-sm" aria-label="Clear activity" onClick={p.clearEvents}>
-              <Trash2 />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Clear activity"
+              title="Clear activity feed"
+              onClick={p.clearEvents}
+            >
+              <Trash2 className="size-4" />
             </Button>
           )}
-        </CardAction>
+        </div>
+        <CardDescription className="text-xs">Things appear here as they trigger — tap for details</CardDescription>
       </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col px-2">
+
+      {p.events.length > 0 && (
+        <div className="flex items-center gap-1.5 border-b px-4 pb-2 pt-0.5">
+          <button
+            type="button"
+            onClick={() => setFilter('all')}
+            className={cn(
+              'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+              filter === 'all'
+                ? 'bg-primary/10 font-semibold text-primary'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+            )}
+          >
+            All ({p.events.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('alerts')}
+            className={cn(
+              'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+              filter === 'alerts'
+                ? 'bg-primary/10 font-semibold text-primary'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+            )}
+          >
+            Alerts & Risk ({alertEvents.length})
+          </button>
+        </div>
+      )}
+
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-2">
         {p.events.length === 0 ? (
           <Empty className="flex-1 border-0">
             <EmptyHeader>
@@ -159,9 +212,13 @@ function FeedCard({ onSelectEvent }: { onSelectEvent: (e: ActivityEvent) => void
               <EmptyDescription>Play the demo call or start the microphone — detections will stream in here.</EmptyDescription>
             </EmptyHeader>
           </Empty>
+        ) : displayedEvents.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center p-4 text-center text-xs text-muted-foreground">
+            No alert or risk level events recorded yet.
+          </div>
         ) : (
-          <ScrollArea className="h-[22rem] lg:h-0 lg:flex-1">
-            <ActivityFeed events={p.events} onSelect={onSelectEvent} />
+          <ScrollArea className="h-full flex-1 pr-1">
+            <ActivityFeed events={displayedEvents} onSelect={onSelectEvent} />
           </ScrollArea>
         )}
       </CardContent>

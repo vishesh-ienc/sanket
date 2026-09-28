@@ -95,17 +95,25 @@ export function useAudioFileMonitor() {
   const playFile = useCallback(() => service.play(), [service]);
   const pauseFile = useCallback(() => service.pause(), [service]);
   const restartFile = useCallback(() => service.restart(), [service]);
+  const setMuted = useCallback((muted: boolean) => service.setMuted(muted), [service]);
+  const setVolume = useCallback((vol: number) => service.setVolume(vol), [service]);
 
   const isPlaying = playbackStatus.state === 'PLAYING';
+  const isMuted = playbackStatus.isMuted ?? false;
+  const volume = playbackStatus.volume ?? 1.0;
 
   return {
     service,
     playbackStatus,
     activity,
     isPlaying,
+    isMuted,
+    volume,
     loadFile,
     playFile,
     pauseFile,
     restartFile,
+    setMuted,
+    setVolume,
   };
 }

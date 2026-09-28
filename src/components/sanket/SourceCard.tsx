@@ -1,5 +1,18 @@
 import { useRef } from 'react';
-import { FileAudio, Mic, MicOff, Pause, Play, RotateCcw, Upload, MessagesSquare, Square, AlertCircle } from 'lucide-react';
+import {
+  FileAudio,
+  Mic,
+  MicOff,
+  Pause,
+  Play,
+  RotateCcw,
+  Upload,
+  MessagesSquare,
+  Square,
+  AlertCircle,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -65,6 +78,15 @@ function ConversationPlayer() {
         )}
         <Button size="icon" variant="ghost" aria-label="Restart" onClick={p.file.restartFile}>
           <RotateCcw />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label={p.file.isMuted ? 'Unmute speaker audio' : 'Mute speaker audio'}
+          title={p.file.isMuted ? 'Unmute speaker audio' : 'Mute speaker audio'}
+          onClick={() => p.file.setMuted(!p.file.isMuted)}
+        >
+          {p.file.isMuted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-primary" />}
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{conv.title}</p>
@@ -189,6 +211,15 @@ function UploadPanel() {
                 <Play /> {status.state === 'ENDED' ? 'Replay' : 'Analyse'}
               </Button>
             )}
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={p.file.isMuted ? 'Unmute speaker audio' : 'Mute speaker audio'}
+              title={p.file.isMuted ? 'Unmute speaker audio' : 'Mute speaker audio'}
+              onClick={() => p.file.setMuted(!p.file.isMuted)}
+            >
+              {p.file.isMuted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-primary" />}
+            </Button>
             <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
               <FileAudio className="size-3.5 shrink-0" />
               <span className="truncate">{status.fileName}</span>

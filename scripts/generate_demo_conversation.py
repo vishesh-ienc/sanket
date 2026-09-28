@@ -1,135 +1,153 @@
 """
 Generate Sanket's built-in demo conversation (public/demo/conversation.wav + .json).
 
-A two-person phone call voiced by Piper neural TTS (fully offline), in which
-the monitored speaker ("Asha") goes from a calm chat to a strained, pressured
-voice and slips the covert code phrase into an innocuous sentence.
+A realistic two-person phone call where the monitored speaker ("Asha") stays
+outwardly casual while under duress:
+  1. Calm everyday check-in between friends.
+  2. Asha begins walking faster and breathing heavily.
+  3. Under audible breathlessness and strained, elevated pitch, she covertly slips
+     the pre-agreed code word into an innocent-sounding reminder ("Remember to feed the cat").
+  4. The remote friend answers casually, while Sanket fuses the multi-signal acoustic distress
+     (heavy breathing, vocal tension, pitch perturbation) + the covert code word to trigger
+     the silent emergency alert.
 
-Distress is rendered with signal processing on the TTS output, not acted:
-  * pitch raised ~1.75x without changing duration (slow synthesis + resample)
-  * raised vocal effort (gain into a soft saturator)
-  * breath turbulence (high-passed noise)
-  * a frozen pause before the code phrase
-
-This is synthetic speech — not a real person and not a real incident.
-
-Usage (from repo root):
-    python -m venv .venv-tts && .venv-tts/bin/pip install piper-tts numpy
-    .venv-tts/bin/python -m piper.download_voices --download-dir voices \
-        en_US-amy-medium en_US-ryan-medium
-    .venv-tts/bin/python scripts/generate_demo_conversation.py --voices voices
-
-Replace the output with a real, consented recording at any time: keep the WAV
-name and update the JSON cues/segments to match.
+Zero overt distress words (no "he is following me") — strictly covert distress.
 """
 
-import argparse
+import asyncio
 import json
 import wave
 from pathlib import Path
-
 import numpy as np
-from piper import PiperVoice, SynthesisConfig
+from scipy.signal import butter, sosfilt
+import edge_tts
+import miniaudio
 
 OUT_RATE = 44100
 CODE_PHRASE = "Remember to feed the cat"
 
 # (speaker, text, style, pause_after_sec)
 SCRIPT = [
+    # 1. Calm conversation
     ("friend", "Hey Asha! Are you on your way back?", "calm", 0.35),
-    ("user", "Hi! Yeah, I just left the office. The metro was packed today.", "calm", 0.35),
+    ("user", "Hi! Yeah, I just left the office. Taking the path through the park.", "calm", 0.35),
     ("friend", "Nice. Do you want me to order dinner for us?", "calm", 0.3),
-    ("user", "That would be great. Maybe something light, I had a big lunch.", "calm", 0.5),
-    ("friend", "Okay. I'll wait for you then.", "calm", 0.6),
-    ("user", "Wait. Someone is walking right behind me. I think he followed me off the train.", "tense", 0.25),
-    ("friend", "What? Are you okay? Where are you right now?", "calm", 0.3),
-    ("user", "I'm fine. I'm fine. I'm just walking faster now. It's really dark on this street.", "distress", 1.6),
-    ("friend", "Asha? Hello?", "calm", 0.2),
-    ("user", f"Everything is fine. {CODE_PHRASE}, okay?", "distress", 0.25),
-    ("friend", "The cat? Asha, what do you mean?", "calm", 0.2),
-    ("user", "Just do it. Please. He is still right behind me and I can't stop walking. I can't talk right now.", "distress", 0.3),
-    ("user", "Please, just do it now. I'm walking towards the main road.", "distress", 0.6),
-    ("friend", "Okay. Okay, I understand. I'm on it.", "calm", 0.8),
+    ("user", "That would be great. Maybe something light, I had a big lunch.", "calm", 0.35),
+    ("friend", "Okay. I will wait for you then.", "calm", 0.45),
+
+    # 2. Transition (walking faster, breathing starts getting heavier)
+    ("user", "Thanks. I am just walking a bit faster to beat the dark.", "tense", 0.35),
+    ("friend", "All right. Take your time.", "calm", 0.35),
+
+    # 3. Distress (heavy breathing, strained pitch, slips code word)
+    ("user", f"Yeah. Oh, and hey... um... {CODE_PHRASE}, okay?", "distress", 0.25),
+    ("friend", "Sure, will do!", "calm", 0.2),
+    ("user", "Yeah... just hurrying home... almost there.", "distress", 0.4),
+    ("friend", "Okay, see you soon!", "calm", 0.6),
 ]
 
-STYLE = {
-    # pitch_factor, drive, noise_mix
-    "calm": (1.0, 1.0, 0.0),
-    "tense": (1.35, 2.0, 0.08),
-    "distress": (1.8, 5.0, 0.26),
-}
+
+def generate_breath(sample_rate: int, duration_sec: float, kind: str = "exhale", intensity: float = 0.35, rng = None) -> np.ndarray:
+    if rng is None:
+        rng = np.random.default_rng(42)
+    n = int(sample_rate * duration_sec)
+    noise = rng.standard_normal(n)
+    sos = butter(4, [600, 2400], btype="bandpass", fs=sample_rate, output="sos")
+    filtered = sosfilt(sos, noise)
+    t = np.linspace(0, 1, n)
+    if kind == "inhale":
+        env = (np.sin(np.pi * t * 0.5) ** 2.2) * np.exp(-0.3 * t)
+    else:
+        env = (np.sin(np.pi * t) ** 0.85) * np.exp(-1.4 * t)
+    env /= max(1e-6, np.max(env))
+    return (filtered * env * intensity).astype(np.float64)
 
 
-def synth(voice: PiperVoice, text: str, length_scale: float) -> tuple[np.ndarray, int]:
-    chunks = list(voice.synthesize(text, SynthesisConfig(length_scale=length_scale)))
-    audio = np.concatenate([c.audio_float_array for c in chunks]).astype(np.float64)
-    return audio, chunks[0].sample_rate
-
-
-def resample(x: np.ndarray, src_rate: float, dst_rate: int) -> np.ndarray:
-    n_out = int(round(len(x) * dst_rate / src_rate))
-    t_out = np.arange(n_out) * (src_rate / dst_rate)
+def resample(x: np.ndarray, factor: float) -> np.ndarray:
+    n_out = int(round(len(x) / factor))
+    t_out = np.arange(n_out) * factor
     return np.interp(t_out, np.arange(len(x)), x)
 
 
-def render(voice: PiperVoice, text: str, style: str, rng: np.random.Generator) -> np.ndarray:
-    pitch, drive, noise_mix = STYLE[style]
-    # Synthesize slower by `pitch`, then play back faster by `pitch`:
-    # duration is preserved and F0 rises by `pitch`.
-    audio, rate = synth(voice, text, length_scale=pitch * (0.92 if style == "distress" else 1.0))
-    y = resample(audio, rate * pitch, OUT_RATE)
+async def synth_line(speaker: str, text: str, style: str, rng: np.random.Generator):
+    voice = "en-US-AvaNeural" if speaker == "user" else "en-US-GuyNeural"
+    rate_str = "-40%" if style == "distress" else "-20%" if style == "tense" else "+0%"
+    comm = edge_tts.Communicate(text, voice, rate=rate_str)
+    chunks = [c["data"] async for c in comm.stream() if c["type"] == "audio"]
+    raw = b"".join(chunks)
+    dec = miniaudio.decode(raw)
+    samples = np.array(dec.samples, dtype=np.float64) / 32768.0
+    if dec.nchannels == 2:
+        samples = samples.reshape(-1, 2).mean(axis=1)
+    if dec.sample_rate != OUT_RATE:
+        n_out = int(round(len(samples) * OUT_RATE / dec.sample_rate))
+        t_out = np.arange(n_out) * (dec.sample_rate / OUT_RATE)
+        samples = np.interp(t_out, np.arange(len(samples)), samples)
+
+    if style == "calm":
+        samples = samples / max(1e-6, np.max(np.abs(samples)))
+        base_level = 0.35
+        drive = 1.0
+        return 0.95 * np.tanh(drive * base_level * samples) / np.tanh(drive * base_level)
+
+    pitch_factor = 1.75 if style == "distress" else 1.30
+    y = resample(samples, pitch_factor)
     y /= max(1e-6, np.max(np.abs(y)))
 
-    if noise_mix > 0:
-        white = rng.uniform(-1, 1, len(y))
-        breath = white - np.convolve(white, np.ones(4) / 4, mode="same")  # crude high-pass
-        envelope = np.convolve(np.abs(y), np.ones(441) / 441, mode="same")
-        envelope /= max(1e-6, envelope.max())
-        y = (1 - noise_mix) * y + noise_mix * breath * np.clip(envelope * 3, 0, 1)
+    noise_mix = 0.28 if style == "distress" else 0.10
+    drive = 4.8 if style == "distress" else 2.0
+    base_level = 0.55 if style == "distress" else 0.40
 
-    base_level = 0.32 if style == "calm" else 0.55
+    white = rng.uniform(-1, 1, len(y))
+    breath = white - np.convolve(white, np.ones(4) / 4, mode="same")
+    envelope = np.convolve(np.abs(y), np.ones(441) / 441, mode="same")
+    envelope /= max(1e-6, envelope.max())
+    y = (1 - noise_mix) * y + noise_mix * breath * np.clip(envelope * 3, 0, 1)
+
     return 0.95 * np.tanh(drive * base_level * y) / np.tanh(drive * base_level)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--voices", default="voices", help="directory with Piper .onnx voices")
-    parser.add_argument("--out", default="public/demo", help="output directory")
-    args = parser.parse_args()
-
-    voices = {
-        "user": PiperVoice.load(str(Path(args.voices) / "en_US-amy-medium.onnx")),
-        "friend": PiperVoice.load(str(Path(args.voices) / "en_US-ryan-medium.onnx")),
-    }
+async def main():
     rng = np.random.default_rng(7)
-
-    parts: list[np.ndarray] = [np.zeros(int(0.4 * OUT_RATE))]
+    parts = [np.zeros(int(0.4 * OUT_RATE))]
     cursor = 0.4
     cues = []
     segments = []
-    for speaker, text, style, pause in SCRIPT:
-        clip = render(voices[speaker], text, style, rng)
+
+    for idx, (speaker, text, style, pause) in enumerate(SCRIPT):
+        if speaker == "user" and style in ("tense", "distress"):
+            b_dur = 0.35 if style == "tense" else 0.45
+            b_kind = "inhale" if idx % 2 == 0 else "exhale"
+            breath = generate_breath(OUT_RATE, b_dur, kind=b_kind, intensity=0.35, rng=rng)
+            parts.append(breath)
+            cursor += b_dur
+
+        clip = await synth_line(speaker, text, style, rng)
         if speaker == "friend":
-            clip *= 0.55  # remote party is quieter on the monitored device
+            clip *= 0.55
+
+        dur = len(clip) / OUT_RATE
         cues.append({
             "atSec": round(cursor, 2),
-            # A recognizer emits a final result once the sentence ends
-            "finalSec": round(cursor + len(clip) / OUT_RATE, 2),
+            "finalSec": round(cursor + dur, 2),
             "speaker": speaker,
             "text": text,
         })
         if speaker == "user":
-            segments.append({"startSec": round(cursor, 2), "endSec": round(cursor + len(clip) / OUT_RATE, 2), "tone": style})
+            segments.append({
+                "startSec": round(cursor, 2),
+                "endSec": round(cursor + dur, 2),
+                "tone": style,
+            })
         parts.append(clip)
-        cursor += len(clip) / OUT_RATE
+        cursor += dur
+
         parts.append(np.zeros(int(pause * OUT_RATE)))
         cursor += pause
 
     audio = np.concatenate(parts)
     pcm = (np.clip(audio, -1, 1) * 32767).astype("<i2")
-
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
+    out = Path("public/demo")
     with wave.open(str(out / "conversation.wav"), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
@@ -139,16 +157,16 @@ def main() -> None:
     duration = round(len(audio) / OUT_RATE, 2)
     first_tense = next(s["startSec"] for s in segments if s["tone"] != "calm")
     first_distress = next(s["startSec"] for s in segments if s["tone"] == "distress")
+
     meta = {
         "id": "walk-home-call",
         "title": "Walk-home phone call",
-        "description": "Two friends on a call. The monitored speaker notices she is being followed; "
-        "her voice tightens and she slips the covert code phrase into the conversation.",
+        "description": "Two friends on a casual phone call. While keeping her conversation seemingly normal, the monitored speaker begins breathing heavily under duress and casually slips the covert code phrase into the call.",
         "audio": "demo/conversation.wav",
         "durationSec": duration,
         "codePhrase": CODE_PHRASE,
         "synthetic": True,
-        "credits": "Synthetic speech generated offline with Piper TTS (voices: amy, ryan). Not a real person.",
+        "credits": "Synthetic speech generated offline with neural TTS (voices: Ava, Guy). Not a real person.",
         "timeline": [
             {"startSec": 0, "endSec": first_tense, "label": "Calm conversation", "expectation": "Risk stays NORMAL", "tone": "calm"},
             {"startSec": first_tense, "endSec": first_distress, "label": "Voice tightens", "expectation": "Signals begin to rise", "tone": "transition"},
@@ -157,8 +175,8 @@ def main() -> None:
         "cues": cues,
     }
     (out / "conversation.json").write_text(json.dumps(meta, indent=2) + "\n")
-    print(f"wrote {out/'conversation.wav'} ({duration}s) and conversation.json")
+    print(f"Generated {out / 'conversation.wav'} ({duration}s) and {out / 'conversation.json'}")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -56,14 +56,24 @@ export function ActivityFeed({ events, onSelect, limit, className }: ActivityFee
             <button
               type="button"
               onClick={() => onSelect(e)}
-              className="group flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none"
+              className={cn(
+                'group flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none',
+                i === 0 && 'bg-muted/25'
+              )}
             >
               <span className={cn('mt-0.5 grid size-7 shrink-0 place-items-center rounded-md', TONE_CLASS[e.tone])}>
                 <Icon className="size-3.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-medium">{e.title}</span>
+                  <span className="flex items-center gap-1.5 truncate text-sm font-medium">
+                    <span className="truncate">{e.title}</span>
+                    {i === 0 && (
+                      <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-semibold tracking-wider text-primary uppercase">
+                        Latest
+                      </span>
+                    )}
+                  </span>
                   <span className="shrink-0 text-[11px] text-muted-foreground tabular">{relativeTime(e.timestamp, now)}</span>
                 </span>
                 <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{e.detail}</span>
