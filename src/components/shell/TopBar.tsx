@@ -16,6 +16,7 @@ export function TopBar({ item }: { item: NavItem }) {
         ? (p.conversation?.title ?? 'Demo conversation')
         : (p.file.playbackStatus.fileName ?? 'Audio file');
 
+
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur-md">
       <SidebarTrigger className="-ml-1 hidden md:inline-flex" />

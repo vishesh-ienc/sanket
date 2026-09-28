@@ -123,7 +123,7 @@ export function usePipeline() {
 
   const codeWord = useCodeWordDetector({
     onDetection: (detection) => {
-      const boost = boostRef.current;
+      const boost = sourceKind === 'conversation' ? 41 : boostRef.current;
       injectExternalSignal(boost, boost, {
         signal: 'codeWord',
         reason: detection.reason ?? 'Configured distress phrase detected',

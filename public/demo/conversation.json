@@ -1,9 +1,9 @@
 {
   "id": "walk-home-call",
-  "title": "Walk-home phone call",
-  "description": "Two friends on a casual phone call. While keeping her conversation seemingly normal, the monitored speaker begins breathing heavily under duress and casually slips the covert code phrase into the call.",
+  "title": "Walk-Home Phone Call",
+  "description": "Two friends on a casual phone call. The dialogue sounds completely normal throughout, with no overt mention of danger. The monitored speaker is walking briskly and slips the pre-set code phrase into the conversation. Sanket's risk engine detects subtle respiratory shifts, vocal tension, and the covert code phrase to conclude high risk.",
   "audio": "demo/conversation.wav",
-  "durationSec": 46.35,
+  "durationSec": 47.35,
   "codePhrase": "Remember to feed the cat",
   "synthetic": true,
   "credits": "Synthetic speech generated offline with neural TTS (voices: Ava, Guy). Not a real person.",
@@ -11,22 +11,22 @@
     {
       "startSec": 0,
       "endSec": 24.03,
-      "label": "Calm conversation",
+      "label": "Normal conversation",
       "expectation": "Risk stays NORMAL",
       "tone": "calm"
     },
     {
       "startSec": 24.03,
-      "endSec": 32.4,
-      "label": "Voice tightens",
-      "expectation": "Signals begin to rise",
+      "endSec": 32.57,
+      "label": "Pace increases slightly",
+      "expectation": "Engine detects subtle breathing shifts",
       "tone": "transition"
     },
     {
-      "startSec": 32.4,
-      "endSec": 46.35,
-      "label": "Distress + code phrase",
-      "expectation": "Multi-signal HIGH_RISK \u2192 silent alert",
+      "startSec": 32.57,
+      "endSec": 47.35,
+      "label": "Code phrase window",
+      "expectation": "Multi-signal trigger and silent alert",
       "tone": "distress"
     }
   ],
@@ -63,37 +63,37 @@
     },
     {
       "atSec": 24.03,
-      "finalSec": 27.81,
+      "finalSec": 27.99,
       "speaker": "user",
       "text": "Thanks. I am just walking a bit faster to beat the dark."
     },
     {
-      "atSec": 28.16,
-      "finalSec": 31.6,
+      "atSec": 28.34,
+      "finalSec": 31.77,
       "speaker": "friend",
       "text": "All right. Take your time."
     },
     {
-      "atSec": 32.4,
-      "finalSec": 36.88,
+      "atSec": 32.57,
+      "finalSec": 37.3,
       "speaker": "user",
       "text": "Yeah. Oh, and hey... um... Remember to feed the cat, okay?"
     },
     {
-      "atSec": 37.13,
-      "finalSec": 39.32,
+      "atSec": 37.55,
+      "finalSec": 39.73,
       "speaker": "friend",
       "text": "Sure, will do!"
     },
     {
-      "atSec": 39.97,
-      "finalSec": 42.93,
+      "atSec": 40.38,
+      "finalSec": 43.53,
       "speaker": "user",
       "text": "Yeah... just hurrying home... almost there."
     },
     {
-      "atSec": 43.33,
-      "finalSec": 45.75,
+      "atSec": 44.33,
+      "finalSec": 46.75,
       "speaker": "friend",
       "text": "Okay, see you soon!"
     }

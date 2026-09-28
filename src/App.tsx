@@ -1,7 +1,7 @@
 /**
  * Sanket — application shell
  *
- * Sidebar (desktop) / bottom tab bar (phone) navigation across five views.
+ * Sidebar (desktop) / bottom tab bar (phone) navigation across six views.
  * Detail surfaces (activity events, incident evidence) open in sheets so the
  * main views stay uncluttered. All pipeline state lives in PipelineContext.
  */
@@ -25,6 +25,7 @@ const SignalsView = lazy(() => import('@/views/SignalsView').then((m) => ({ defa
 const IncidentsView = lazy(() => import('@/views/IncidentsView').then((m) => ({ default: m.IncidentsView })));
 const DemoView = lazy(() => import('@/views/DemoView').then((m) => ({ default: m.DemoView })));
 const SettingsView = lazy(() => import('@/views/SettingsView').then((m) => ({ default: m.SettingsView })));
+const DeployView = lazy(() => import('@/views/DeployView').then((m) => ({ default: m.DeployView })));
 
 function ViewSkeleton() {
   return (
@@ -85,6 +86,7 @@ export function App() {
             {view === 'incidents' && <IncidentsView onNavigate={navigate} />}
             {view === 'demo' && <DemoView onNavigate={navigate} />}
             {view === 'settings' && <SettingsView />}
+            {view === 'deploy' && <DeployView />}
           </Suspense>
         </main>
       </SidebarInset>

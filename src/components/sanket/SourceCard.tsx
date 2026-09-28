@@ -145,7 +145,7 @@ function MicPanel() {
   const requesting = p.mic.monitoringState === 'REQUESTING_PERMISSION';
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         {p.mic.isLive ? (
           <Button variant="destructive" onClick={p.mic.stop}>
             <Square /> Stop listening
@@ -160,9 +160,19 @@ function MicPanel() {
             ? 'Code word listens on-device'
             : p.speech.mode === 'cloud'
               ? 'Code word via cloud speech (opted in)'
-              : 'Code word: type it in Settings (no private speech engine)'}
+              : 'Code word: type it in Settings'}
         </span>
       </div>
+
+      {!p.mic.isLive && (
+        <div className="rounded-lg border border-dashed bg-muted/20 p-2.5 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground/80">Continuous acoustic distress monitor</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed">
+            Real-time vocal stress, respiratory patterns, and speech code words analysed on-device. Zero raw audio leaves your browser.
+          </p>
+        </div>
+      )}
+
       {p.mic.error && (
         <p className="flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -240,7 +250,7 @@ function UploadPanel() {
   );
 }
 
-export function SourceCard() {
+export function SourceCard({ className }: { className?: string } = {}) {
   const p = usePipelineContext();
 
   const onSource = (value: string) => {
@@ -249,45 +259,51 @@ export function SourceCard() {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={cn('flex flex-col h-full', className)}>
+      <CardHeader className="pb-3">
         <CardTitle>Audio source</CardTitle>
-        <CardDescription>Any voice stream — phone, VoIP, mic or recording — runs through the same pipeline.</CardDescription>
+        <CardDescription>Voice stream analysed locally in real time</CardDescription>
         <CardAction>
           {p.isAudioLive ? <Badge className="bg-risk-normal/15 text-risk-normal">Streaming</Badge> : <Badge variant="outline">Idle</Badge>}
         </CardAction>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col justify-between gap-3 p-4 pt-0">
         <ToggleGroup type="single" variant="outline" value={p.sourceKind} onValueChange={onSource} className="w-full">
-          <ToggleGroupItem value="conversation" className="flex-1">
-            <MessagesSquare /> <span className="hidden sm:inline">Demo call</span>
+          <ToggleGroupItem value="conversation" className="flex-1 text-xs">
+            <MessagesSquare className="size-3.5" /> <span className="hidden sm:inline">Demo call</span>
             <span className="sm:hidden">Call</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="mic" className="flex-1">
-            {p.mic.isLive ? <Mic /> : <MicOff />} <span>Mic</span>
+          <ToggleGroupItem value="mic" className="flex-1 text-xs">
+            {p.mic.isLive ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />} <span>Mic</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="file" className="flex-1">
-            <Upload /> <span>Upload</span>
+          <ToggleGroupItem value="file" className="flex-1 text-xs">
+            <Upload className="size-3.5" /> <span>Upload</span>
           </ToggleGroupItem>
         </ToggleGroup>
 
-        {p.isSimulating && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-info/30 bg-info/8 p-3 text-sm">
-            <span>
-              Scenario <strong>{scenarioInfo(p.scenario)?.title}</strong> is driving the engine.
-            </span>
-            <Button size="sm" variant="outline" onClick={p.stopSimulation}>
-              Stop
-            </Button>
+        <div className="flex-1 min-h-0 flex flex-col justify-center">
+          {p.isSimulating && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-info/30 bg-info/8 p-3 text-xs">
+              <span>
+                Scenario <strong>{scenarioInfo(p.scenario)?.title}</strong> is driving the engine.
+              </span>
+              <Button size="sm" variant="outline" onClick={p.stopSimulation}>
+                Stop
+              </Button>
+            </div>
+          )}
+
+          {p.sourceKind === 'conversation' && <ConversationPlayer />}
+          {p.sourceKind === 'mic' && <MicPanel />}
+          {p.sourceKind === 'file' && <UploadPanel />}
+        </div>
+
+        <div className="relative overflow-hidden rounded-lg border bg-muted/20 shrink-0">
+          <div className="absolute right-2.5 top-1.5 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 select-none">
+            <span className={cn('size-1.5 rounded-full', p.isAudioLive ? 'bg-primary animate-pulse' : 'bg-muted-foreground/40')} />
+            {p.isAudioLive ? 'Live Scope' : 'Scope Standby'}
           </div>
-        )}
-
-        {p.sourceKind === 'conversation' && <ConversationPlayer />}
-        {p.sourceKind === 'mic' && <MicPanel />}
-        {p.sourceKind === 'file' && <UploadPanel />}
-
-        <div className="overflow-hidden rounded-lg border bg-muted/30">
-          <Waveform analyser={p.analyserNode} active={p.isAudioLive} />
+          <Waveform analyser={p.analyserNode} active={p.isAudioLive} className="h-16 w-full" />
         </div>
       </CardContent>
     </Card>

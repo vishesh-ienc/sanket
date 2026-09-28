@@ -1,19 +1,3 @@
-"""
-Generate Sanket's built-in demo conversation (public/demo/conversation.wav + .json).
-
-A realistic two-person phone call where the monitored speaker ("Asha") stays
-outwardly casual while under duress:
-  1. Calm everyday check-in between friends.
-  2. Asha begins walking faster and breathing heavily.
-  3. Under audible breathlessness and strained, elevated pitch, she covertly slips
-     the pre-agreed code word into an innocent-sounding reminder ("Remember to feed the cat").
-  4. The remote friend answers casually, while Sanket fuses the multi-signal acoustic distress
-     (heavy breathing, vocal tension, pitch perturbation) + the covert code word to trigger
-     the silent emergency alert.
-
-Zero overt distress words (no "he is following me") — strictly covert distress.
-"""
-
 import asyncio
 import json
 import wave
@@ -26,53 +10,51 @@ import miniaudio
 OUT_RATE = 44100
 CODE_PHRASE = "Remember to feed the cat"
 
-# (speaker, text, style, pause_after_sec)
 SCRIPT = [
-    # 1. Calm conversation
+    # 1. Calm conversation (opening stays strictly NORMAL, score < 20)
     ("friend", "Hey Asha! Are you on your way back?", "calm", 0.35),
     ("user", "Hi! Yeah, I just left the office. Taking the path through the park.", "calm", 0.35),
-    ("friend", "Nice. Do you want me to order dinner for us?", "calm", 0.3),
+    ("friend", "Nice. Do you want me to order dinner for us?", "calm", 0.30),
     ("user", "That would be great. Maybe something light, I had a big lunch.", "calm", 0.35),
     ("friend", "Okay. I will wait for you then.", "calm", 0.45),
 
-    # 2. Transition (walking faster, breathing starts getting heavier)
+    # 2. Transition (walking a bit faster, slight breathing shifts)
+    ("breath", 0.35, "inhale", 0.30),
     ("user", "Thanks. I am just walking a bit faster to beat the dark.", "tense", 0.35),
     ("friend", "All right. Take your time.", "calm", 0.35),
 
-    # 3. Distress (heavy breathing, strained pitch, slips code word)
+    # 3. Distress (outwardly normal call, but breathing heavier from walking fast, slips code phrase)
+    ("breath", 0.45, "exhale", 0.40),
     ("user", f"Yeah. Oh, and hey... um... {CODE_PHRASE}, okay?", "distress", 0.25),
-    ("friend", "Sure, will do!", "calm", 0.2),
-    ("user", "Yeah... just hurrying home... almost there.", "distress", 0.4),
-    ("friend", "Okay, see you soon!", "calm", 0.6),
+    ("friend", "Sure, will do!", "calm", 0.20),
+    ("breath", 0.45, "inhale", 0.40),
+    ("user", "Yeah... just hurrying home... almost there.", "distress", 0.30),
+    ("breath", 0.50, "exhale", 0.35),
+    ("friend", "Okay, see you soon!", "calm", 0.60),
 ]
 
-
-def generate_breath(sample_rate: int, duration_sec: float, kind: str = "exhale", intensity: float = 0.35, rng = None) -> np.ndarray:
+def generate_breath(sample_rate: int, duration_sec: float, kind: str = "exhale", intensity: float = 0.35, rng=None) -> np.ndarray:
     if rng is None:
         rng = np.random.default_rng(42)
     n = int(sample_rate * duration_sec)
     noise = rng.standard_normal(n)
-    sos = butter(4, [600, 2400], btype="bandpass", fs=sample_rate, output="sos")
+    sos = butter(3, [1200, 3600], btype="bandpass", fs=sample_rate, output="sos")
     filtered = sosfilt(sos, noise)
     t = np.linspace(0, 1, n)
     if kind == "inhale":
-        env = (np.sin(np.pi * t * 0.5) ** 2.2) * np.exp(-0.3 * t)
+        env = (np.sin(np.pi * t * 0.5) ** 1.8) * np.exp(-0.15 * t)
     else:
-        env = (np.sin(np.pi * t) ** 0.85) * np.exp(-1.4 * t)
+        env = (np.sin(np.pi * t) ** 0.85) * np.exp(-1.1 * t)
     env /= max(1e-6, np.max(env))
     return (filtered * env * intensity).astype(np.float64)
 
-
-def resample(x: np.ndarray, factor: float) -> np.ndarray:
-    n_out = int(round(len(x) / factor))
-    t_out = np.arange(n_out) * factor
-    return np.interp(t_out, np.arange(len(x)), x)
-
-
 async def synth_line(speaker: str, text: str, style: str, rng: np.random.Generator):
     voice = "en-US-AvaNeural" if speaker == "user" else "en-US-GuyNeural"
-    rate_str = "-40%" if style == "distress" else "-20%" if style == "tense" else "+0%"
-    comm = edge_tts.Communicate(text, voice, rate=rate_str)
+    # Ava stays 100% Ava: NO pitch_factor resampling, NO chipmunk effect, NO slow-mo rate!
+    # Pitch boost via edge-tts neural vocoder:
+    pitch_str = "+30Hz" if style == "distress" else "+10Hz" if style == "tense" else "+0Hz"
+    rate_str = "+0%"
+    comm = edge_tts.Communicate(text, voice, rate=rate_str, pitch=pitch_str)
     chunks = [c["data"] async for c in comm.stream() if c["type"] == "audio"]
     raw = b"".join(chunks)
     dec = miniaudio.decode(raw)
@@ -84,44 +66,37 @@ async def synth_line(speaker: str, text: str, style: str, rng: np.random.Generat
         t_out = np.arange(n_out) * (dec.sample_rate / OUT_RATE)
         samples = np.interp(t_out, np.arange(len(samples)), samples)
 
-    if style == "calm":
-        samples = samples / max(1e-6, np.max(np.abs(samples)))
-        base_level = 0.35
-        drive = 1.0
-        return 0.95 * np.tanh(drive * base_level * samples) / np.tanh(drive * base_level)
+    samples = samples / max(1e-6, np.max(np.abs(samples)))
+    base_level = 0.48 if style == "distress" else 0.40 if style == "tense" else 0.36
 
-    pitch_factor = 1.75 if style == "distress" else 1.30
-    y = resample(samples, pitch_factor)
-    y /= max(1e-6, np.max(np.abs(y)))
+    # In distress/tense: add gentle, natural telephone mic airflow / breathiness
+    # (High frequencies 2.2k-6.5k Hz: sounds like breath on a phone mic, preserves Ava's voice completely)
+    if speaker == "user" and style in ("tense", "distress"):
+        b_noise = rng.standard_normal(len(samples))
+        sos_b = butter(3, [2200, 6500], btype="bandpass", fs=OUT_RATE, output="sos")
+        b_filt = sosfilt(sos_b, b_noise)
+        b_filt /= max(1e-6, np.max(np.abs(b_filt)))
+        mix = 0.09 if style == "distress" else 0.03
+        samples = samples + mix * b_filt
 
-    noise_mix = 0.28 if style == "distress" else 0.10
-    drive = 4.8 if style == "distress" else 2.0
-    base_level = 0.55 if style == "distress" else 0.40
+    return 0.95 * np.tanh(1.0 * base_level * samples) / np.tanh(1.0 * base_level)
 
-    white = rng.uniform(-1, 1, len(y))
-    breath = white - np.convolve(white, np.ones(4) / 4, mode="same")
-    envelope = np.convolve(np.abs(y), np.ones(441) / 441, mode="same")
-    envelope /= max(1e-6, envelope.max())
-    y = (1 - noise_mix) * y + noise_mix * breath * np.clip(envelope * 3, 0, 1)
-
-    return 0.95 * np.tanh(drive * base_level * y) / np.tanh(drive * base_level)
-
-
-async def main():
+async def generate():
     rng = np.random.default_rng(7)
     parts = [np.zeros(int(0.4 * OUT_RATE))]
     cursor = 0.4
     cues = []
     segments = []
 
-    for idx, (speaker, text, style, pause) in enumerate(SCRIPT):
-        if speaker == "user" and style in ("tense", "distress"):
-            b_dur = 0.35 if style == "tense" else 0.45
-            b_kind = "inhale" if idx % 2 == 0 else "exhale"
-            breath = generate_breath(OUT_RATE, b_dur, kind=b_kind, intensity=0.35, rng=rng)
-            parts.append(breath)
-            cursor += b_dur
+    for item in SCRIPT:
+        if item[0] == "breath":
+            _, dur, kind, intensity = item
+            b_clip = generate_breath(OUT_RATE, dur, kind=kind, intensity=intensity, rng=rng)
+            parts.append(b_clip)
+            cursor += dur
+            continue
 
+        speaker, text, style, pause = item
         clip = await synth_line(speaker, text, style, rng)
         if speaker == "friend":
             clip *= 0.55
@@ -160,23 +135,22 @@ async def main():
 
     meta = {
         "id": "walk-home-call",
-        "title": "Walk-home phone call",
-        "description": "Two friends on a casual phone call. While keeping her conversation seemingly normal, the monitored speaker begins breathing heavily under duress and casually slips the covert code phrase into the call.",
+        "title": "Walk-Home Phone Call",
+        "description": "Two friends on a casual phone call. The dialogue sounds completely normal throughout, with no overt mention of danger. The monitored speaker is walking briskly and slips the pre-set code phrase into the conversation. Sanket's risk engine detects subtle respiratory shifts, vocal tension, and the covert code phrase to conclude high risk.",
         "audio": "demo/conversation.wav",
         "durationSec": duration,
         "codePhrase": CODE_PHRASE,
         "synthetic": True,
         "credits": "Synthetic speech generated offline with neural TTS (voices: Ava, Guy). Not a real person.",
         "timeline": [
-            {"startSec": 0, "endSec": first_tense, "label": "Calm conversation", "expectation": "Risk stays NORMAL", "tone": "calm"},
-            {"startSec": first_tense, "endSec": first_distress, "label": "Voice tightens", "expectation": "Signals begin to rise", "tone": "transition"},
-            {"startSec": first_distress, "endSec": duration, "label": "Distress + code phrase", "expectation": "Multi-signal HIGH_RISK → silent alert", "tone": "distress"},
+            {"startSec": 0, "endSec": first_tense, "label": "Normal conversation", "expectation": "Risk stays NORMAL", "tone": "calm"},
+            {"startSec": first_tense, "endSec": first_distress, "label": "Pace increases slightly", "expectation": "Engine detects subtle breathing shifts", "tone": "transition"},
+            {"startSec": first_distress, "endSec": duration, "label": "Code phrase window", "expectation": "Multi-signal trigger and silent alert", "tone": "distress"},
         ],
         "cues": cues,
     }
     (out / "conversation.json").write_text(json.dumps(meta, indent=2) + "\n")
-    print(f"Generated {out / 'conversation.wav'} ({duration}s) and {out / 'conversation.json'}")
-
+    print(f"Generated clean normal conversation: {duration}s")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(generate())

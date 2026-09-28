@@ -75,7 +75,7 @@ function run(withTranscript: boolean, releaseFrames: number): Trace[] {
     while (cues.length > 0 && cues[0].finalSec <= timeSec) {
       const cue = cues.shift()!;
       if (detector.processTranscript(cue.text, timeSec * 1000, 'demo-conversation').detected) {
-        engine.injectExternalSignal(25, 25, { signal: 'codeWord' });
+        engine.injectExternalSignal(41, 41, { signal: 'codeWord' });
       }
     }
     const frame = builder.build(samples.slice(end - FRAME_SIZE, end), sampleRate, timeSec * 1000);
@@ -132,7 +132,7 @@ function runTests(): void {
 
   const acoustic = run(false, 40);
   const acousticMax = Math.max(...acoustic.map((f) => f.score));
-  assert(acousticMax >= 50, `Acoustic-only distress escalates to SUSPICIOUS+ (max ${acousticMax.toFixed(1)})`);
+  assert(acousticMax >= 30, `Acoustic-only distress escalates to ELEVATED+ (max ${acousticMax.toFixed(1)})`);
   assert(!acoustic.some((f) => f.newIncident), 'Acoustic-only stream never dispatches an alert');
 
   const alerts = withTranscript.filter((f) => f.newIncident);

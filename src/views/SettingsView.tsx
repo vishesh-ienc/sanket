@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme, type Theme } from '@/components/theme/theme-context';
 import {
   AlertTriangle,
@@ -6,9 +6,9 @@ import {
   Cloud,
   Download,
   KeyRound,
-  Mail,
   MessageSquare,
   Mic,
+  MicOff,
   Monitor,
   Moon,
   ShieldCheck,
@@ -16,6 +16,7 @@ import {
   Trash2,
   UserPlus,
   UserRound,
+  Volume2,
 } from 'lucide-react';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,17 +31,85 @@ import { usePipelineContext } from '@/app/PipelineContext';
 import { MAX_TRUSTED_CONTACTS, maskAddress, type ContactChannel } from '@/services/trustedContacts';
 import { cn } from '@/lib/utils';
 
+// The calibration text the user is asked to read aloud
+const CALIBRATION_PASSAGES = [
+  "The morning light filtered through the curtains as I made a cup of tea. I listened to the birds outside and thought about the day ahead. Everything felt calm and unhurried, just the way I like it.",
+  "I walked down the street to meet a friend for coffee. We talked about movies, weekend plans, and an old joke that still made us laugh. It was a perfectly ordinary afternoon.",
+  "Please read this passage at your normal speaking pace and volume. The system is capturing your natural voice pattern to use as a baseline for analysis. Take your time and speak naturally.",
+];
+
+function CalibrationPrompt({ active }: { active: boolean }) {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % CALIBRATION_PASSAGES.length), 8000);
+    return () => clearInterval(t);
+  }, [active]);
+
+  return (
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-xl border-2 p-5 transition-all duration-500',
+        active
+          ? 'border-primary/50 bg-primary/5'
+          : 'border-border bg-muted/20 opacity-60',
+      )}
+    >
+      {active && (
+        <>
+          <div className="animate-calibration-ring absolute inset-0 rounded-xl border-2 border-primary/40" />
+          <div className="mb-3 flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-widest">
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+              Recording your voice
+            </span>
+          </div>
+        </>
+      )}
+      {!active && (
+        <div className="mb-3 flex items-center gap-2">
+          <Volume2 className="size-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+            Read this aloud when calibrating
+          </span>
+        </div>
+      )}
+      <p className="text-base leading-relaxed font-medium text-foreground">
+        {CALIBRATION_PASSAGES[idx]}
+      </p>
+      {active && (
+        <div className="mt-3 flex gap-1">
+          {CALIBRATION_PASSAGES.map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'h-1 flex-1 rounded-full transition-colors',
+                i === idx ? 'bg-primary' : 'bg-primary/20',
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BaselineCard() {
   const p = usePipelineContext();
   const { calibrationState: cs } = p.calibration;
   const profile = cs.profile;
+  const isCalibrating = cs.status === 'CALIBRATING';
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <UserRound className="size-4 text-primary" /> Personal voice baseline
+          <UserRound className="size-4 text-primary" /> Personal Voice Baseline
         </CardTitle>
-        <CardDescription>Speak normally for ~30 s so deviations are measured against your own voice, not a generic one.</CardDescription>
+        <CardDescription>
+          Speak normally for about 30 seconds so deviations are measured against your own voice, not a generic model.
+        </CardDescription>
         <CardAction>
           {cs.status === 'COMPLETE' ? (
             <Badge className="bg-risk-normal/15 text-risk-normal">Calibrated</Badge>
@@ -50,15 +119,19 @@ function BaselineCard() {
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {cs.status === 'CALIBRATING' && (
+        <CalibrationPrompt active={isCalibrating} />
+
+        {isCalibrating && (
           <div className="flex flex-col gap-2">
-            <Progress value={cs.progress * 100} />
-            <p className="text-xs text-muted-foreground">
-              {cs.voicedFrames} / {cs.minVoicedFrames} voiced frames · keep talking naturally
-            </p>
-            <div className="flex gap-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{cs.voicedFrames} / {cs.minVoicedFrames} voiced frames</span>
+              <span>{Math.round(cs.progress * 100)}% complete</span>
+            </div>
+            <Progress value={cs.progress * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground">Keep reading naturally from the text above...</p>
+            <div className="flex gap-2 mt-1">
               <Button size="sm" onClick={p.calibration.finalizeCalibration} disabled={cs.voicedFrames < cs.minVoicedFrames}>
-                <Check /> Finish now
+                <Check /> Finish Now
               </Button>
               <Button size="sm" variant="ghost" onClick={p.calibration.cancelCalibration}>
                 Cancel
@@ -66,40 +139,54 @@ function BaselineCard() {
             </div>
           </div>
         )}
+
         {cs.status === 'COMPLETE' && profile && (
           <dl className="grid grid-cols-3 gap-2 text-center">
             {[
               ['Pitch', `${Math.round(profile.pitchMean)} Hz`],
-              ['Variation', `±${profile.pitchStdDev.toFixed(0)} Hz`],
+              ['Variation', `+/-${profile.pitchStdDev.toFixed(0)} Hz`],
               ['Loudness', `${(profile.energyMean * 100).toFixed(1)}%`],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-lg border p-2">
-                <dt className="text-[11px] text-muted-foreground">{k}</dt>
-                <dd className="font-mono text-sm font-semibold tabular">{v}</dd>
+              <div key={k} className="rounded-lg border bg-muted/20 p-2.5">
+                <dt className="text-[11px] text-muted-foreground uppercase tracking-wide">{k}</dt>
+                <dd className="font-mono text-sm font-semibold tabular mt-0.5">{v}</dd>
               </div>
             ))}
           </dl>
         )}
+
         {cs.status === 'ERROR' && <p className="text-sm text-destructive">{cs.errorMessage}</p>}
+
         {cs.status !== 'CALIBRATING' && (
           <div className="flex flex-wrap gap-2">
-            <Button onClick={p.calibration.startCalibration} disabled={!p.mic.isLive}>
-              <Mic /> {cs.status === 'COMPLETE' ? 'Recalibrate' : 'Calibrate with microphone'}
+            <Button
+              onClick={p.calibration.startCalibration}
+              disabled={!p.mic.isLive}
+              className="gap-2"
+            >
+              <Mic className="size-4" />
+              {cs.status === 'COMPLETE' ? 'Recalibrate Voice' : 'Calibrate with Microphone'}
             </Button>
             {cs.status !== 'COMPLETE' && (
               <Button variant="outline" onClick={() => p.calibration.loadPresetProfile()}>
-                Use demo profile
+                Use Demo Profile
               </Button>
             )}
             {cs.status === 'COMPLETE' && (
               <Button variant="ghost" onClick={p.calibration.clearBaseline}>
-                Reset to default
+                Reset to Default
               </Button>
             )}
           </div>
         )}
+
         {!p.mic.isLive && cs.status !== 'CALIBRATING' && (
-          <p className="text-xs text-muted-foreground">Start the microphone on Monitor to calibrate with your own voice.</p>
+          <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
+            <MicOff className="size-3.5 shrink-0 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              Start the microphone on the Monitor tab to calibrate with your own voice.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -117,9 +204,9 @@ function CodeWordCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound className="size-4 text-primary" /> Covert code word
+          <KeyRound className="size-4 text-primary" /> Covert Code Word
         </CardTitle>
-        <CardDescription>A phrase you can slip into a normal sentence. It adds context — it never alerts on its own.</CardDescription>
+        <CardDescription>A phrase you can slip into a normal sentence. It adds context and never alerts on its own.</CardDescription>
         <CardAction>
           <Switch checked={cw.config.enabled} onCheckedChange={() => cw.toggleEnabled()} aria-label="Arm code word" />
         </CardAction>
@@ -158,7 +245,7 @@ function CodeWordCard() {
                 setTest(e.target.value);
                 setResult(null);
               }}
-              placeholder="Type what someone might say…"
+              placeholder="Type what someone might say..."
             />
             <Button type="submit" variant="outline" disabled={!test.trim()}>
               Test
@@ -166,7 +253,7 @@ function CodeWordCard() {
           </div>
           {result !== null && (
             <p className={cn('text-sm', result ? 'text-risk-suspicious' : 'text-muted-foreground')}>
-              {result ? 'Matched — context added to the live engine.' : 'No match (or within the 5 s repeat cooldown).'}
+              {result ? 'Matched. Context added to the live engine.' : 'No match (or within the 5s repeat cooldown).'}
             </p>
           )}
         </form>
@@ -181,20 +268,20 @@ function LiveSpeechCard() {
   const api = speech.support?.apiAvailable;
 
   const status = !speech.support
-    ? { label: 'Checking…', cls: 'bg-muted text-muted-foreground' }
+    ? { label: 'Checking...', cls: 'bg-muted text-muted-foreground' }
     : !api
       ? { label: 'Not supported', cls: 'bg-muted text-muted-foreground' }
       : speech.mode === 'on-device'
         ? { label: 'On-device', cls: 'bg-risk-normal/15 text-risk-normal' }
         : speech.mode === 'cloud'
           ? { label: 'Cloud (opted in)', cls: 'bg-risk-elevated/15 text-risk-elevated' }
-          : { label: 'Off — private engine needed', cls: 'bg-muted text-muted-foreground' };
+          : { label: 'Off', cls: 'bg-muted text-muted-foreground' };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Mic className="size-4 text-primary" /> Live code-word listening
+          <Mic className="size-4 text-primary" /> Live Code-Word Listening
         </CardTitle>
         <CardDescription>Turns speech into text only to check for your phrase. Text is discarded immediately.</CardDescription>
         <CardAction>
@@ -225,8 +312,7 @@ function LiveSpeechCard() {
             <p className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-risk-elevated" />
               <span>
-                Without on-device support, recognition runs on the browser vendor's servers — your microphone audio would leave this device.
-                Off by default.
+                Without on-device support, recognition runs on the browser vendor's servers. Your microphone audio would leave this device. Off by default.
               </span>
             </p>
             <div className="flex items-center justify-between gap-4">
@@ -261,7 +347,7 @@ function ContactsCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <UserPlus className="size-4 text-primary" /> Trusted contacts
+          <UserPlus className="size-4 text-primary" /> Trusted Contacts
         </CardTitle>
         <CardDescription>Who would get a discreet alert. Stored only here and never messaged in this prototype.</CardDescription>
         <CardAction>
@@ -306,9 +392,6 @@ function ContactsCard() {
             <ToggleGroupItem value="SMS" aria-label="SMS">
               <MessageSquare />
             </ToggleGroupItem>
-            <ToggleGroupItem value="EMAIL" aria-label="Email">
-              <Mail />
-            </ToggleGroupItem>
           </ToggleGroup>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tc-address">{channel === 'SMS' ? 'Phone' : 'Email'}</Label>
@@ -330,11 +413,7 @@ function ContactsCard() {
           <ul className="flex flex-col divide-y rounded-lg border">
             {contacts.contacts.map((c) => (
               <li key={c.id} className="flex items-center gap-3 px-3 py-2">
-                {c.channel === 'SMS' ? (
-                  <MessageSquare className="size-4 text-muted-foreground" />
-                ) : (
-                  <Mail className="size-4 text-muted-foreground" />
-                )}
+                <MessageSquare className="size-4 text-muted-foreground" />
                 <span className="flex-1 truncate text-sm font-medium">{c.name}</span>
                 <span className="font-mono text-xs text-muted-foreground">{maskAddress(c.channel, c.address)}</span>
                 <Button variant="ghost" size="icon-sm" aria-label={`Remove ${c.name}`} onClick={() => contacts.removeContact(c.id)}>
